@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+The project must contain three main data models: User, Shop, and Product, with clear relationships as described.
+
+use_sqlalchemy_and_flask_migrate:  
+All main data models must be implemented using SQLAlchemy ORM and support database migration via Flask-Migrate.
+
+support_restful_api_for_all_main_operations:  
+All CRUD operations for User, Shop, and Product should be exposed through RESTful API endpoints.
+
+shop_owner_crud_restriction:  
+Only the owner of a shop is allowed to perform Create, Read, Update, and Delete operations on their shop.
+
+product_owner_crud_restriction:  
+Only the owner of a shop can manage products under their shop (CRUD operations).
+
+user_login_required_for_restricted_actions:  
+User authentication (login) is required for managing shops and products; customers can only browse and purchase.
+
+role_based_permission:  
+There should be separate roles: admin, shop_owner, and customer. Permissions for managing shops/products/orders must match the user's role.
+
+unified_error_handling:  
+The backend API should provide consistent error messages for authentication and validation failures.

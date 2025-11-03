@@ -1,0 +1,65 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>店鋪管理</h1>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>店鋪名称</th>
+                    <th>擁有者</th>
+                    <th>狀態</th>
+                    <th>最大Toppings</th>
+                    <th>建立時間</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shop in shops %}
+                <tr>
+                    <td>{{ shop.id }}</td>
+                    <td>{{ shop.name }}</td>
+                    <td>{{ shop.owner.name if shop.owner else 'N/A' }}</td>
+                    <td>
+                        {% if shop.status == 'active' %}
+                            <span class="badge badge-success">啟動</span>
+                        {% else %}
+                            <span class="badge badge-danger">禁用</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ shop.max_toppings_per_order }}</td>
+                    <td>{{ shop.created_at.strftime('%Y-%m-%d %H:%M') if shop.created_at else '' }}</td>
+                    <td>
+                        <a href="{{ url_for('backend.shop_detail', shop_id=shop.id) }}" class="btn btn-sm btn-primary">查看</a>
+                        <button class="btn btn-sm btn-danger" onclick="deleteShop({{ shop.id }})">刪除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function deleteShop(shopId) {
+    if (confirm('确定要刪除这个店鋪吗？')) {
+        fetch('/api/shops/' + shopId, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('刪除失败');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
+

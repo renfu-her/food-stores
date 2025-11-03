@@ -1,0 +1,17 @@
+{% extends "base/app.html" %}
+
+{% block title %}Backend - Food Stores{% endblock %}
+
+{% block nav_menu %}
+    <li><a href="{{ url_for('backend.index') }}">儀表板</a></li>
+    <li><a href="{{ url_for('backend.users') }}">使用者管理</a></li>
+    <li><a href="{{ url_for('backend.shops') }}">店鋪管理</a></li>
+    <li><a href="{{ url_for('backend.products') }}">產品管理</a></li>
+    <li><a href="{{ url_for('backend.orders') }}">訂單管理</a></li>
+{% endblock %}
+
+{% block user_info %}
+    <span>管理員</span>
+    <a href="{{ url_for('auth.logout') }}">登出</a>
+{% endblock %}
+

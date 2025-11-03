@@ -1,0 +1,170 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>購物車</h1>
+    
+    <div id="cartItems">
+        <p>載入中...</p>
+    </div>
+    
+    <div class="cart-summary" id="cartSummary" style="display: none;">
+        <div class="total">
+            <strong>總計: $<span id="cartTotal">0.00</span></strong>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="checkout()">結算</button>
+    </div>
+</div>
+
+<style>
+.cart-item {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cart-item-info h3 {
+    margin-bottom: 0.5rem;
+}
+
+.cart-item-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.cart-summary {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 2rem;
+    text-align: right;
+}
+
+.total {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+</style>
+
+<script>
+async function loadCart() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const cartItemsDiv = document.getElementById('cartItems');
+    
+    if (cart.length === 0) {
+        cartItemsDiv.innerHTML = '<div class="empty-state"><p>購物車是空的</p><a href="{{ url_for("customer.index") }}" class="btn btn-primary">去購物</a></div>';
+        return;
+    }
+    
+    // 获取產品详情
+    let html = '';
+    let total = 0;
+    
+    for (const item of cart) {
+        try {
+            const response = await fetch('/api/products/' + item.product_id);
+            const product = await response.json();
+            
+            const itemTotal = product.unit_price * item.quantity;
+            total += itemTotal;
+            
+            html += `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <h3>${product.name}</h3>
+                        <p>數量: ${item.quantity}</p>
+                        <p>單價: $${product.unit_price.toFixed(2)}</p>
+                    </div>
+                    <div class="cart-item-actions">
+                        <span>$${itemTotal.toFixed(2)}</span>
+                        <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">刪除</button>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('加载產品失败:', error);
+        }
+    }
+    
+    cartItemsDiv.innerHTML = html;
+    document.getElementById('cartTotal').textContent = total.toFixed(2);
+    document.getElementById('cartSummary').style.display = 'block';
+}
+
+function removeFromCart(productId) {
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    cart = cart.filter(item => item.product_id !== productId);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    loadCart();
+}
+
+async function checkout() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    if (cart.length === 0) {
+        alert('購物車是空的');
+        return;
+    }
+    
+    // 按店鋪分组
+    const shopGroups = {};
+    for (const item of cart) {
+        try {
+            const response = await fetch('/api/products/' + item.product_id);
+            const product = await response.json();
+            
+            if (!shopGroups[product.shop_id]) {
+                shopGroups[product.shop_id] = [];
+            }
+            shopGroups[product.shop_id].push({
+                product_id: item.product_id,
+                quantity: item.quantity,
+                toppings: item.toppings || []
+            });
+        } catch (error) {
+            console.error('获取產品信息失败:', error);
+        }
+    }
+    
+    // 为每个店鋪创建訂單
+    for (const [shopId, items] of Object.entries(shopGroups)) {
+        try {
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shop_id: parseInt(shopId),
+                    items: items
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                alert('创建訂單失败: ' + error.message);
+                return;
+            }
+        } catch (error) {
+            alert('创建訂單失败，请重试');
+            return;
+        }
+    }
+    
+    // 清空購物車
+    localStorage.removeItem('cart');
+    alert('訂單创建成功！');
+    window.location.href = "{{ url_for('customer.orders') }}";
+}
+
+// 页面加载时加载購物車
+loadCart();
+</script>
+{% endblock %}
+

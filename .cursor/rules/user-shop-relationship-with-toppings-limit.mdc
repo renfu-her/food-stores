@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+---
+user_shop_relationship_with_toppings_limit:
+Each shop must define its own set of available toppings and the maximum number of toppings allowed for each product or order.
+
+product_category_and_pricing_rules:
+All products are required to belong to a product category and must include a unit price, an optional discounted price, and support for add-on toppings with individual prices.
+
+topping_price_configurable_per_product:
+The price for each topping can be configured per product or per shop, allowing customization for different items.
+
+enforce_maximum_topping_count_per_order:
+The system must check and prevent users from selecting more toppings than the shop's configured maximum for a product or order.

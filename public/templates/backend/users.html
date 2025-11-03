@@ -1,0 +1,79 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>使用者管理</h1>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>郵箱</th>
+                    <th>角色</th>
+                    <th>狀態</th>
+                    <th>建立時間</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                            <span class="badge badge-admin">管理員</span>
+                        {% elif user.role == 'shop_owner' %}
+                            <span class="badge badge-shop">店鋪擁有者</span>
+                        {% else %}
+                            <span class="badge badge-customer">客戶</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge badge-success">啟動</span>
+                        {% else %}
+                            <span class="badge badge-danger">禁用</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editUser({{ user.id }})">編輯</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }})">刪除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function editUser(userId) {
+    // TODO: 实现編輯使用者功能
+    alert('編輯使用者 ' + userId);
+}
+
+function deleteUser(userId) {
+    if (confirm('确定要刪除这个使用者吗？')) {
+        // TODO: 实现刪除使用者功能
+        fetch('/api/users/' + userId, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('刪除失败');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,18 @@
+{% extends "base/app.html" %}
+
+{% block title %}Shop Owner - Food Stores{% endblock %}
+
+{% block nav_menu %}
+    <li><a href="{{ url_for('shop_owner.dashboard') }}">儀表板</a></li>
+    <li><a href="{{ url_for('shop_owner.profile') }}">店鋪資訊</a></li>
+    <li><a href="{{ url_for('shop_owner.products') }}">產品管理</a></li>
+    <li><a href="{{ url_for('shop_owner.toppings') }}">Toppings管理</a></li>
+    <li><a href="{{ url_for('shop_owner.orders') }}">訂單管理</a></li>
+    <li><a href="{{ url_for('shop_owner.statistics') }}">統計</a></li>
+{% endblock %}
+
+{% block user_info %}
+    <span>商店管理者</span>
+    <a href="{{ url_for('auth.logout') }}">登出</a>
+{% endblock %}
+

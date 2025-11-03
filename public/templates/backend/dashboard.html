@@ -1,0 +1,53 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>儀表板</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>使用者总数</h3>
+            <p class="stat-number">{{ total_users }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>店鋪总数</h3>
+            <p class="stat-number">{{ total_shops }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>產品总数</h3>
+            <p class="stat-number">{{ total_products }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>訂單总数</h3>
+            <p class="stat-number">{{ total_orders }}</p>
+        </div>
+        <div class="stat-card alert-stat">
+            <h3>待處理訂單</h3>
+            <p class="stat-number">{{ pending_orders }}</p>
+        </div>
+    </div>
+    
+    <div class="quick-actions">
+        <h2>快速操作</h2>
+        <div class="action-buttons">
+            <a href="{{ url_for('backend.users') }}" class="btn btn-primary">使用者管理</a>
+            <a href="{{ url_for('backend.shops') }}" class="btn btn-primary">店鋪管理</a>
+            <a href="{{ url_for('backend.products') }}" class="btn btn-primary">產品管理</a>
+            <a href="{{ url_for('backend.orders') }}" class="btn btn-primary">訂單管理</a>
+        </div>
+    </div>
+</div>
+
+<script>
+// 监听新訂單事件
+window.addEventListener('newOrder', function(event) {
+    const data = event.detail;
+    console.log('新訂單:', data);
+    // 可以在这里显示通知或更新統計数据
+    if (confirm('收到新訂單，是否查看？')) {
+        window.location.href = "{{ url_for('backend.orders') }}";
+    }
+});
+</script>
+{% endblock %}
+

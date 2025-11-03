@@ -1,0 +1,114 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>我的訂單</h1>
+    
+    {% if orders %}
+    <div class="orders-list">
+        {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <div>
+                    <strong>訂單 #{{ order.id }}</strong>
+                    <span class="order-date">{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '' }}</span>
+                </div>
+                <div>
+                    {% if order.status == 'pending' %}
+                        <span class="badge badge-warning">待處理</span>
+                    {% elif order.status == 'process' %}
+                        <span class="badge badge-info">處理中</span>
+                    {% elif order.status == 'success' %}
+                        <span class="badge badge-success">已完成</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="order-body">
+                <p><strong>店鋪:</strong> {{ order.shop.name if order.shop else 'N/A' }}</p>
+                <p><strong>總價:</strong> ${{ "%.2f"|format(order.total_price|float) }}</p>
+                <div class="order-items">
+                    {% for item in order.items %}
+                    <div class="order-item">
+                        <span>{{ item.product.name if item.product else 'N/A' }} x {{ item.quantity }}</span>
+                        <span>${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>暂无訂單</p>
+        <a href="{{ url_for('customer.index') }}" class="btn btn-primary">去購物</a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.orders-list {
+    margin-top: 2rem;
+}
+
+.order-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 1rem;
+}
+
+.order-date {
+    color: #666;
+    font-size: 0.9rem;
+    margin-left: 1rem;
+}
+
+.order-body p {
+    margin: 0.5rem 0;
+}
+
+.order-items {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state p {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+}
+</style>
+
+<script>
+// 监听訂單更新事件
+window.addEventListener('orderUpdated', function(event) {
+    const data = event.detail;
+    console.log('訂單更新:', data);
+    location.reload();
+});
+</script>
+{% endblock %}
+

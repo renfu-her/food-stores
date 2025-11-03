@@ -1,0 +1,98 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>訂單管理</h1>
+    
+    <div class="filter-bar">
+        <select id="statusFilter" onchange="filterOrders()">
+            <option value="">全部狀態</option>
+            <option value="pending">待處理</option>
+            <option value="process">處理中</option>
+            <option value="success">已完成</option>
+        </select>
+    </div>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>訂單ID</th>
+                    <th>使用者</th>
+                    <th>店鋪</th>
+                    <th>總價</th>
+                    <th>狀態</th>
+                    <th>建立時間</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr data-status="{{ order.status }}">
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.user.name if order.user else 'N/A' }}</td>
+                    <td>{{ order.shop.name if order.shop else 'N/A' }}</td>
+                    <td>${{ "%.2f"|format(order.total_price|float) }}</td>
+                    <td>
+                        {% if order.status == 'pending' %}
+                            <span class="badge badge-warning">待處理</span>
+                        {% elif order.status == 'process' %}
+                            <span class="badge badge-info">處理中</span>
+                        {% elif order.status == 'success' %}
+                            <span class="badge badge-success">已完成</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '' }}</td>
+                    <td>
+                        <a href="{{ url_for('backend.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">查看</a>
+                        <select onchange="updateOrderStatus({{ order.id }}, this.value)">
+                            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>待處理</option>
+                            <option value="process" {% if order.status == 'process' %}selected{% endif %}>處理中</option>
+                            <option value="success" {% if order.status == 'success' %}selected{% endif %}>已完成</option>
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterOrders() {
+    const status = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        if (!status || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function updateOrderStatus(orderId, status) {
+    fetch('/api/orders/' + orderId + '/status', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: status })
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('更新失敗');
+        }
+    });
+}
+
+// 监听訂單更新事件
+window.addEventListener('orderUpdated', function(event) {
+    const data = event.detail;
+    console.log('訂單更新:', data);
+    location.reload();
+});
+</script>
+{% endblock %}
+

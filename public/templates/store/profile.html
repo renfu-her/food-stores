@@ -1,0 +1,76 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>個人資料</h1>
+    
+    <div class="profile-card">
+        <div class="profile-info">
+            <h2>{{ user.name }}</h2>
+            <p><strong>郵箱:</strong> {{ user.email }}</p>
+            <p><strong>角色:</strong> 
+                {% if user.role == 'customer' %}
+                    客戶
+                {% elif user.role == 'shop_owner' %}
+                    店鋪擁有者
+                {% else %}
+                    管理員
+                {% endif %}
+            </p>
+            <p><strong>狀態:</strong> 
+                {% if user.is_active %}
+                    <span class="badge badge-success">啟動</span>
+                {% else %}
+                    <span class="badge badge-danger">禁用</span>
+                {% endif %}
+            </p>
+            <p><strong>註冊时间:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '' }}</p>
+        </div>
+        
+        <div class="profile-actions">
+            <button class="btn btn-primary" onclick="editProfile()">編輯資料</button>
+            <a href="{{ url_for('customer.orders') }}" class="btn btn-secondary">我的訂單</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 2rem;
+}
+
+.profile-info p {
+    margin: 1rem 0;
+    font-size: 1.1rem;
+}
+
+.profile-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+</style>
+
+<script>
+function editProfile() {
+    // TODO: 实现編輯資料功能
+    alert('編輯資料功能待实现');
+}
+</script>
+{% endblock %}
+

@@ -1,0 +1,117 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ shop.name }}</h1>
+    <p>{{ shop.description or '暫無描述' }}</p>
+    
+    <div class="filter-bar">
+        <select id="categoryFilter" onchange="filterProducts()">
+            <option value="">全部分類</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="products-grid">
+        {% for product in products %}
+        <div class="product-card" data-category="{{ product.category_id }}">
+            <h3><a href="{{ url_for('customer.product', product_id=product.id) }}">{{ product.name }}</a></h3>
+            <p>{{ product.description or '暫無描述' }}</p>
+            <div class="product-price">
+                {% if product.discounted_price %}
+                    <span class="price-old">${{ "%.2f"|format(product.unit_price|float) }}</span>
+                    <span class="price-new">${{ "%.2f"|format(product.discounted_price|float) }}</span>
+                {% else %}
+                    <span class="price">${{ "%.2f"|format(product.unit_price|float) }}</span>
+                {% endif %}
+            </div>
+            <div class="product-meta">
+                <span>庫存: {{ product.stock_quantity }}</span>
+            </div>
+            <a href="{{ url_for('customer.product', product_id=product.id) }}" class="btn btn-primary">查看詳情</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.product-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.product-price {
+    margin: 1rem 0;
+    font-size: 1.2rem;
+}
+
+.price-old {
+    text-decoration: line-through;
+    color: #999;
+    margin-right: 0.5rem;
+}
+
+.price-new {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.product-meta {
+    margin: 1rem 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.filter-bar {
+    margin: 2rem 0;
+}
+
+.filter-bar select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+</style>
+
+<script>
+function filterProducts() {
+    const categoryId = document.getElementById('categoryFilter').value;
+    const cards = document.querySelectorAll('.product-card');
+    cards.forEach(card => {
+        if (!categoryId || card.dataset.category == categoryId) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// 监听產品更新事件
+window.addEventListener('productUpdated', function(event) {
+    const data = event.detail;
+    if (data.shop_id == {{ shop.id }}) {
+        console.log('產品更新:', data);
+        // 可以在这里刷新產品列表
+        location.reload();
+    }
+});
+</script>
+{% endblock %}
+

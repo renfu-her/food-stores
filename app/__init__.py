@@ -1,0 +1,55 @@
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_socketio import SocketIO
+from app.config import Config
+
+# 初始化擴展
+db = SQLAlchemy()
+migrate = Migrate()
+socketio = SocketIO(cors_allowed_origins="*")
+
+def create_app(config_class=Config):
+    """應用工廠函數"""
+    app = Flask(__name__, 
+                template_folder='../public/templates',
+                static_folder='../public/static')
+    app.config.from_object(config_class)
+    
+    # 初始化擴展
+    db.init_app(app)
+    migrate.init_app(app, db)
+    socketio.init_app(app, async_mode=app.config['SOCKETIO_ASYNC_MODE'])
+    
+    # 註冊藍圖（延遲導入避免循環依賴）
+    with app.app_context():
+        try:
+            from app.routes.auth import auth_bp
+            from app.routes.backend import backend_bp
+            from app.routes.shop_owner import shop_owner_bp
+            from app.routes.customer import customer_bp
+            from app.routes.api.shops import shops_api_bp
+            from app.routes.api.products import products_api_bp
+            from app.routes.api.orders import orders_api_bp
+            from app.routes.api.toppings import toppings_api_bp
+            from app.routes.websocket import websocket_bp
+            
+            app.register_blueprint(auth_bp)
+            app.register_blueprint(backend_bp, url_prefix='/backend')
+            app.register_blueprint(shop_owner_bp, url_prefix='/shop')
+            app.register_blueprint(customer_bp, url_prefix='/store')
+            app.register_blueprint(shops_api_bp, url_prefix='/api/shops')
+            app.register_blueprint(products_api_bp, url_prefix='/api/products')
+            app.register_blueprint(orders_api_bp, url_prefix='/api/orders')
+            app.register_blueprint(toppings_api_bp, url_prefix='/api/toppings')
+            app.register_blueprint(websocket_bp)
+        except ImportError:
+            # 如果路由檔案還不存在，暫時跳過
+            pass
+    
+    # 註冊錯誤處理器
+    from app.utils.error_handlers import register_error_handlers
+    register_error_handlers(app)
+    
+    return app
+

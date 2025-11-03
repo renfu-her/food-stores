@@ -1,0 +1,75 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>產品管理</h1>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>產品名称</th>
+                    <th>店鋪</th>
+                    <th>分類</th>
+                    <th>單價</th>
+                    <th>庫存</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.shop.name if product.shop else 'N/A' }}</td>
+                    <td>{{ product.category.name if product.category else 'N/A' }}</td>
+                    <td>${{ "%.2f"|format(product.unit_price|float) }}</td>
+                    <td>{{ product.stock_quantity }}</td>
+                    <td>
+                        {% if product.is_active %}
+                            <span class="badge badge-success">上架</span>
+                        {% else %}
+                            <span class="badge badge-danger">下架</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('backend.product_detail', product_id=product.id) }}" class="btn btn-sm btn-primary">查看</a>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProduct({{ product.id }})">刪除</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function deleteProduct(productId) {
+    if (confirm('确定要刪除这个產品吗？')) {
+        fetch('/api/products/' + productId, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('刪除失败');
+            }
+        });
+    }
+}
+
+// 监听產品更新事件
+window.addEventListener('productUpdated', function(event) {
+    const data = event.detail;
+    console.log('產品更新:', data);
+    // 可以在这里刷新產品列表
+    location.reload();
+});
+</script>
+{% endblock %}
+
