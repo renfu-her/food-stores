@@ -1,0 +1,39 @@
+{% extends "base/shop_base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="empty-state">
+        <div class="empty-icon">🏪</div>
+        <h2>您還沒有店鋪</h2>
+        <p>請先建立一個店鋪才能開始使用商店管理功能</p>
+        <a href="{{ url_for('shop_owner.create_shop') }}" class="btn btn-primary">建立店鋪</a>
+    </div>
+</div>
+
+<style>
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h2 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.empty-state p {
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %}
+

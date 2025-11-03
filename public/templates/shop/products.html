@@ -1,0 +1,326 @@
+{% extends "base/shop_base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>產品管理</h1>
+        <button class="btn btn-primary" onclick="showAddProductModal()">新增產品</button>
+    </div>
+    
+    <div class="filter-bar">
+        <select id="statusFilter" onchange="filterProducts()">
+            <option value="">全部狀態</option>
+            <option value="active">已上架</option>
+            <option value="inactive">已下架</option>
+        </select>
+    </div>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>產品名稱</th>
+                    <th>分類</th>
+                    <th>單價</th>
+                    <th>庫存</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr data-status="{{ 'active' if product.is_active else 'inactive' }}">
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.category.name if product.category else 'N/A' }}</td>
+                    <td>${{ "%.2f"|format(product.unit_price|float) }}</td>
+                    <td>{{ product.stock_quantity }}</td>
+                    <td>
+                        {% if product.is_active %}
+                            <span class="badge badge-success">上架</span>
+                        {% else %}
+                            <span class="badge badge-danger">下架</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editProduct({{ product.id }})">編輯</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProduct({{ product.id }})">刪除</button>
+                        <button class="btn btn-sm btn-secondary" onclick="toggleProductStatus({{ product.id }}, {{ 'false' if product.is_active else 'true' }})">
+                            {% if product.is_active %}下架{% else %}上架{% endif %}
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 新增/編輯產品模態框 -->
+<div id="productModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeProductModal()">&times;</span>
+        <h2 id="modalTitle">新增產品</h2>
+        <form id="productForm">
+            <input type="hidden" id="productId" name="product_id">
+            <input type="hidden" name="shop_id" value="{{ shop.id }}">
+            
+            <div class="form-group">
+                <label>產品名稱 *</label>
+                <input type="text" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label>產品描述</label>
+                <textarea name="description" rows="3"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>分類 *</label>
+                <select name="category_id" required>
+                    <option value="">請選擇分類</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>單價 *</label>
+                    <input type="number" name="unit_price" step="0.01" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>折扣價</label>
+                    <input type="number" name="discounted_price" step="0.01" min="0">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>庫存數量</label>
+                <input type="number" name="stock_quantity" value="0" min="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="is_active" checked> 立即上架
+                </label>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeProductModal()">取消</button>
+                <button type="submit" class="btn btn-primary">儲存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+}
+
+.close:hover {
+    color: #333;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+</style>
+
+<script>
+function filterProducts() {
+    const status = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        if (!status || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function showAddProductModal() {
+    document.getElementById('productForm').reset();
+    document.getElementById('productId').value = '';
+    document.getElementById('modalTitle').textContent = '新增產品';
+    document.getElementById('productModal').style.display = 'flex';
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+}
+
+async function editProduct(productId) {
+    try {
+        const response = await fetch('/api/products/' + productId);
+        const product = await response.json();
+        
+        document.getElementById('productId').value = product.id;
+        document.querySelector('input[name="name"]').value = product.name;
+        document.querySelector('textarea[name="description"]').value = product.description || '';
+        document.querySelector('select[name="category_id"]').value = product.category_id;
+        document.querySelector('input[name="unit_price"]').value = product.unit_price;
+        document.querySelector('input[name="discounted_price"]').value = product.discounted_price || '';
+        document.querySelector('input[name="stock_quantity"]').value = product.stock_quantity;
+        document.querySelector('input[name="is_active"]').checked = product.is_active;
+        
+        document.getElementById('modalTitle').textContent = '編輯產品';
+        document.getElementById('productModal').style.display = 'flex';
+    } catch (error) {
+        alert('載入產品資訊失敗');
+    }
+}
+
+function deleteProduct(productId) {
+    if (confirm('確定要刪除此產品嗎？')) {
+        fetch('/api/products/' + productId, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('刪除失敗');
+            }
+        });
+    }
+}
+
+function toggleProductStatus(productId, newStatus) {
+    fetch('/api/products/' + productId + '/status', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_active: newStatus === 'true' })
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('更新失敗');
+        }
+    });
+}
+
+document.getElementById('productForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const productId = formData.get('product_id');
+    const shopId = formData.get('shop_id');
+    
+    const data = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        category_id: parseInt(formData.get('category_id')),
+        unit_price: parseFloat(formData.get('unit_price')),
+        discounted_price: formData.get('discounted_price') ? parseFloat(formData.get('discounted_price')) : null,
+        stock_quantity: parseInt(formData.get('stock_quantity')),
+        is_active: formData.get('is_active') === 'on'
+    };
+    
+    try {
+        let response;
+        if (productId) {
+            // 更新產品
+            response = await fetch('/api/products/' + productId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+        } else {
+            // 新增產品
+            response = await fetch('/api/shops/' + shopId + '/products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+        }
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert('產品儲存成功');
+            closeProductModal();
+            location.reload();
+        } else {
+            alert('儲存失敗: ' + result.message);
+        }
+    } catch (error) {
+        alert('儲存失敗，請重試');
+    }
+});
+
+// 監聽產品更新事件
+window.addEventListener('productUpdated', function(event) {
+    const data = event.detail;
+    if (data.shop_id == {{ shop.id }}) {
+        console.log('產品更新:', data);
+        location.reload();
+    }
+});
+</script>
+{% endblock %}
+

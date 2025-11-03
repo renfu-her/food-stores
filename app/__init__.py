@@ -43,6 +43,14 @@ def create_app(config_class=Config):
             app.register_blueprint(orders_api_bp, url_prefix='/api/orders')
             app.register_blueprint(toppings_api_bp, url_prefix='/api/toppings')
             app.register_blueprint(websocket_bp)
+            
+            # 根路径指向前台首页
+            @app.route('/')
+            def index():
+                from flask import render_template
+                from app.models import Shop
+                shops = Shop.query.filter_by(status='active').all()
+                return render_template('store/index.html', shops=shops)
         except ImportError:
             # 如果路由檔案還不存在，暫時跳過
             pass

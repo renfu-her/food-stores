@@ -1,0 +1,179 @@
+{% extends "base/shop_base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>統計資料</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>產品統計</h3>
+            <p class="stat-number">{{ total_products }}</p>
+            <p class="stat-subtitle">總數</p>
+            <div class="stat-breakdown">
+                <span>啟動: {{ active_products }}</span>
+                <span>下架: {{ inactive_products }}</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <h3>訂單統計</h3>
+            <p class="stat-number">{{ total_orders }}</p>
+            <p class="stat-subtitle">總訂單數</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>總收入</h3>
+            <p class="stat-number">${{ "%.2f"|format(total_revenue|float) }}</p>
+            <p class="stat-subtitle">已完成訂單</p>
+        </div>
+        
+        <div class="stat-card alert-stat">
+            <h3>待處理</h3>
+            <p class="stat-number">{{ pending_orders }}</p>
+            <p class="stat-subtitle">{{ "%.1f"|format(order_percentage.pending|float) }}%</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>處理中</h3>
+            <p class="stat-number">{{ process_orders }}</p>
+            <p class="stat-subtitle">{{ "%.1f"|format(order_percentage.process|float) }}%</p>
+        </div>
+        
+        <div class="stat-card">
+            <h3>已完成</h3>
+            <p class="stat-number">{{ success_orders }}</p>
+            <p class="stat-subtitle">{{ "%.1f"|format(order_percentage.success|float) }}%</p>
+        </div>
+    </div>
+    
+    <div class="charts-section">
+        <div class="chart-card">
+            <h2>訂單狀態分佈</h2>
+            <div class="progress-bars">
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>待處理</span>
+                        <span>{{ pending_orders }} ({{ "%.1f"|format(order_percentage.pending|float) }}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ order_percentage.pending }}%; background: #ffc107;"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>處理中</span>
+                        <span>{{ process_orders }} ({{ "%.1f"|format(order_percentage.process|float) }}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ order_percentage.process }}%; background: #17a2b8;"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>已完成</span>
+                        <span>{{ success_orders }} ({{ "%.1f"|format(order_percentage.success|float) }}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ order_percentage.success }}%; background: #28a745;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-card">
+            <h2>產品狀態分佈</h2>
+            <div class="progress-bars">
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>已上架</span>
+                        <span>{{ active_products }} ({{ "%.1f"|format((active_products / total_products * 100) if total_products > 0 else 0) }}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (active_products / total_products * 100) if total_products > 0 else 0 }}%; background: #28a745;"></div>
+                    </div>
+                </div>
+                
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>已下架</span>
+                        <span>{{ inactive_products }} ({{ "%.1f"|format((inactive_products / total_products * 100) if total_products > 0 else 0) }}%)</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (inactive_products / total_products * 100) if total_products > 0 else 0 }}%; background: #dc3545;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-breakdown {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.charts-section {
+    margin-top: 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.chart-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chart-card h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+}
+
+.progress-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 24px;
+    background: #f0f0f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 12px;
+    transition: width 0.3s;
+}
+
+@media (max-width: 768px) {
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
