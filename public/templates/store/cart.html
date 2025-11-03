@@ -9,10 +9,15 @@
     </div>
     
     <div class="cart-summary" id="cartSummary" style="display: none;">
-        <div class="total">
-            <strong>總計: $<span id="cartTotal">0.00</span></strong>
+        <div class="summary-row">
+            <span>小計</span>
+            <span id="subtotal">$0.00</span>
         </div>
-        <button class="btn btn-primary btn-block" onclick="checkout()">結算</button>
+        <div class="summary-row total-row">
+            <strong>總計</strong>
+            <strong id="cartTotal">$0.00</strong>
+        </div>
+        <button class="btn btn-primary btn-block btn-large" onclick="checkout()">前往結算</button>
     </div>
 </div>
 
@@ -20,36 +25,96 @@
 .cart-item {
     background: white;
     padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 2rem;
+}
+
+.cart-item-info {
+    flex-grow: 1;
 }
 
 .cart-item-info h3 {
     margin-bottom: 0.5rem;
+    font-size: 1.3rem;
+}
+
+.cart-item-info p {
+    color: #666;
+    margin: 0.25rem 0;
 }
 
 .cart-item-actions {
     display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 1rem;
-    align-items: center;
+}
+
+.item-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
 }
 
 .cart-summary {
     background: white;
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     margin-top: 2rem;
-    text-align: right;
 }
 
-.total {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.total-row {
+    border-bottom: none;
+    border-top: 2px solid #667eea;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    font-size: 1.3rem;
+}
+
+.btn-large {
+    padding: 1rem;
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.empty-state p {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .cart-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .cart-item-actions {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+    }
 }
 </style>
 
@@ -60,10 +125,11 @@ async function loadCart() {
     
     if (cart.length === 0) {
         cartItemsDiv.innerHTML = '<div class="empty-state"><p>購物車是空的</p><a href="{{ url_for("customer.index") }}" class="btn btn-primary">去購物</a></div>';
+        document.getElementById('cartSummary').style.display = 'none';
         return;
     }
     
-    // 获取產品详情
+    // 獲取產品詳情
     let html = '';
     let total = 0;
     
@@ -72,7 +138,9 @@ async function loadCart() {
             const response = await fetch('/api/products/' + item.product_id);
             const product = await response.json();
             
-            const itemTotal = product.unit_price * item.quantity;
+            // 計算單價（使用折扣價如果有）
+            const unitPrice = product.discounted_price || product.unit_price;
+            const itemTotal = parseFloat(unitPrice) * item.quantity;
             total += itemTotal;
             
             html += `
@@ -80,29 +148,33 @@ async function loadCart() {
                     <div class="cart-item-info">
                         <h3>${product.name}</h3>
                         <p>數量: ${item.quantity}</p>
-                        <p>單價: $${product.unit_price.toFixed(2)}</p>
+                        <p>單價: $${parseFloat(unitPrice).toFixed(2)}</p>
+                        ${item.toppings && item.toppings.length > 0 ? '<p style="color: #999; font-size: 0.9rem;">含 ' + item.toppings.length + ' 個Toppings</p>' : ''}
                     </div>
                     <div class="cart-item-actions">
-                        <span>$${itemTotal.toFixed(2)}</span>
+                        <span class="item-price">$${itemTotal.toFixed(2)}</span>
                         <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">刪除</button>
                     </div>
                 </div>
             `;
         } catch (error) {
-            console.error('加载產品失败:', error);
+            console.error('載入產品失敗:', error);
         }
     }
     
     cartItemsDiv.innerHTML = html;
-    document.getElementById('cartTotal').textContent = total.toFixed(2);
+    document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
     document.getElementById('cartSummary').style.display = 'block';
 }
 
 function removeFromCart(productId) {
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    cart = cart.filter(item => item.product_id !== productId);
-    localStorage.setItem('cart', JSON.stringify(cart));
-    loadCart();
+    if (confirm('確定要從購物車中移除這個商品嗎？')) {
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        cart = cart.filter(item => item.product_id !== productId);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+    }
 }
 
 async function checkout() {
@@ -112,7 +184,21 @@ async function checkout() {
         return;
     }
     
-    // 按店鋪分组
+    // 檢查是否已登入
+    try {
+        const response = await fetch('/api/auth/me');
+        if (!response.ok) {
+            alert('請先登入');
+            window.location.href = "{{ url_for('customer.login') }}";
+            return;
+        }
+    } catch (error) {
+        alert('請先登入');
+        window.location.href = "{{ url_for('customer.login') }}";
+        return;
+    }
+    
+    // 按店鋪分組
     const shopGroups = {};
     for (const item of cart) {
         try {
@@ -128,11 +214,11 @@ async function checkout() {
                 toppings: item.toppings || []
             });
         } catch (error) {
-            console.error('获取產品信息失败:', error);
+            console.error('獲取產品資訊失敗:', error);
         }
     }
     
-    // 为每个店鋪创建訂單
+    // 為每個店鋪建立訂單
     for (const [shopId, items] of Object.entries(shopGroups)) {
         try {
             const response = await fetch('/api/orders', {
@@ -148,23 +234,22 @@ async function checkout() {
             
             if (!response.ok) {
                 const error = await response.json();
-                alert('创建訂單失败: ' + error.message);
+                alert('建立訂單失敗: ' + error.message);
                 return;
             }
         } catch (error) {
-            alert('创建訂單失败，请重试');
+            alert('建立訂單失敗，請重試');
             return;
         }
     }
     
     // 清空購物車
     localStorage.removeItem('cart');
-    alert('訂單创建成功！');
+    alert('訂單建立成功！');
     window.location.href = "{{ url_for('customer.orders') }}";
 }
 
-// 页面加载时加载購物車
+// 頁面載入時載入購物車
 loadCart();
 </script>
 {% endblock %}
-

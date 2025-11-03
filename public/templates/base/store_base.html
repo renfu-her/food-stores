@@ -11,10 +11,71 @@
 {% block user_info %}
     {% if session.user_id %}
         <span>歡迎，{{ session.user_name }}</span>
+        <a href="{{ url_for('customer.cart') }}" class="cart-link">
+            <span>購物車</span>
+            <span id="cartCount" class="cart-badge">0</span>
+        </a>
         <a href="{{ url_for('auth.logout') }}">登出</a>
     {% else %}
         <a href="{{ url_for('customer.login') }}">登入</a>
         <a href="{{ url_for('customer.register') }}">註冊</a>
     {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 更新購物車數量
+function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const cartCountEl = document.getElementById('cartCount');
+    if (cartCountEl) {
+        cartCountEl.textContent = cart.length;
+        cartCountEl.style.display = cart.length > 0 ? 'inline-block' : 'none';
+    }
+}
+
+// 頁面載入時更新購物車數量
+document.addEventListener('DOMContentLoaded', function() {
+    updateCartCount();
+});
+
+// 監聽購物車變化
+window.addEventListener('storage', function(e) {
+    if (e.key === 'cart') {
+        updateCartCount();
+    }
+});
+</script>
+<style>
+.cart-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s;
+}
+
+.cart-link:hover {
+    background-color: #f8f9fa;
+}
+
+.cart-badge {
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+</style>
 {% endblock %}
 

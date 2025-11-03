@@ -4,54 +4,141 @@
 <div class="container">
     <h1>個人資料</h1>
     
-    <div class="profile-card">
-        <div class="profile-info">
-            <h2>{{ user.name }}</h2>
-            <p><strong>郵箱:</strong> {{ user.email }}</p>
-            <p><strong>角色:</strong> 
-                {% if user.role == 'customer' %}
-                    客戶
-                {% elif user.role == 'shop_owner' %}
-                    店鋪擁有者
-                {% else %}
-                    管理員
-                {% endif %}
-            </p>
-            <p><strong>狀態:</strong> 
-                {% if user.is_active %}
-                    <span class="badge badge-success">啟動</span>
-                {% else %}
-                    <span class="badge badge-danger">禁用</span>
-                {% endif %}
-            </p>
-            <p><strong>註冊时间:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '' }}</p>
-        </div>
-        
-        <div class="profile-actions">
-            <button class="btn btn-primary" onclick="editProfile()">編輯資料</button>
-            <a href="{{ url_for('customer.orders') }}" class="btn btn-secondary">我的訂單</a>
+    <div class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar">
+                    <span>{{ user.name[0].upper() }}</span>
+                </div>
+                <h2>{{ user.name }}</h2>
+            </div>
+            
+            <div class="profile-info">
+                <div class="info-section">
+                    <div class="info-item">
+                        <label>姓名</label>
+                        <div class="info-value">{{ user.name }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <label>郵箱</label>
+                        <div class="info-value">{{ user.email }}</div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <label>角色</label>
+                        <div class="info-value">
+                            {% if user.role == 'customer' %}
+                                <span class="badge badge-customer">客戶</span>
+                            {% elif user.role == 'shop_owner' %}
+                                <span class="badge badge-shop">店鋪擁有者</span>
+                            {% else %}
+                                <span class="badge badge-admin">管理員</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <label>狀態</label>
+                        <div class="info-value">
+                            {% if user.is_active %}
+                                <span class="badge badge-success">啟動</span>
+                            {% else %}
+                                <span class="badge badge-danger">禁用</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <label>註冊時間</label>
+                        <div class="info-value">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="profile-actions">
+                <button class="btn btn-primary" onclick="editProfile()">編輯資料</button>
+                <a href="{{ url_for('customer.orders') }}" class="btn btn-secondary">我的訂單</a>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-.profile-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.profile-container {
     margin-top: 2rem;
 }
 
-.profile-info p {
-    margin: 1rem 0;
+.profile-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    text-align: center;
+    color: white;
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.profile-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.profile-info {
+    padding: 2rem;
+}
+
+.info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-item label {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.info-value {
     font-size: 1.1rem;
+    color: #333;
 }
 
 .profile-actions {
-    margin-top: 2rem;
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #eee;
     display: flex;
     gap: 1rem;
+}
+
+.profile-actions .btn {
+    flex: 1;
 }
 
 .btn-secondary {
@@ -63,14 +150,19 @@
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
 }
 </style>
 
 <script>
 function editProfile() {
-    // TODO: 实现編輯資料功能
-    alert('編輯資料功能待实现');
+    // TODO: 實現編輯資料功能
+    alert('編輯資料功能待實現');
 }
 </script>
 {% endblock %}
-

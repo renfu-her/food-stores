@@ -12,12 +12,14 @@ def hash_password(password: str) -> str:
         password: 明文密碼
         
     Returns:
-        Laravel格式的密码哈希字符串（$2y$...）
+        Laravel格式的密碼雜湊字串（$2y$...）
     """
-    # 生成bcrypt雜湊
-    salt = bcrypt.gensalt(rounds=12, prefix=b'2y')  # Laravel使用$2y$前缀
+    # 生成bcrypt雜湊（使用$2a$前綴，因為bcrypt庫不支持$2y$）
+    salt = bcrypt.gensalt(rounds=12, prefix=b'2a')
     hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed.decode('utf-8')
+    # 將$2a$替換為$2y$以匹配Laravel格式
+    hashed_str = hashed.decode('utf-8')
+    return hashed_str.replace('$2a$', '$2y$')
 
 def check_password(password: str, password_hash: str) -> bool:
     """
@@ -31,7 +33,8 @@ def check_password(password: str, password_hash: str) -> bool:
         bool: 密碼是否匹配
     """
     try:
-        # bcrypt.checkpw会自动处理$2y$前缀
+        # 如果密碼雜湊使用$2y$前綴，先替換為$2a$（bcrypt庫需要）
+        password_hash = password_hash.replace('$2y$', '$2a$')
         return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
     except Exception:
         return False

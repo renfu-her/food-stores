@@ -2,120 +2,343 @@
 
 {% block content %}
 <div class="container">
-    <div class="product-detail">
-        <div class="product-info">
-            <h1>{{ product.name }}</h1>
-            <p>{{ product.description or '暫無描述' }}</p>
-            <div class="product-price">
-                {% if product.discounted_price %}
-                    <span class="price-old">${{ "%.2f"|format(product.unit_price|float) }}</span>
-                    <span class="price-new">${{ "%.2f"|format(product.discounted_price|float) }}</span>
-                {% else %}
-                    <span class="price">${{ "%.2f"|format(product.unit_price|float) }}</span>
-                {% endif %}
+    <div class="product-detail-container">
+        <div class="product-info-section">
+            <div class="product-image-large">
+                <span>🍽️</span>
             </div>
-            <div class="product-meta">
-                <span>庫存: {{ product.stock_quantity }}</span>
-                <span>店鋪: {{ product.shop.name }}</span>
+            <div class="product-info">
+                <h1>{{ product.name }}</h1>
+                <p class="product-description">{{ product.description or '暫無描述' }}</p>
+                <div class="product-price-large">
+                    {% if product.discounted_price %}
+                        <span class="price-old">${{ "%.2f"|format(product.unit_price|float) }}</span>
+                        <span class="price-new">${{ "%.2f"|format(product.discounted_price|float) }}</span>
+                    {% else %}
+                        <span class="price">${{ "%.2f"|format(product.unit_price|float) }}</span>
+                    {% endif %}
+                </div>
+                <div class="product-meta-info">
+                    <div class="meta-item">
+                        <strong>庫存:</strong> 
+                        <span class="{% if product.stock_quantity > 0 %}in-stock{% else %}out-of-stock{% endif %}">
+                            {{ product.stock_quantity }}
+                        </span>
+                    </div>
+                    <div class="meta-item">
+                        <strong>店鋪:</strong> {{ product.shop.name }}
+                    </div>
+                </div>
             </div>
         </div>
         
-        <div class="product-order">
-            <h2>選擇Toppings</h2>
-            <form id="orderForm">
-                <input type="hidden" name="product_id" value="{{ product.id }}">
-                <input type="hidden" name="shop_id" value="{{ product.shop_id }}">
+        <div class="product-order-section">
+            <div class="order-card">
+                <h2>選擇Toppings</h2>
+                <p class="topping-limit">最多可選擇 {{ product.shop.max_toppings_per_order }} 個Toppings</p>
                 
-                <div class="toppings-list">
-                    {% for topping in toppings %}
-                    <label class="topping-item">
-                        <input type="checkbox" name="toppings[]" value="{{ topping.id }}" 
-                               data-price="{{ topping.price }}">
-                        <span>{{ topping.name }}</span>
-                        <span class="topping-price">
-                            {% if topping.price == 0 %}
-                                FREE
-                            {% else %}
-                                ${{ "%.2f"|format(topping.price|float) }}
-                            {% endif %}
-                        </span>
-                    </label>
-                    {% endfor %}
-                </div>
-                
-                <div class="form-group">
-                    <label>數量</label>
-                    <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" required>
-                </div>
-                
-                <div class="total-price">
-                    <strong>總價: $<span id="totalPrice">0.00</span></strong>
-                </div>
-                
-                <button type="submit" class="btn btn-primary btn-block">添加到購物車</button>
-            </form>
+                <form id="orderForm">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="shop_id" value="{{ product.shop_id }}">
+                    
+                    <div class="toppings-list">
+                        {% if toppings %}
+                            {% for topping in toppings %}
+                            <label class="topping-item">
+                                <input type="checkbox" name="toppings[]" value="{{ topping.id }}" 
+                                       data-price="{{ topping.price }}">
+                                <div class="topping-content">
+                                    <span class="topping-name">{{ topping.name }}</span>
+                                    <span class="topping-price">
+                                        {% if topping.price == 0 %}
+                                            <span class="free-badge">FREE</span>
+                                        {% else %}
+                                            ${{ "%.2f"|format(topping.price|float) }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-toppings">此產品暫無可用Toppings</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="quantity-section">
+                        <label>數量</label>
+                        <div class="quantity-controls">
+                            <button type="button" class="qty-btn" onclick="decreaseQuantity()">-</button>
+                            <input type="number" name="quantity" id="quantityInput" value="1" min="1" max="{{ product.stock_quantity }}" required>
+                            <button type="button" class="qty-btn" onclick="increaseQuantity()">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="total-price-section">
+                        <div class="total-label">總價</div>
+                        <div class="total-amount">$<span id="totalPrice">0.00</span></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block btn-large" {% if product.stock_quantity == 0 %}disabled{% endif %}>
+                        {% if product.stock_quantity == 0 %}
+                            缺貨中
+                        {% else %}
+                            添加到購物車
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-.product-detail {
+.product-detail-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     margin-top: 2rem;
 }
 
+.product-info-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.product-image-large {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+}
+
 .product-info {
     background: white;
     padding: 2rem;
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.product-order {
+.product-info h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.product-description {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.product-price-large {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 1.5rem 0;
+}
+
+.price-old {
+    text-decoration: line-through;
+    color: #999;
+    margin-right: 0.5rem;
+    font-weight: normal;
+    font-size: 1.5rem;
+}
+
+.price-new {
+    color: #dc3545;
+}
+
+.product-meta-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.meta-item {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.meta-item .in-stock {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.meta-item .out-of-stock {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.product-order-section {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
+.order-card {
     background: white;
     padding: 2rem;
-    border-radius: 8px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.order-card h2 {
+    margin-bottom: 0.5rem;
+}
+
+.topping-limit {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
 }
 
 .toppings-list {
-    margin: 1rem 0;
+    margin: 1.5rem 0;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .topping-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem;
+    display: block;
+    padding: 1rem;
     margin: 0.5rem 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
 }
 
 .topping-item:hover {
-    background-color: #f8f9fa;
+    border-color: #667eea;
+    background-color: #f8f9ff;
 }
 
 .topping-item input[type="checkbox"] {
     margin-right: 1rem;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.topping-item input[type="checkbox"]:checked + .topping-content {
+    color: #667eea;
+}
+
+.topping-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.topping-name {
+    font-weight: 500;
 }
 
 .topping-price {
     font-weight: bold;
-    color: #007bff;
+    color: #667eea;
 }
 
-.total-price {
-    margin: 1.5rem 0;
+.free-badge {
+    background: #28a745;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.no-toppings {
+    text-align: center;
+    color: #666;
+    padding: 2rem;
+}
+
+.quantity-section {
+    margin: 2rem 0;
+}
+
+.quantity-section label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.qty-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.qty-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+#quantityInput {
+    width: 80px;
+    text-align: center;
+    padding: 0.5rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
     font-size: 1.2rem;
-    text-align: right;
 }
 
-@media (max-width: 768px) {
-    .product-detail {
+.total-price-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.total-label {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.total-amount {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.btn-large {
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 968px) {
+    .product-detail-container {
         grid-template-columns: 1fr;
+    }
+    
+    .product-order-section {
+        position: static;
     }
 }
 </style>
@@ -125,14 +348,8 @@ const maxToppings = {{ product.shop.max_toppings_per_order }};
 const basePrice = {{ product.discounted_price|float if product.discounted_price else product.unit_price|float }};
 
 function updateTotalPrice() {
-    const quantity = parseInt(document.querySelector('input[name="quantity"]').value) || 1;
+    const quantity = parseInt(document.getElementById('quantityInput').value) || 1;
     const checkedToppings = document.querySelectorAll('input[name="toppings[]"]:checked');
-    
-    if (checkedToppings.length > maxToppings) {
-        alert('最多只能選擇' + maxToppings + '個toppings');
-        event.target.checked = false;
-        return;
-    }
     
     let total = basePrice * quantity;
     checkedToppings.forEach(checkbox => {
@@ -143,8 +360,27 @@ function updateTotalPrice() {
     document.getElementById('totalPrice').textContent = total.toFixed(2);
 }
 
+function increaseQuantity() {
+    const input = document.getElementById('quantityInput');
+    const max = parseInt(input.max);
+    const current = parseInt(input.value) || 1;
+    if (current < max) {
+        input.value = current + 1;
+        updateTotalPrice();
+    }
+}
+
+function decreaseQuantity() {
+    const input = document.getElementById('quantityInput');
+    const current = parseInt(input.value) || 1;
+    if (current > 1) {
+        input.value = current - 1;
+        updateTotalPrice();
+    }
+}
+
 document.querySelectorAll('input[name="toppings[]"]').forEach(checkbox => {
-    checkbox.addEventListener('change', function(e) {
+    checkbox.addEventListener('change', function() {
         if (this.checked) {
             const checkedCount = document.querySelectorAll('input[name="toppings[]"]:checked').length;
             if (checkedCount > maxToppings) {
@@ -157,10 +393,19 @@ document.querySelectorAll('input[name="toppings[]"]').forEach(checkbox => {
     });
 });
 
-document.querySelector('input[name="quantity"]').addEventListener('change', updateTotalPrice);
+document.getElementById('quantityInput').addEventListener('change', updateTotalPrice);
+
+// 初始化總價
+updateTotalPrice();
 
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
+    {% if product.stock_quantity == 0 %}
+    alert('此產品目前缺貨');
+    return;
+    {% endif %}
+    
     const formData = new FormData(this);
     const toppings = [];
     formData.getAll('toppings[]').forEach(id => toppings.push(parseInt(id)));
@@ -174,7 +419,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
         }]
     };
     
-    // 保存到localStorage作为購物車
+    // 儲存到localStorage作為購物車
     let cart = JSON.parse(localStorage.getItem('cart') || '[]');
     cart.push(orderData.items[0]);
     localStorage.setItem('cart', JSON.stringify(cart));
@@ -184,4 +429,3 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 });
 </script>
 {% endblock %}
-

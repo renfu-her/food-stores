@@ -19,7 +19,7 @@
                     <input type="password" name="password" required minlength="6">
                 </div>
                 <div class="form-group">
-                    <label>确认密碼</label>
+                    <label>確認密碼</label>
                     <input type="password" name="confirm_password" required>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">註冊</button>
@@ -60,7 +60,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     const formData = new FormData(this);
     
     if (formData.get('password') !== formData.get('confirm_password')) {
-        document.getElementById('errorMessage').textContent = '两次输入的密碼不一致';
+        document.getElementById('errorMessage').textContent = '兩次輸入的密碼不一致';
         document.getElementById('errorMessage').style.display = 'block';
         return;
     }
@@ -83,17 +83,16 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         const result = await response.json();
         
         if (response.ok) {
-            alert('註冊成功，请登入');
+            alert('註冊成功，請登入');
             window.location.href = "{{ url_for('customer.login') }}";
         } else {
-            document.getElementById('errorMessage').textContent = result.message || '註冊失败';
+            document.getElementById('errorMessage').textContent = result.message || '註冊失敗';
             document.getElementById('errorMessage').style.display = 'block';
         }
     } catch (error) {
-        document.getElementById('errorMessage').textContent = '註冊失败，请重试';
+        document.getElementById('errorMessage').textContent = '註冊失敗，請重試';
         document.getElementById('errorMessage').style.display = 'block';
     }
 });
 </script>
 {% endblock %}
-

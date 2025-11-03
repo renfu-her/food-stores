@@ -2,23 +2,83 @@
 
 {% block content %}
 <div class="container">
-    <h1>店鋪列表</h1>
+    <div class="hero-section">
+        <h1>歡迎來到 Food Stores</h1>
+        <p>探索各種美味的食品店鋪</p>
+    </div>
     
+    <div class="search-bar">
+        <input type="text" id="shopSearch" placeholder="搜尋店鋪..." onkeyup="searchShops()">
+    </div>
+    
+    <h2>店鋪列表</h2>
+    
+    {% if shops %}
     <div class="shops-grid">
         {% for shop in shops %}
-        <div class="shop-card">
-            <h3><a href="{{ url_for('customer.shop', shop_id=shop.id) }}">{{ shop.name }}</a></h3>
-            <p>{{ shop.description or '暫無描述' }}</p>
-            <div class="shop-meta">
-                <span>最大Toppings: {{ shop.max_toppings_per_order }}</span>
+        <div class="shop-card" data-shop-name="{{ shop.name|lower }}">
+            <div class="shop-header">
+                <h3><a href="{{ url_for('customer.shop', shop_id=shop.id) }}">{{ shop.name }}</a></h3>
             </div>
-            <a href="{{ url_for('customer.shop', shop_id=shop.id) }}" class="btn btn-primary">进入店鋪</a>
+            <div class="shop-body">
+                <p>{{ shop.description or '暫無描述' }}</p>
+                <div class="shop-meta">
+                    <span><i class="icon">🍴</i> 最大Toppings: {{ shop.max_toppings_per_order }}</span>
+                </div>
+            </div>
+            <div class="shop-footer">
+                <a href="{{ url_for('customer.shop', shop_id=shop.id) }}" class="btn btn-primary">進入店鋪</a>
+            </div>
         </div>
         {% endfor %}
     </div>
+    {% else %}
+    <div class="empty-state">
+        <p>暫無店鋪</p>
+    </div>
+    {% endif %}
 </div>
 
 <style>
+.hero-section {
+    text-align: center;
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.hero-section h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.hero-section p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.search-bar {
+    margin: 2rem 0;
+}
+
+.search-bar input {
+    width: 100%;
+    max-width: 500px;
+    padding: 0.75rem 1rem;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    display: block;
+    margin: 0 auto;
+}
+
+.search-bar input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
 .shops-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -28,35 +88,83 @@
 
 .shop-card {
     background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     transition: transform 0.3s, box-shadow 0.3s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .shop-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
 }
 
-.shop-card h3 {
-    margin-bottom: 0.5rem;
+.shop-header {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
 }
 
-.shop-card h3 a {
-    color: #333;
+.shop-header h3 {
+    margin: 0;
+}
+
+.shop-header h3 a {
+    color: white;
     text-decoration: none;
 }
 
-.shop-card h3 a:hover {
-    color: #007bff;
+.shop-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.shop-body p {
+    color: #666;
+    margin-bottom: 1rem;
+    min-height: 3rem;
 }
 
 .shop-meta {
-    margin: 1rem 0;
     color: #666;
     font-size: 0.9rem;
 }
-</style>
-{% endblock %}
 
+.shop-meta .icon {
+    margin-right: 0.5rem;
+}
+
+.shop-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state p {
+    font-size: 1.2rem;
+    color: #666;
+}
+</style>
+
+<script>
+function searchShops() {
+    const searchTerm = document.getElementById('shopSearch').value.toLowerCase();
+    const cards = document.querySelectorAll('.shop-card');
+    
+    cards.forEach(card => {
+        const shopName = card.dataset.shopName || '';
+        if (shopName.includes(searchTerm)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

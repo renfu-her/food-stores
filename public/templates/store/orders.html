@@ -9,11 +9,11 @@
         {% for order in orders %}
         <div class="order-card">
             <div class="order-header">
-                <div>
+                <div class="order-title">
                     <strong>訂單 #{{ order.id }}</strong>
                     <span class="order-date">{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '' }}</span>
                 </div>
-                <div>
+                <div class="order-status">
                     {% if order.status == 'pending' %}
                         <span class="badge badge-warning">待處理</span>
                     {% elif order.status == 'process' %}
@@ -24,23 +24,37 @@
                 </div>
             </div>
             <div class="order-body">
-                <p><strong>店鋪:</strong> {{ order.shop.name if order.shop else 'N/A' }}</p>
-                <p><strong>總價:</strong> ${{ "%.2f"|format(order.total_price|float) }}</p>
-                <div class="order-items">
-                    {% for item in order.items %}
-                    <div class="order-item">
-                        <span>{{ item.product.name if item.product else 'N/A' }} x {{ item.quantity }}</span>
-                        <span>${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</span>
+                <div class="order-info-row">
+                    <div class="info-item">
+                        <strong>店鋪:</strong> {{ order.shop.name if order.shop else 'N/A' }}
                     </div>
-                    {% endfor %}
+                    <div class="info-item">
+                        <strong>總價:</strong> <span class="total-amount">${{ "%.2f"|format(order.total_price|float) }}</span>
+                    </div>
                 </div>
+                <div class="order-items-section">
+                    <strong>訂單項目:</strong>
+                    <div class="items-list">
+                        {% for item in order.items %}
+                        <div class="order-item">
+                            <span class="item-name">{{ item.product.name if item.product else 'N/A' }}</span>
+                            <span class="item-quantity">x {{ item.quantity }}</span>
+                            <span class="item-price">${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="order-footer">
+                <a href="{{ url_for('customer.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">查看詳情</a>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
     <div class="empty-state">
-        <p>暂无訂單</p>
+        <div class="empty-icon">📦</div>
+        <p>暫無訂單</p>
         <a href="{{ url_for('customer.index') }}" class="btn btn-primary">去購物</a>
     </div>
     {% endif %}
@@ -53,46 +67,112 @@
 
 .order-card {
     background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+}
+
+.order-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .order-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #eee;
-    margin-bottom: 1rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.order-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.order-title strong {
+    font-size: 1.2rem;
 }
 
 .order-date {
-    color: #666;
     font-size: 0.9rem;
-    margin-left: 1rem;
+    opacity: 0.9;
 }
 
-.order-body p {
-    margin: 0.5rem 0;
+.order-body {
+    padding: 1.5rem;
 }
 
-.order-items {
+.order-info-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.info-item {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.total-amount {
+    color: #667eea;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.order-items-section {
     margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
+}
+
+.items-list {
+    margin-top: 1rem;
 }
 
 .order-item {
     display: flex;
     justify-content: space-between;
-    padding: 0.5rem 0;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.item-name {
+    flex-grow: 1;
+}
+
+.item-quantity {
+    color: #666;
+    margin: 0 1rem;
+}
+
+.item-price {
+    font-weight: bold;
+    color: #333;
+}
+
+.order-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+    text-align: right;
 }
 
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
 }
 
 .empty-state p {
@@ -100,10 +180,23 @@
     color: #666;
     margin-bottom: 2rem;
 }
+
+@media (max-width: 768px) {
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .order-info-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
 </style>
 
 <script>
-// 监听訂單更新事件
+// 監聽訂單更新事件
 window.addEventListener('orderUpdated', function(event) {
     const data = event.detail;
     console.log('訂單更新:', data);
@@ -111,4 +204,3 @@ window.addEventListener('orderUpdated', function(event) {
 });
 </script>
 {% endblock %}
-

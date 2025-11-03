@@ -69,14 +69,13 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         if (response.ok) {
             window.location.href = "{{ url_for('customer.index') }}";
         } else {
-            document.getElementById('errorMessage').textContent = result.message || '登入失败';
+            document.getElementById('errorMessage').textContent = result.message || '登入失敗';
             document.getElementById('errorMessage').style.display = 'block';
         }
     } catch (error) {
-        document.getElementById('errorMessage').textContent = '登入失败，请重试';
+        document.getElementById('errorMessage').textContent = '登入失敗，請重試';
         document.getElementById('errorMessage').style.display = 'block';
     }
 });
 </script>
 {% endblock %}
-
