@@ -26,9 +26,7 @@
             {% endif %}
             
             {% if news.description %}
-            <div class="news-content">
-                {{ news.description|replace('\n', '<br>')|safe }}
-            </div>
+            <div class="news-content markdown-content"></div>
             {% endif %}
         </div>
     </div>
@@ -43,13 +41,73 @@
 
 {% block extra_css %}
 <style>
-.news-content {
+.markdown-content {
     line-height: 1.8;
     font-size: 1.05rem;
 }
-.news-content p {
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+    margin-top: 1.5rem;
     margin-bottom: 1rem;
 }
+.markdown-content h1 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+.markdown-content h2 {
+    font-size: 1.75rem;
+    font-weight: bold;
+}
+.markdown-content h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.markdown-content p {
+    margin-bottom: 1rem;
+}
+.markdown-content ul,
+.markdown-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+.markdown-content img {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+}
+.markdown-content code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+.markdown-content pre {
+    background: #f4f4f4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+.markdown-content blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: #666;
+}
 </style>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+$(document).ready(function() {
+    {% if news.description %}
+    const markdown = {{ news.description|tojson }};
+    const html = marked.parse(markdown);
+    document.querySelector('.news-content').innerHTML = html;
+    {% endif %}
+});
+</script>
 {% endblock %}
 

@@ -4,12 +4,15 @@
 <div class="container my-5">
     <h1 class="mb-4">關於我們</h1>
     
-    {% if about %}
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-4">
-            <div id="aboutContent" class="markdown-content"></div>
+    {% if about_list %}
+        {% for about in about_list %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h2 class="mb-3">{{ about.title }}</h2>
+                <div class="markdown-content" data-markdown="{{ loop.index }}"></div>
+            </div>
         </div>
-    </div>
+        {% endfor %}
     {% else %}
     <div class="d-flex align-items-center justify-content-center" style="min-height: 400px;">
         <div class="text-center">
@@ -33,23 +36,48 @@
     margin-top: 1.5rem;
     margin-bottom: 1rem;
 }
+.markdown-content h1 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+.markdown-content h2 {
+    font-size: 1.75rem;
+    font-weight: bold;
+}
+.markdown-content h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
 .markdown-content p {
     margin-bottom: 1rem;
+}
+.markdown-content ul,
+.markdown-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
 }
 .markdown-content img {
     max-width: 100%;
     height: auto;
+    margin: 1rem 0;
 }
 .markdown-content code {
     background: #f4f4f4;
     padding: 2px 6px;
     border-radius: 3px;
+    font-family: monospace;
 }
 .markdown-content pre {
     background: #f4f4f4;
     padding: 1rem;
     border-radius: 4px;
     overflow-x: auto;
+}
+.markdown-content blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: #666;
 }
 </style>
 {% endblock %}
@@ -59,10 +87,12 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 $(document).ready(function() {
-    {% if about %}
-    const markdown = {{ about.content|tojson }};
-    const html = marked.parse(markdown);
-    document.getElementById('aboutContent').innerHTML = html;
+    {% if about_list %}
+        {% for about in about_list %}
+        const markdown{{ loop.index }} = {{ about.content|tojson }};
+        const html{{ loop.index }} = marked.parse(markdown{{ loop.index }});
+        document.querySelector('[data-markdown="{{ loop.index }}"]').innerHTML = html{{ loop.index }};
+        {% endfor %}
     {% endif %}
 });
 </script>

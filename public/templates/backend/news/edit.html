@@ -33,7 +33,8 @@
                     
                     <div class="col-12">
                         <label for="description" class="form-label">描述/內容</label>
-                        <textarea class="form-control" id="description" rows="6">{{ news.description or '' }}</textarea>
+                        <textarea class="form-control" id="description" rows="15">{{ news.description or '' }}</textarea>
+                        <div class="form-text">支持 Markdown 語法</div>
                     </div>
                     
                     <!-- 當前圖片 -->
@@ -80,12 +81,34 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/backend.css') }}">
+{% endblock %}
+
 {% block extra_js %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
 <script>
 const newsId = {{ news.id }};
+let easyMDE;
 
 $(document).ready(function() {
+    // 初始化 EasyMDE 編輯器
+    easyMDE = new EasyMDE({
+        element: document.getElementById('description'),
+        spellChecker: false,
+        status: false,
+        toolbar: [
+            'bold', 'italic', 'heading', '|',
+            'quote', 'unordered-list', 'ordered-list', '|',
+            'link', 'image', '|',
+            'preview', 'side-by-side', 'fullscreen', '|',
+            'guide'
+        ],
+        placeholder: '請輸入描述/內容...'
+    });
+    
     // 圖片預覽
     $('#image').on('change', function(e) {
         const file = e.target.files[0];
@@ -106,7 +129,7 @@ $(document).ready(function() {
         e.preventDefault();
         
         const name = $('#name').val().trim();
-        const description = $('#description').val().trim();
+        const description = easyMDE.value().trim();
         const publishDate = $('#publish_date').val();
         const isActive = $('#is_active').is(':checked');
         const fileInput = document.getElementById('image');

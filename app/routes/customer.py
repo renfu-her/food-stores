@@ -17,8 +17,8 @@ def index():
 @customer_bp.route('/about')
 def about():
     """關於我們頁面"""
-    about_record = About.query.first()
-    return render_template('store/about.html', about=about_record)
+    about_list = About.query.filter_by(is_active=True).order_by(About.display_order).all()
+    return render_template('store/about.html', about_list=about_list)
 
 @customer_bp.route('/news')
 def news():
