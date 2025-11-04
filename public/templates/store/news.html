@@ -37,8 +37,12 @@
         {% endfor %}
     </div>
     {% else %}
-    <div class="alert alert-info">
-        暫無最新消息
+    <div class="d-flex align-items-center justify-content-center" style="min-height: 400px;">
+        <div class="text-center">
+            <i class="bi bi-newspaper text-muted mb-3" style="font-size: 4rem;"></i>
+            <h4 class="text-muted">暫無最新消息</h4>
+            <p class="text-muted">請稍後再來查看</p>
+        </div>
     </div>
     {% endif %}
 </div>

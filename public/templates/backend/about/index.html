@@ -1,0 +1,87 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">關於我們管理</h1>
+        <a href="{{ url_for('backend.about_edit') }}" class="btn btn-primary">
+            <i class="bi bi-pencil me-2"></i>編輯內容
+        </a>
+    </div>
+    
+    {% if about %}
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-bold">最後更新時間</label>
+                <p class="text-muted">{{ about.updated_at.strftime('%Y/%m/%d %H:%M:%S') if about.updated_at else '-' }}</p>
+            </div>
+            
+            <hr>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold">內容預覽</label>
+                <div id="contentPreview" class="border rounded p-3 markdown-content" style="background: #f8f9fa; min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-info-circle text-muted mb-3" style="font-size: 4rem;"></i>
+            <h4 class="text-muted">尚未設定關於我們內容</h4>
+            <p class="text-muted mb-4">請點擊上方按鈕開始編輯</p>
+            <a href="{{ url_for('backend.about_edit') }}" class="btn btn-primary">
+                <i class="bi bi-pencil me-2"></i>開始編輯
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.markdown-content {
+    line-height: 1.8;
+}
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+.markdown-content p {
+    margin-bottom: 1rem;
+}
+.markdown-content img {
+    max-width: 100%;
+    height: auto;
+}
+.markdown-content code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+.markdown-content pre {
+    background: #f4f4f4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+$(document).ready(function() {
+    {% if about %}
+    const markdown = {{ about.content|tojson }};
+    const html = marked.parse(markdown);
+    document.getElementById('contentPreview').innerHTML = html;
+    {% endif %}
+});
+</script>
+{% endblock %}

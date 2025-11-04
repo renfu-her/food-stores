@@ -3,7 +3,10 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">關於我們管理</h1>
+        <h1 class="h3 mb-0">編輯關於我們</h1>
+        <a href="{{ url_for('backend.about') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>返回
+        </a>
     </div>
     
     <div class="card">
@@ -11,7 +14,7 @@
             <form id="aboutForm">
                 <div class="mb-3">
                     <label for="content" class="form-label">內容 <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="content" rows="20" required>{{ about.content if about else '' }}</textarea>
+                    <textarea class="form-control" id="content" rows="20">{{ about.content if about else '' }}</textarea>
                     <div class="form-text">支持 Markdown 語法</div>
                 </div>
                 
@@ -28,6 +31,9 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-lg me-2"></i>儲存
                     </button>
+                    <a href="{{ url_for('backend.about') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-2"></i>取消
+                    </a>
                 </div>
             </form>
         </div>
@@ -37,6 +43,20 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<style>
+.markdown-content {
+    line-height: 1.8;
+}
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+.markdown-content p {
+    margin-bottom: 1rem;
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -87,6 +107,7 @@ $(document).ready(function() {
             data: JSON.stringify({ content: content }),
             success: function(response) {
                 alert('儲存成功');
+                window.location.href = "{{ url_for('backend.about') }}";
             },
             error: function(xhr) {
                 const error = xhr.responseJSON || {};

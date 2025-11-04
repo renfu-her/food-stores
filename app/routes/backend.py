@@ -319,10 +319,36 @@ def home_banner_edit(banner_id):
 @backend_bp.route('/about')
 @role_required('admin')
 def about():
-    """關於我們管理頁面"""
+    """關於我們管理頁面（列表）"""
     from app.models import About
-    about_record = About.query.first()
-    return render_template('backend/about.html', about=about_record)
+    about_list = About.query.order_by(About.display_order).all()
+    
+    about_data = []
+    for a in about_list:
+        about_data.append({
+            'id': a.id,
+            'title': a.title,
+            'content': a.content,
+            'is_active': a.is_active,
+            'display_order': a.display_order,
+            'created_at': a.created_at.isoformat() if a.created_at else None
+        })
+    
+    return render_template('backend/about/list.html', about_list=about_data)
+
+@backend_bp.route('/about/add')
+@role_required('admin')
+def about_add():
+    """新增關於我們頁面"""
+    return render_template('backend/about/add.html')
+
+@backend_bp.route('/about/<int:about_id>/edit')
+@role_required('admin')
+def about_edit(about_id):
+    """編輯關於我們頁面"""
+    from app.models import About
+    about_record = About.query.get_or_404(about_id)
+    return render_template('backend/about/edit.html', about=about_record)
 
 @backend_bp.route('/news')
 @role_required('admin')

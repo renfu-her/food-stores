@@ -240,15 +240,24 @@ class HomeBanner(db.Model):
         return f'<HomeBanner {self.name}>'
 
 class About(db.Model):
-    """關於我們模型（單例）"""
+    """關於我們模型"""
     __tablename__ = 'about'
     
     id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)  # 標題
     content = db.Column(db.Text, nullable=False)  # Markdown 內容
+    is_active = db.Column(db.Boolean, default=True, nullable=False)  # 是否啟用
+    display_order = db.Column(db.Integer, default=0, nullable=False)  # 顯示順序
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
+    __table_args__ = (
+        Index('idx_about_active', 'is_active'),
+        Index('idx_about_order', 'display_order'),
+    )
+    
     def __repr__(self):
-        return f'<About {self.id}>'
+        return f'<About {self.title}>'
 
 class News(db.Model):
     """最新消息模型"""
