@@ -3,10 +3,63 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">產品管理</h1>
+        <h1 class="h3 mb-0">產品管理</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal" onclick="openProductModal()">
+            <i class="bi bi-plus-lg me-2"></i>新增產品
+        </button>
     </div>
     
-    <div class="card border-0 shadow-sm">
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋產品名稱..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="shopFilter" onchange="performSearch()">
+                        <option value="">所有店鋪</option>
+                        {% for shop in shops %}
+                        <option value="{{ shop.id }}">{{ shop.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="categoryFilter" onchange="performSearch()">
+                        <option value="">所有分類</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
+                        <option value="">所有狀態</option>
+                        <option value="active">上架</option>
+                        <option value="inactive">下架</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select class="form-select" id="stockFilter" onchange="performSearch()">
+                        <option value="">所有庫存</option>
+                        <option value="in">有庫存</option>
+                        <option value="out">缺貨</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="card">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
@@ -16,40 +69,97 @@
                             <th>產品名稱</th>
                             <th>店鋪</th>
                             <th>分類</th>
-                            <th>單價</th>
+                            <th>售價</th>
                             <th>庫存</th>
                             <th>狀態</th>
-                            <th>操作</th>
+                            <th class="text-end">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for product in products %}
-                        <tr>
-                            <td>{{ product.id }}</td>
-                            <td>{{ product.name }}</td>
-                            <td>{{ product.shop.name if product.shop else 'N/A' }}</td>
-                            <td>{{ product.category.name if product.category else 'N/A' }}</td>
-                            <td>${{ "%.2f"|format(product.unit_price|float) }}</td>
-                            <td>{{ product.stock_quantity }}</td>
-                            <td>
-                                {% if product.is_active %}
-                                    <span class="badge bg-success">上架</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">下架</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('backend.product_detail', product_id=product.id) }}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-eye"></i> 查看
-                                </a>
-                                <button class="btn btn-sm btn-danger" onclick="deleteProduct({{ product.id }})">
-                                    <i class="bi bi-trash"></i> 刪除
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="productsTableBody">
+                        <tr><td colspan="8" class="text-center">載入中...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 产品模态框 -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalTitle">新增產品</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <input type="hidden" id="productId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="productName" class="form-label">產品名稱</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="productShop" class="form-label">店鋪</label>
+                            <select class="form-select" id="productShop" required>
+                                <option value="">請選擇店鋪</option>
+                                {% for shop in shops %}
+                                <option value="{{ shop.id }}">{{ shop.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productDescription" class="form-label">產品描述</label>
+                        <textarea class="form-control" id="productDescription" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="productCategory" class="form-label">分類</label>
+                            <select class="form-select" id="productCategory" required>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="productPrice" class="form-label">原價</label>
+                            <input type="number" class="form-control" id="productPrice" step="0.01" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="productDiscountPrice" class="form-label">優惠價（選填）</label>
+                            <input type="number" class="form-control" id="productDiscountPrice" step="0.01">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="productStock" class="form-label">庫存數量</label>
+                            <input type="number" class="form-control" id="productStock" value="0" min="0" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">狀態</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="productActive" checked>
+                                <label class="form-check-label" for="productActive">上架販售</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveProduct()">儲存</button>
             </div>
         </div>
     </div>
@@ -58,28 +168,185 @@
 
 {% block extra_js %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
 <script>
+let allProducts = {{ products|tojson }};
+let allShops = {{ shops|tojson }};
+let allCategories = {{ categories|tojson }};
+
+// 渲染产品行
+function renderProductRow(product) {
+    const shop = allShops.find(s => s.id === product.shop_id);
+    const shopName = shop ? shop.name : '-';
+    
+    const category = allCategories.find(c => c.id === product.category_id);
+    const categoryName = category ? category.name : '-';
+    
+    const price = product.discounted_price || product.unit_price;
+    const priceHtml = product.discounted_price 
+        ? `<span class="text-decoration-line-through text-muted">${product.unit_price}</span> <span class="text-danger">${product.discounted_price}</span>`
+        : `${product.unit_price}`;
+    
+    const stockBadge = product.stock > 0 
+        ? `<span class="badge bg-success">${product.stock}</span>` 
+        : '<span class="badge bg-danger">缺貨</span>';
+    
+    const statusBadge = product.is_active 
+        ? '<span class="badge bg-success">上架</span>' 
+        : '<span class="badge bg-secondary">下架</span>';
+    
+    return `
+        <tr>
+            <td>${product.id}</td>
+            <td>
+                <a href="{{ url_for('backend.product_detail', product_id=0) }}".replace('0', product.id) class="text-decoration-none">
+                    ${product.name}
+                </a>
+            </td>
+            <td>${shopName}</td>
+            <td>${categoryName}</td>
+            <td>${priceHtml}</td>
+            <td>${stockBadge}</td>
+            <td>${statusBadge}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-info" onclick="window.location.href='{{ url_for('backend.product_detail', product_id=0) }}'.replace('0', ${product.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="editProduct(${product.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderProductsTable() {
+    renderTable('productsTableBody', renderProductRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const shopFilter = document.getElementById('shopFilter').value;
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const stockFilter = document.getElementById('stockFilter').value;
+    
+    filteredItems = allProducts.filter(product => {
+        const matchSearch = !searchValue || 
+            product.name.toLowerCase().includes(searchValue.toLowerCase());
+        
+        const matchShop = !shopFilter || product.shop_id == shopFilter;
+        const matchCategory = !categoryFilter || product.category_id == categoryFilter;
+        const matchStatus = !statusFilter || 
+            (statusFilter === 'active' && product.is_active) ||
+            (statusFilter === 'inactive' && !product.is_active);
+        const matchStock = !stockFilter ||
+            (stockFilter === 'in' && product.stock > 0) ||
+            (stockFilter === 'out' && product.stock === 0);
+        
+        return matchSearch && matchShop && matchCategory && matchStatus && matchStock;
+    });
+    
+    currentPage = 1;
+    renderProductsTable();
+    updatePagination();
+}
+
+// 打开产品模态框
+function openProductModal(productId = null) {
+    const modal = document.getElementById('productModal');
+    const title = document.getElementById('productModalTitle');
+    const form = document.getElementById('productForm');
+    
+    form.reset();
+    
+    if (productId) {
+        title.textContent = '編輯產品';
+        const product = allProducts.find(p => p.id === productId);
+        if (product) {
+            document.getElementById('productId').value = product.id;
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productShop').value = product.shop_id;
+            document.getElementById('productDescription').value = product.description || '';
+            document.getElementById('productCategory').value = product.category_id;
+            document.getElementById('productPrice').value = product.unit_price;
+            document.getElementById('productDiscountPrice').value = product.discounted_price || '';
+            document.getElementById('productStock').value = product.stock;
+            document.getElementById('productActive').checked = product.is_active;
+        }
+    } else {
+        title.textContent = '新增產品';
+        document.getElementById('productId').value = '';
+    }
+}
+
+// 编辑产品
+function editProduct(productId) {
+    openProductModal(productId);
+    new bootstrap.Modal(document.getElementById('productModal')).show();
+}
+
+// 保存产品
+function saveProduct() {
+    const productId = document.getElementById('productId').value;
+    const data = {
+        name: document.getElementById('productName').value,
+        shop_id: parseInt(document.getElementById('productShop').value),
+        description: document.getElementById('productDescription').value,
+        category_id: parseInt(document.getElementById('productCategory').value),
+        unit_price: parseFloat(document.getElementById('productPrice').value),
+        stock: parseInt(document.getElementById('productStock').value),
+        is_active: document.getElementById('productActive').checked
+    };
+    
+    const discountPrice = document.getElementById('productDiscountPrice').value;
+    if (discountPrice) {
+        data.discounted_price = parseFloat(discountPrice);
+    }
+    
+    const url = productId ? `/api/products/${productId}` : '/api/products';
+    const method = productId ? 'PUT' : 'POST';
+    
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccess(productId ? '更新成功' : '新增成功');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            showError(error.message || '操作失敗');
+        }
+    });
+}
+
+// 删除产品
 function deleteProduct(productId) {
-    if (confirm('確定要刪除此產品嗎？')) {
+    confirmDelete('確定要刪除此產品嗎？', function() {
         $.ajax({
             url: '/api/products/' + productId,
             method: 'DELETE',
             success: function() {
-                location.reload();
+                showSuccess('刪除成功');
             },
             error: function() {
-                alert('刪除失敗');
+                showError('刪除失敗');
             }
         });
-    }
+    });
 }
 
-// 監聽產品更新事件
-window.addEventListener('productUpdated', function(event) {
-    const data = event.detail;
-    console.log('產品更新:', data);
-    location.reload();
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderProductsTable;
+    initializeDataTable('productsTableBody', allProducts, renderProductRow);
 });
 </script>
 {% endblock %}
-

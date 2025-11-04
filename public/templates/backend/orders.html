@@ -3,71 +3,156 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">訂單管理</h1>
+        <h1 class="h3 mb-0">訂單管理</h1>
+        <div>
+            <button class="btn btn-outline-secondary" onclick="exportOrders()">
+                <i class="bi bi-download me-2"></i>匯出訂單
+            </button>
+        </div>
     </div>
     
-    <div class="card border-0 shadow-sm mb-4">
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
         <div class="card-body">
-            <div class="row align-items-center">
+            <div class="row g-3">
                 <div class="col-md-3">
-                    <label class="form-label">狀態篩選</label>
-                    <select id="statusFilter" class="form-select" onchange="filterOrders()">
-                        <option value="">全部狀態</option>
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋訂單編號、客戶..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
+                        <option value="">所有狀態</option>
                         <option value="pending">待處理</option>
-                        <option value="process">處理中</option>
-                        <option value="success">已完成</option>
+                        <option value="processing">處理中</option>
+                        <option value="completed">已完成</option>
+                        <option value="cancelled">已取消</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="shopFilter" onchange="performSearch()">
+                        <option value="">所有店鋪</option>
+                        {% for shop in shops %}
+                        <option value="{{ shop.id }}">{{ shop.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" id="dateFilter" onchange="performSearch()">
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
                     </select>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="card border-0 shadow-sm">
+    <!-- 统计卡片 -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">總訂單數</h5>
+                    <h2 class="mb-0" id="totalOrders">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">待處理</h5>
+                    <h2 class="mb-0" id="pendingOrders">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-info">處理中</h5>
+                    <h2 class="mb-0" id="processingOrders">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-success">已完成</h5>
+                    <h2 class="mb-0" id="completedOrders">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="card">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>訂單ID</th>
-                            <th>使用者</th>
+                            <th>訂單編號</th>
+                            <th>客戶</th>
                             <th>店鋪</th>
-                            <th>總價</th>
+                            <th>金額</th>
                             <th>狀態</th>
-                            <th>建立時間</th>
-                            <th>操作</th>
+                            <th>訂單時間</th>
+                            <th class="text-end">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for order in orders %}
-                        <tr data-status="{{ order.status }}">
-                            <td>{{ order.id }}</td>
-                            <td>{{ order.user.name if order.user else 'N/A' }}</td>
-                            <td>{{ order.shop.name if order.shop else 'N/A' }}</td>
-                            <td>${{ "%.2f"|format(order.total_price|float) }}</td>
-                            <td>
-                                {% if order.status == 'pending' %}
-                                    <span class="badge bg-warning">待處理</span>
-                                {% elif order.status == 'process' %}
-                                    <span class="badge bg-info">處理中</span>
-                                {% elif order.status == 'success' %}
-                                    <span class="badge bg-success">已完成</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '' }}</td>
-                            <td>
-                                <a href="{{ url_for('backend.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-eye"></i> 查看
-                                </a>
-                                <select class="form-select form-select-sm d-inline-block w-auto ms-2" onchange="updateOrderStatus({{ order.id }}, this.value)">
-                                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>待處理</option>
-                                    <option value="process" {% if order.status == 'process' %}selected{% endif %}>處理中</option>
-                                    <option value="success" {% if order.status == 'success' %}selected{% endif %}>已完成</option>
-                                </select>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="ordersTableBody">
+                        <tr><td colspan="7" class="text-center">載入中...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 订单状态更新模态框 -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">更新訂單狀態</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="updateOrderId">
+                <div class="mb-3">
+                    <label for="newStatus" class="form-label">選擇新狀態</label>
+                    <select class="form-select" id="newStatus">
+                        <option value="pending">待處理</option>
+                        <option value="processing">處理中</option>
+                        <option value="completed">已完成</option>
+                        <option value="cancelled">已取消</option>
+                    </select>
+                </div>
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    更新訂單狀態後將自動通知客戶
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="confirmUpdateStatus()">確認更新</button>
             </div>
         </div>
     </div>
@@ -76,39 +161,147 @@
 
 {% block extra_js %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
 <script>
-function filterOrders() {
-    const status = $('#statusFilter').val();
-    $('tbody tr').each(function() {
-        if (!status || $(this).data('status') === status) {
-            $(this).show();
-        } else {
-            $(this).hide();
-        }
-    });
+let allOrders = {{ orders|tojson }};
+let allShops = {{ shops|tojson }};
+let allUsers = {{ users|tojson }};
+
+// 状态徽章映射
+const statusBadges = {
+    'pending': '<span class="badge bg-warning">待處理</span>',
+    'processing': '<span class="badge bg-info">處理中</span>',
+    'completed': '<span class="badge bg-success">已完成</span>',
+    'cancelled': '<span class="badge bg-secondary">已取消</span>'
+};
+
+// 渲染订单行
+function renderOrderRow(order) {
+    const user = allUsers.find(u => u.id === order.user_id);
+    const userName = user ? user.name : '-';
+    
+    const shop = allShops.find(s => s.id === order.shop_id);
+    const shopName = shop ? shop.name : '-';
+    
+    const createdAt = order.created_at ? new Date(order.created_at).toLocaleString('zh-TW') : '-';
+    
+    return `
+        <tr>
+            <td><strong>#${order.id}</strong></td>
+            <td>${userName}</td>
+            <td>${shopName}</td>
+            <td class="fw-bold">NT$ ${order.total_price.toFixed(2)}</td>
+            <td>${statusBadges[order.status] || order.status}</td>
+            <td><small>${createdAt}</small></td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-info" onclick="window.location.href='{{ url_for('backend.order_detail', order_id=0) }}'.replace('0', ${order.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openStatusModal(${order.id}, '${order.status}')">
+                    <i class="bi bi-arrow-repeat"></i>
+                </button>
+            </td>
+        </tr>
+    `;
 }
 
-function updateOrderStatus(orderId, status) {
+// 渲染表格
+function renderOrdersTable() {
+    renderTable('ordersTableBody', renderOrderRow);
+    updateStatistics();
+}
+
+// 更新统计数据
+function updateStatistics() {
+    document.getElementById('totalOrders').textContent = allOrders.length;
+    document.getElementById('pendingOrders').textContent = allOrders.filter(o => o.status === 'pending').length;
+    document.getElementById('processingOrders').textContent = allOrders.filter(o => o.status === 'processing').length;
+    document.getElementById('completedOrders').textContent = allOrders.filter(o => o.status === 'completed').length;
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const shopFilter = document.getElementById('shopFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    filteredItems = allOrders.filter(order => {
+        const user = allUsers.find(u => u.id === order.user_id);
+        const matchSearch = !searchValue || 
+            order.id.toString().includes(searchValue) ||
+            (user && user.name.toLowerCase().includes(searchValue.toLowerCase()));
+        
+        const matchStatus = !statusFilter || order.status === statusFilter;
+        const matchShop = !shopFilter || order.shop_id == shopFilter;
+        
+        let matchDate = true;
+        if (dateFilter && order.created_at) {
+            const orderDate = new Date(order.created_at).toISOString().split('T')[0];
+            matchDate = orderDate === dateFilter;
+        }
+        
+        return matchSearch && matchStatus && matchShop && matchDate;
+    });
+    
+    currentPage = 1;
+    renderOrdersTable();
+    updatePagination();
+}
+
+// 清除过滤
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('shopFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    performSearch();
+}
+
+// 打开状态更新模态框
+function openStatusModal(orderId, currentStatus) {
+    document.getElementById('updateOrderId').value = orderId;
+    document.getElementById('newStatus').value = currentStatus;
+    new bootstrap.Modal(document.getElementById('statusModal')).show();
+}
+
+// 确认更新状态
+function confirmUpdateStatus() {
+    const orderId = document.getElementById('updateOrderId').value;
+    const newStatus = document.getElementById('newStatus').value;
+    
     $.ajax({
-        url: '/api/orders/' + orderId + '/status',
+        url: `/api/orders/${orderId}/status`,
         method: 'PUT',
         contentType: 'application/json',
-        data: JSON.stringify({ status: status }),
+        data: JSON.stringify({ status: newStatus }),
         success: function() {
-            location.reload();
+            bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+            showSuccess('訂單狀態已更新');
         },
         error: function() {
-            alert('更新失敗');
+            showError('更新失敗');
         }
     });
 }
 
-// 監聽訂單更新事件
-window.addEventListener('orderUpdated', function(event) {
-    const data = event.detail;
-    console.log('訂單更新:', data);
-    location.reload();
+// 导出订单
+function exportOrders() {
+    // TODO: 实现导出功能
+    alert('匯出功能開發中...');
+}
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderOrdersTable;
+    initializeDataTable('ordersTableBody', allOrders, renderOrderRow);
+    updateStatistics();
+    
+    // 监听订单更新事件
+    window.addEventListener('orderUpdated', function(event) {
+        console.log('訂單更新:', event.detail);
+        location.reload();
+    });
 });
 </script>
 {% endblock %}
-

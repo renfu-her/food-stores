@@ -44,6 +44,10 @@
     {% endif %}
 {% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+{% endblock %}
+
 {% block extra_js %}
 <script>
 // 更新購物車數量

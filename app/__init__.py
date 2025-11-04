@@ -38,6 +38,7 @@ def create_app(config_class=Config):
             from app.routes.api.products import products_api_bp
             from app.routes.api.orders import orders_api_bp
             from app.routes.api.toppings import toppings_api_bp
+            from app.routes.api.users import users_api_bp
             from app.routes.websocket import websocket_bp
             
             app.register_blueprint(auth_bp)
@@ -48,6 +49,7 @@ def create_app(config_class=Config):
             app.register_blueprint(products_api_bp, url_prefix='/api/products')
             app.register_blueprint(orders_api_bp, url_prefix='/api/orders')
             app.register_blueprint(toppings_api_bp, url_prefix='/api/toppings')
+            app.register_blueprint(users_api_bp, url_prefix='/api/users')
             app.register_blueprint(websocket_bp)
             
             # 根路径指向前台首页

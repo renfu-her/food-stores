@@ -1,0 +1,332 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-clock-history me-2"></i>系統更新 Log
+        </h1>
+        <button class="btn btn-outline-secondary" onclick="exportLogs()">
+            <i class="bi bi-download me-2"></i>匯出日誌
+        </button>
+    </div>
+    
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋描述、IP..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="actionFilter" onchange="performSearch()">
+                        <option value="">所有操作</option>
+                        <option value="create">新增</option>
+                        <option value="update">更新</option>
+                        <option value="delete">刪除</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="tableFilter" onchange="performSearch()">
+                        <option value="">所有表</option>
+                        <option value="user">使用者</option>
+                        <option value="shop">店鋪</option>
+                        <option value="product">產品</option>
+                        <option value="order">訂單</option>
+                        <option value="topping">Topping</option>
+                        <option value="category">分類</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="userFilter" onchange="performSearch()">
+                        <option value="">所有用戶</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                        <option value="200">200 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 统计卡片 -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">總記錄數</h5>
+                    <h2 class="mb-0" id="totalLogs">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-success">新增操作</h5>
+                    <h2 class="mb-0" id="createLogs">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-info">更新操作</h5>
+                    <h2 class="mb-0" id="updateLogs">0</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">刪除操作</h5>
+                    <h2 class="mb-0" id="deleteLogs">0</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="60">ID</th>
+                            <th width="100">操作</th>
+                            <th width="100">表名</th>
+                            <th width="80">記錄ID</th>
+                            <th>描述</th>
+                            <th width="120">操作者</th>
+                            <th width="120">IP地址</th>
+                            <th width="150">時間</th>
+                            <th width="80">詳情</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="9" class="text-center">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 日志详情模态框 -->
+<div class="modal fade" id="logDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">日誌詳情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>操作類型：</strong>
+                        <span id="detailAction"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>表名：</strong>
+                        <span id="detailTable"></span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>記錄ID：</strong>
+                        <span id="detailRecordId"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>操作時間：</strong>
+                        <span id="detailTime"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <strong>描述：</strong>
+                    <p id="detailDescription"></p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>舊數據：</h6>
+                        <pre id="detailOldData" class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;"></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>新數據：</h6>
+                        <pre id="detailNewData" class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
+<script>
+let allLogs = {{ logs|tojson }};
+let allUsers = {{ users|tojson }};
+
+// 操作类型徽章
+const actionBadges = {
+    'create': '<span class="badge bg-success"><i class="bi bi-plus-circle me-1"></i>新增</span>',
+    'update': '<span class="badge bg-info"><i class="bi bi-pencil me-1"></i>更新</span>',
+    'delete': '<span class="badge bg-danger"><i class="bi bi-trash me-1"></i>刪除</span>'
+};
+
+// 表名映射
+const tableMap = {
+    'user': '使用者',
+    'shop': '店鋪',
+    'product': '產品',
+    'order': '訂單',
+    'topping': 'Topping',
+    'category': '分類'
+};
+
+// 渲染日志行
+function renderLogRow(log) {
+    const user = allUsers.find(u => u.id === log.user_id);
+    const userName = user ? user.name : '系統';
+    
+    const createdAt = log.created_at ? new Date(log.created_at).toLocaleString('zh-TW') : '-';
+    const tableName = tableMap[log.table_name] || log.table_name;
+    
+    return `
+        <tr>
+            <td>${log.id}</td>
+            <td>${actionBadges[log.action] || log.action}</td>
+            <td><span class="badge bg-secondary">${tableName}</span></td>
+            <td>${log.record_id || '-'}</td>
+            <td><small>${log.description || '-'}</small></td>
+            <td>${userName}</td>
+            <td><small class="text-muted">${log.ip_address || '-'}</small></td>
+            <td><small>${createdAt}</small></td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-info" onclick="showLogDetail(${log.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderLogsTable() {
+    renderTable('logsTableBody', renderLogRow);
+    updateStatistics();
+}
+
+// 更新统计数据
+function updateStatistics() {
+    document.getElementById('totalLogs').textContent = allLogs.length;
+    document.getElementById('createLogs').textContent = allLogs.filter(l => l.action === 'create').length;
+    document.getElementById('updateLogs').textContent = allLogs.filter(l => l.action === 'update').length;
+    document.getElementById('deleteLogs').textContent = allLogs.filter(l => l.action === 'delete').length;
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const actionFilter = document.getElementById('actionFilter').value;
+    const tableFilter = document.getElementById('tableFilter').value;
+    const userFilter = document.getElementById('userFilter').value;
+    
+    filteredItems = allLogs.filter(log => {
+        const matchSearch = !searchValue || 
+            (log.description && log.description.toLowerCase().includes(searchValue.toLowerCase())) ||
+            (log.ip_address && log.ip_address.includes(searchValue));
+        
+        const matchAction = !actionFilter || log.action === actionFilter;
+        const matchTable = !tableFilter || log.table_name === tableFilter;
+        const matchUser = !userFilter || log.user_id == userFilter;
+        
+        return matchSearch && matchAction && matchTable && matchUser;
+    });
+    
+    currentPage = 1;
+    renderLogsTable();
+    updatePagination();
+}
+
+// 清除过滤
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('actionFilter').value = '';
+    document.getElementById('tableFilter').value = '';
+    document.getElementById('userFilter').value = '';
+    performSearch();
+}
+
+// 显示日志详情
+function showLogDetail(logId) {
+    const log = allLogs.find(l => l.id === logId);
+    if (!log) return;
+    
+    const user = allUsers.find(u => u.id === log.user_id);
+    
+    document.getElementById('detailAction').innerHTML = actionBadges[log.action] || log.action;
+    document.getElementById('detailTable').textContent = tableMap[log.table_name] || log.table_name;
+    document.getElementById('detailRecordId').textContent = log.record_id || '-';
+    document.getElementById('detailTime').textContent = log.created_at ? new Date(log.created_at).toLocaleString('zh-TW') : '-';
+    document.getElementById('detailDescription').textContent = log.description || '無描述';
+    
+    // 格式化 JSON 数据
+    try {
+        const oldData = log.old_data ? JSON.stringify(JSON.parse(log.old_data), null, 2) : '無';
+        const newData = log.new_data ? JSON.stringify(JSON.parse(log.new_data), null, 2) : '無';
+        
+        document.getElementById('detailOldData').textContent = oldData;
+        document.getElementById('detailNewData').textContent = newData;
+    } catch (e) {
+        document.getElementById('detailOldData').textContent = log.old_data || '無';
+        document.getElementById('detailNewData').textContent = log.new_data || '無';
+    }
+    
+    new bootstrap.Modal(document.getElementById('logDetailModal')).show();
+}
+
+// 导出日志
+function exportLogs() {
+    // TODO: 实现导出功能
+    alert('匯出功能開發中...');
+}
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderLogsTable;
+    itemsPerPage = 20; // 默认每页显示20条
+    initializeDataTable('logsTableBody', allLogs, renderLogRow);
+    updateStatistics();
+});
+</script>
+{% endblock %}
+

@@ -82,71 +82,15 @@
 {% endblock %}
 
 {% block extra_css %}
-<style>
-.wrapper {
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 250px;
-    min-height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    transition: all 0.3s;
-    z-index: 1000;
-}
-
-.sidebar-nav .nav-link {
-    color: rgba(255, 255, 255, 0.8);
-    padding: 1rem 1.5rem;
-    transition: all 0.3s;
-    border-left: 3px solid transparent;
-}
-
-.sidebar-nav .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    border-left-color: #0d6efd;
-}
-
-.sidebar-nav .nav-link.active {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: white;
-    border-left-color: #0d6efd;
-}
-
-.main-content {
-    margin-left: 250px;
-    min-height: 100vh;
-    background-color: #f8f9fa;
-}
-
-.sidebar-footer {
-    background-color: rgba(0, 0, 0, 0.2);
-}
-
-@media (max-width: 991px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-    
-    .sidebar.show {
-        transform: translateX(0);
-    }
-    
-    .main-content {
-        margin-left: 0;
-    }
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop_admin.css') }}">
 {% endblock %}
 
 {% block extra_js %}
 <script>
 $(document).ready(function() {
     // Sidebar toggle for mobile
-    $('#sidebarToggle').on('click', function() {
+    $('#sidebarToggle').on('click', function(e) {
+        e.stopPropagation();
         $('#sidebar').toggleClass('show');
     });
     
@@ -159,9 +103,18 @@ $(document).ready(function() {
         }
     });
     
+    // 确保侧边栏链接可点击
+    $('.sidebar-nav .nav-link').on('click', function(e) {
+        const href = $(this).attr('href');
+        if (href && href !== '#') {
+            window.location.href = href;
+        }
+    });
+    
     // 登出功能
     $('#logoutBtnSidebar, #logoutBtnTopbar').on('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         
         $.ajax({
             url: '/api/auth/logout',
@@ -174,6 +127,19 @@ $(document).ready(function() {
                 alert('登出失敗，請重試');
             }
         });
+    });
+    
+    // 确保模态框关闭时清理所有backdrop
+    $('.modal').on('hidden.bs.modal', function() {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+    });
+    
+    // 防止模态框阻止后续操作
+    $('.modal').on('shown.bs.modal', function() {
+        $(this).css('z-index', 1050);
+        $('.modal-backdrop').css('z-index', 1040);
     });
 });
 </script>

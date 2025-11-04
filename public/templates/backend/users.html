@@ -3,10 +3,48 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="mb-0">使用者管理</h1>
+        <h1 class="h3 mb-0">使用者管理</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="openUserModal()">
+            <i class="bi bi-plus-lg me-2"></i>新增使用者
+        </button>
     </div>
     
-    <div class="card border-0 shadow-sm">
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋姓名、郵箱..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="roleFilter" onchange="performSearch()">
+                        <option value="">所有角色</option>
+                        <option value="admin">管理員</option>
+                        <option value="store_admin">商店管理者</option>
+                        <option value="customer">客戶</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
+                        <option value="">所有狀態</option>
+                        <option value="active">啟用</option>
+                        <option value="inactive">禁用</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="card">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
@@ -17,45 +55,72 @@
                             <th>郵箱</th>
                             <th>角色</th>
                             <th>狀態</th>
-                            <th>建立時間</th>
-                            <th>操作</th>
+                            <th>註冊時間</th>
+                            <th class="text-end">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.name }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>
-                                {% if user.role == 'admin' %}
-                                    <span class="badge bg-danger">管理員</span>
-                                {% elif user.role == 'store_admin' %}
-                                    <span class="badge bg-primary">店鋪管理者</span>
-                                {% else %}
-                                    <span class="badge bg-success">客戶</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if user.is_active %}
-                                    <span class="badge bg-success">啟動</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">禁用</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '' }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="editUser({{ user.id }})">
-                                    <i class="bi bi-pencil"></i> 編輯
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }})">
-                                    <i class="bi bi-trash"></i> 刪除
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="7" class="text-center">載入中...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户模态框 -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle">新增使用者</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    <div class="mb-3">
+                        <label for="userName" class="form-label">姓名</label>
+                        <input type="text" class="form-control" id="userName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label">郵箱</label>
+                        <input type="email" class="form-control" id="userEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userPassword" class="form-label">密碼</label>
+                        <input type="password" class="form-control" id="userPassword">
+                        <small class="form-text text-muted">編輯時留空表示不修改密碼</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userRole" class="form-label">角色</label>
+                        <select class="form-select" id="userRole" required>
+                            <option value="customer">客戶</option>
+                            <option value="store_admin">商店管理者</option>
+                            <option value="admin">管理員</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="userActive" checked>
+                            <label class="form-check-label" for="userActive">啟用帳號</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">儲存</button>
             </div>
         </div>
     </div>
@@ -64,26 +129,158 @@
 
 {% block extra_js %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
 <script>
-function editUser(userId) {
-    // TODO: 實現編輯使用者功能
-    alert('編輯使用者 ' + userId);
+let allUsers = {{ users|tojson }};
+let currentEditUserId = null;
+
+// 渲染用户行
+function renderUserRow(user) {
+    const roleBadges = {
+        'admin': '<span class="badge bg-danger">管理員</span>',
+        'store_admin': '<span class="badge bg-primary">商店管理者</span>',
+        'customer': '<span class="badge bg-info">客戶</span>'
+    };
+    
+    const statusBadge = user.is_active 
+        ? '<span class="badge bg-success">啟用</span>' 
+        : '<span class="badge bg-secondary">禁用</span>';
+    
+    const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString('zh-TW') : '-';
+    
+    return `
+        <tr>
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${roleBadges[user.role] || user.role}</td>
+            <td>${statusBadge}</td>
+            <td>${createdAt}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
 }
 
+// 渲染表格
+function renderUsersTable() {
+    renderTable('usersTableBody', renderUserRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredItems = allUsers.filter(user => {
+        const matchSearch = !searchValue || 
+            user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchValue.toLowerCase());
+        
+        const matchRole = !roleFilter || user.role === roleFilter;
+        const matchStatus = !statusFilter || 
+            (statusFilter === 'active' && user.is_active) ||
+            (statusFilter === 'inactive' && !user.is_active);
+        
+        return matchSearch && matchRole && matchStatus;
+    });
+    
+    currentPage = 1;
+    renderUsersTable();
+    updatePagination();
+}
+
+// 打开用户模态框
+function openUserModal(userId = null) {
+    currentEditUserId = userId;
+    const modal = document.getElementById('userModal');
+    const title = document.getElementById('userModalTitle');
+    const form = document.getElementById('userForm');
+    
+    form.reset();
+    
+    if (userId) {
+        title.textContent = '編輯使用者';
+        const user = allUsers.find(u => u.id === userId);
+        if (user) {
+            document.getElementById('userId').value = user.id;
+            document.getElementById('userName').value = user.name;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userActive').checked = user.is_active;
+        }
+    } else {
+        title.textContent = '新增使用者';
+        document.getElementById('userId').value = '';
+    }
+}
+
+// 编辑用户
+function editUser(userId) {
+    openUserModal(userId);
+    new bootstrap.Modal(document.getElementById('userModal')).show();
+}
+
+// 保存用户
+function saveUser() {
+    const userId = document.getElementById('userId').value;
+    const data = {
+        name: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        role: document.getElementById('userRole').value,
+        is_active: document.getElementById('userActive').checked
+    };
+    
+    const password = document.getElementById('userPassword').value;
+    if (password) {
+        data.password = password;
+    }
+    
+    const url = userId ? `/api/users/${userId}` : '/api/users';
+    const method = userId ? 'PUT' : 'POST';
+    
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccess(userId ? '更新成功' : '新增成功');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            showError(error.message || '操作失敗');
+        }
+    });
+}
+
+// 删除用户
 function deleteUser(userId) {
-    if (confirm('確定要刪除此使用者嗎？')) {
+    confirmDelete('確定要刪除此使用者嗎？', function() {
         $.ajax({
             url: '/api/users/' + userId,
             method: 'DELETE',
             success: function() {
-                location.reload();
+                showSuccess('刪除成功');
             },
             error: function() {
-                alert('刪除失敗');
+                showError('刪除失敗');
             }
         });
-    }
+    });
 }
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderUsersTable;
+    initializeDataTable('usersTableBody', allUsers, renderUserRow);
+});
 </script>
 {% endblock %}
-

@@ -6,6 +6,7 @@ from app import db
 from app.models import Shop, User, Topping
 from app.utils.decorators import login_required, role_required, shop_access_required, get_current_user
 from app.utils.validators import validate_integer, validate_decimal
+from app.utils.update_logger import log_update
 
 shops_api_bp = Blueprint('shops_api', __name__)
 
@@ -120,6 +121,23 @@ def create_shop():
         )
         
         db.session.add(new_shop)
+        db.session.flush()  # 獲取店鋪ID
+        
+        # 記錄日誌
+        log_update(
+            action='create',
+            table_name='shop',
+            record_id=new_shop.id,
+            new_data={
+                'name': new_shop.name,
+                'description': new_shop.description,
+                'owner_id': new_shop.owner_id,
+                'max_toppings_per_order': new_shop.max_toppings_per_order,
+                'status': new_shop.status
+            },
+            description=f'新增店鋪: {new_shop.name}'
+        )
+        
         db.session.commit()
         
         return jsonify({
@@ -185,6 +203,20 @@ def update_shop(shop_id):
         if 'status' in data and user.role == 'admin':
             shop.status = data['status']
         
+        # 記錄日誌
+        log_update(
+            action='update',
+            table_name='shop',
+            record_id=shop.id,
+            new_data={
+                'name': shop.name,
+                'description': shop.description,
+                'max_toppings_per_order': shop.max_toppings_per_order,
+                'status': shop.status
+            },
+            description=f'更新店鋪: {shop.name}'
+        )
+        
         db.session.commit()
         
         return jsonify({
@@ -222,6 +254,22 @@ def delete_shop(shop_id):
                 'message': '無權刪除此店鋪',
                 'details': {}
             }), 403
+        
+        # 保存店鋪信息用於日誌
+        shop_data = {
+            'name': shop.name,
+            'description': shop.description,
+            'owner_id': shop.owner_id
+        }
+        
+        # 記錄日誌
+        log_update(
+            action='delete',
+            table_name='shop',
+            record_id=shop.id,
+            old_data=shop_data,
+            description=f'刪除店鋪: {shop.name}'
+        )
         
         db.session.delete(shop)
         db.session.commit()

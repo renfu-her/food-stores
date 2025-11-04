@@ -157,3 +157,31 @@ class OrderItem(db.Model):
     def __repr__(self):
         return f'<OrderItem {self.id}>'
 
+class UpdateLog(db.Model):
+    """系統更新日誌模型"""
+    __tablename__ = 'update_log'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # 執行操作的用戶
+    action = db.Column(db.String(20), nullable=False)  # create, update, delete
+    table_name = db.Column(db.String(50), nullable=False)  # 操作的表名
+    record_id = db.Column(db.Integer, nullable=True)  # 記錄的ID
+    old_data = db.Column(db.Text, nullable=True)  # 舊數據（JSON格式）
+    new_data = db.Column(db.Text, nullable=True)  # 新數據（JSON格式）
+    description = db.Column(db.Text, nullable=True)  # 操作描述
+    ip_address = db.Column(db.String(50), nullable=True)  # IP地址
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # 關係
+    user = db.relationship('User', backref='update_logs', lazy=True)
+    
+    # 索引
+    __table_args__ = (
+        Index('idx_update_log_table_record', 'table_name', 'record_id'),
+        Index('idx_update_log_user', 'user_id'),
+        Index('idx_update_log_created', 'created_at'),
+    )
+    
+    def __repr__(self):
+        return f'<UpdateLog {self.action} {self.table_name} #{self.record_id}>'
+

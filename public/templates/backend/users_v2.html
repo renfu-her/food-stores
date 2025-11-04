@@ -1,0 +1,79 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">使用者管理 v2</h1>
+        <button class="btn btn-primary" onclick="alert('新增功能')">
+            <i class="bi bi-plus-lg me-2"></i>新增使用者
+        </button>
+    </div>
+    
+    <!-- 简单测试 -->
+    <div class="card">
+        <div class="card-body">
+            <p>總共 {{ users|length }} 個用戶</p>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>姓名</th>
+                        <th>郵箱</th>
+                        <th>角色</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.role == 'admin' %}
+                                <span class="badge bg-danger">管理員</span>
+                            {% elif user.role == 'store_admin' %}
+                                <span class="badge bg-primary">商店管理者</span>
+                            {% else %}
+                                <span class="badge bg-info">客戶</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="testEdit({{ user.id }})">編輯</button>
+                            <button class="btn btn-sm btn-danger" onclick="testDelete({{ user.id }})">刪除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+console.log('users_v2.html 已載入');
+console.log('jQuery:', typeof $);
+console.log('用戶數據:', {{ users|tojson }});
+
+function testEdit(userId) {
+    alert('編輯用戶 ID: ' + userId);
+    console.log('編輯用戶:', userId);
+}
+
+function testDelete(userId) {
+    if (confirm('確定刪除用戶 ' + userId + '?')) {
+        alert('刪除用戶 ID: ' + userId);
+        console.log('刪除用戶:', userId);
+    }
+}
+
+$(document).ready(function() {
+    console.log('✓ Document Ready');
+    console.log('✓ 頁面初始化完成');
+});
+</script>
+{% endblock %}
+
