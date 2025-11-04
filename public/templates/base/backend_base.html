@@ -18,27 +18,27 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'backend.users' %}active{% endif %}" href="{{ url_for('backend.users') }}">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.user') %}active{% endif %}" href="{{ url_for('backend.users') }}">
                         <i class="bi bi-people me-2"></i>使用者管理
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'backend.shops' %}active{% endif %}" href="{{ url_for('backend.shops') }}">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.shop') %}active{% endif %}" href="{{ url_for('backend.shops') }}">
                         <i class="bi bi-shop me-2"></i>店鋪管理
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'backend.products' %}active{% endif %}" href="{{ url_for('backend.products') }}">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.product') %}active{% endif %}" href="{{ url_for('backend.products') }}">
                         <i class="bi bi-box-seam me-2"></i>產品管理
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'backend.categories' %}active{% endif %}" href="{{ url_for('backend.categories') }}">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.categor') %}active{% endif %}" href="{{ url_for('backend.categories') }}">
                         <i class="bi bi-tags me-2"></i>分類管理
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'backend.orders' %}active{% endif %}" href="{{ url_for('backend.orders') }}">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.order') %}active{% endif %}" href="{{ url_for('backend.orders') }}">
                         <i class="bi bi-receipt me-2"></i>訂單管理
                     </a>
                 </li>

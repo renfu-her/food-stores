@@ -4,18 +4,27 @@
 <div class="container">
     <div class="product-detail-container">
         <div class="product-info-section">
+            <!-- 產品圖片 (1:1 正方形) -->
             <div class="product-image-large">
-                <span>🍽️</span>
+                <div class="position-relative" style="width: 100%; padding-top: 100%; overflow: hidden; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 8px;">
+                    {% if product.images and product.images|length > 0 %}
+                        <img src="{{ product.images[0].image_path }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ product.name }}" style="object-fit: cover;">
+                    {% else %}
+                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                            <i class="bi bi-box-seam display-1 text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
             <div class="product-info">
                 <h1>{{ product.name }}</h1>
                 <p class="product-description">{{ product.description or '暫無描述' }}</p>
                 <div class="product-price-large">
                     {% if product.discounted_price %}
-                        <span class="price-old">${{ "%.2f"|format(product.unit_price|float) }}</span>
-                        <span class="price-new">${{ "%.2f"|format(product.discounted_price|float) }}</span>
+                        <span class="price-old">${{ product.unit_price|int }}</span>
+                        <span class="price-new">${{ product.discounted_price|int }}</span>
                     {% else %}
-                        <span class="price">${{ "%.2f"|format(product.unit_price|float) }}</span>
+                        <span class="price">${{ product.unit_price|int }}</span>
                     {% endif %}
                 </div>
                 <div class="product-meta-info">

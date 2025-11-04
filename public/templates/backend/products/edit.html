@@ -45,14 +45,11 @@
                                     <option value="{{ category.id }}" {% if category.id == product.category_id %}selected{% endif %}>{{ category.name }}</option>
                                     {% endfor %}
                                 </select>
-                                <button class="btn btn-outline-primary" type="button" onclick="showQuickAddCategory()">
-                                    <i class="bi bi-plus-circle"></i>
-                                </button>
-                                <button class="btn btn-outline-secondary" type="button" onclick="manageCategoriesInline()">
+                                <a href="{{ url_for('backend.categories') }}" class="btn btn-outline-secondary" target="_blank" title="管理分類（新分頁開啟）">
                                     <i class="bi bi-gear"></i>
-                                </button>
+                                </a>
                             </div>
-                            <small class="form-text text-muted">快速新增或管理分類</small>
+                            <small class="form-text text-muted">點擊齒輪圖標可在新分頁管理分類</small>
                         </div>
                         
                         <div class="mb-3">
@@ -102,6 +99,29 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- 圖片管理 -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-images me-2"></i>產品圖片</h5>
+                    <label class="btn btn-sm btn-primary" for="imageUpload">
+                        <i class="bi bi-upload me-1"></i>上傳圖片
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(event)">
+                    </label>
+                </div>
+                <div class="card-body">
+                    <div id="imagesContainer" class="row g-3">
+                        <!-- 圖片將動態載入 -->
+                        <div class="col-12 text-center text-muted py-4">
+                            <i class="bi bi-image fs-1"></i>
+                            <p>暫無圖片，請點擊上方按鈕上傳</p>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted d-block mt-3">
+                        <i class="bi bi-info-circle me-1"></i>支持 PNG, JPG, GIF, WEBP 格式，最大 16MB。第一張圖片將顯示在前台。
+                    </small>
+                </div>
+            </div>
         </div>
         
         <div class="col-md-4">
@@ -130,102 +150,18 @@
         </div>
     </div>
 </div>
-
-<!-- 快速新增分類模態框 -->
-<div class="modal fade" id="quickCategoryModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">快速新增分類</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="quickCategoryName" class="form-label">分類名稱 <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="quickCategoryName" required>
-                </div>
-                <div class="mb-3">
-                    <label for="quickCategoryDesc" class="form-label">描述</label>
-                    <textarea class="form-control" id="quickCategoryDesc" rows="2"></textarea>
-                </div>
-                <div id="quickCategoryError" class="alert alert-danger" style="display: none;"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="saveQuickCategory()">新增</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 管理分類模態框 -->
-<div class="modal fade" id="manageCategoriesModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">管理分類</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive" style="max-height: 400px;">
-                    <table class="table table-sm">
-                        <thead class="table-light sticky-top">
-                            <tr>
-                                <th>名稱</th>
-                                <th>產品數</th>
-                                <th class="text-end">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="manageCategoriesBody">
-                            <tr><td colspan="3" class="text-center">載入中...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 編輯分類模態框 -->
-<div class="modal fade" id="editCategoryModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">編輯分類</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="editCategoryId">
-                <div class="mb-3">
-                    <label for="editCategoryName" class="form-label">分類名稱 <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="editCategoryName" required>
-                </div>
-                <div class="mb-3">
-                    <label for="editCategoryDesc" class="form-label">描述</label>
-                    <textarea class="form-control" id="editCategoryDesc" rows="2"></textarea>
-                </div>
-                <div id="editCategoryError" class="alert alert-danger" style="display: none;"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="saveEditCategory()">更新</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 const productId = {{ product.id }};
-let quickCategoryModal, manageCategoriesModal, editCategoryModal;
-let allCategoriesData = [];
+let productImages = [];
 
 $(document).ready(function() {
-    quickCategoryModal = new bootstrap.Modal(document.getElementById('quickCategoryModal'));
-    manageCategoriesModal = new bootstrap.Modal(document.getElementById('manageCategoriesModal'));
-    editCategoryModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    // 載入產品圖片
+    loadImages();
     
     $('#productForm').on('submit', function(e) {
         e.preventDefault();
@@ -283,165 +219,142 @@ function deleteProduct() {
     });
 }
 
-// 快速新增分類
-function showQuickAddCategory() {
-    document.getElementById('quickCategoryName').value = '';
-    document.getElementById('quickCategoryDesc').value = '';
-    $('#quickCategoryError').hide();
-    quickCategoryModal.show();
-}
+// ==================== 產品圖片管理 ====================
 
-function saveQuickCategory() {
-    const name = document.getElementById('quickCategoryName').value.trim();
-    const description = document.getElementById('quickCategoryDesc').value.trim();
-    
-    if (!name) {
-        $('#quickCategoryError').text('請輸入分類名稱').show();
-        return;
-    }
-    
+// 載入圖片列表
+function loadImages() {
     $.ajax({
-        url: '/api/categories',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ name, description }),
-        success: function(response) {
-            // 更新下拉選單
-            $('#productCategory').append(`<option value="${response.id}">${response.name}</option>`);
-            $('#productCategory').val(response.id);
-            quickCategoryModal.hide();
-            alert('分類新增成功');
-        },
-        error: function(xhr) {
-            const error = xhr.responseJSON || {};
-            $('#quickCategoryError').text(error.error || '新增失敗').show();
-        }
-    });
-}
-
-// 內聯管理分類
-function manageCategoriesInline() {
-    loadCategoriesForManage();
-    manageCategoriesModal.show();
-}
-
-function loadCategoriesForManage() {
-    $.ajax({
-        url: '/api/categories',
+        url: `/api/products/${productId}/images`,
         method: 'GET',
-        success: function(categories) {
-            allCategoriesData = categories;
-            renderManageCategories();
+        success: function(images) {
+            productImages = images;
+            renderImages();
+            initSortable();
+        },
+        error: function() {
+            console.error('載入圖片失敗');
         }
     });
 }
 
-function renderManageCategories() {
-    const tbody = $('#manageCategoriesBody');
-    if (allCategoriesData.length === 0) {
-        tbody.html('<tr><td colspan="3" class="text-center text-muted">暫無分類</td></tr>');
+// 渲染圖片
+function renderImages() {
+    const container = $('#imagesContainer');
+    
+    if (productImages.length === 0) {
+        container.html(`
+            <div class="col-12 text-center text-muted py-4">
+                <i class="bi bi-image fs-1"></i>
+                <p>暫無圖片，請點擊上方按鈕上傳</p>
+            </div>
+        `);
         return;
     }
     
     let html = '';
-    allCategoriesData.forEach(cat => {
-        const canDelete = cat.product_count === 0;
+    productImages.forEach((img, index) => {
         html += `
-            <tr>
-                <td>
-                    <strong>${cat.name}</strong>
-                    ${cat.description ? '<br><small class="text-muted">' + cat.description + '</small>' : ''}
-                </td>
-                <td>
-                    ${cat.product_count > 0 
-                        ? '<span class="badge bg-primary">' + cat.product_count + '</span>'
-                        : '<span class="badge bg-secondary">0</span>'
-                    }
-                </td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary" onclick="showEditCategoryModal(${cat.id})">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInlineCategory(${cat.id})" 
-                        ${!canDelete ? 'disabled title="此分類下有產品"' : ''}>
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            </tr>
+            <div class="col-md-3 image-item" data-id="${img.id}">
+                <div class="card position-relative">
+                    ${index === 0 ? '<div class="badge bg-primary position-absolute top-0 start-0 m-2" style="z-index: 10;">主圖</div>' : ''}
+                    <div class="badge bg-secondary position-absolute top-0 end-0 m-2" style="cursor: move; z-index: 10;">
+                        <i class="bi bi-grip-vertical"></i>
+                    </div>
+                    <div style="width: 100%; padding-top: 100%; position: relative; overflow: hidden; background: #f5f5f5;">
+                        <img src="${img.image_path}" class="position-absolute top-0 start-0 w-100 h-100" alt="Product Image" style="object-fit: cover;">
+                    </div>
+                    <div class="card-body p-2 text-center">
+                        <button class="btn btn-sm btn-danger w-100" onclick="deleteImage(${img.id})">
+                            <i class="bi bi-trash"></i> 刪除
+                        </button>
+                    </div>
+                </div>
+            </div>
         `;
     });
-    tbody.html(html);
+    
+    container.html(html);
 }
 
-// 顯示編輯分類模態框
-function showEditCategoryModal(categoryId) {
-    const cat = allCategoriesData.find(c => c.id === categoryId);
-    if (!cat) return;
-    
-    document.getElementById('editCategoryId').value = cat.id;
-    document.getElementById('editCategoryName').value = cat.name;
-    document.getElementById('editCategoryDesc').value = cat.description || '';
-    $('#editCategoryError').hide();
-    
-    manageCategoriesModal.hide();
-    editCategoryModal.show();
-}
-
-// 儲存編輯的分類
-function saveEditCategory() {
-    const categoryId = document.getElementById('editCategoryId').value;
-    const name = document.getElementById('editCategoryName').value.trim();
-    const description = document.getElementById('editCategoryDesc').value.trim();
-    
-    if (!name) {
-        $('#editCategoryError').text('請輸入分類名稱').show();
-        return;
+// 初始化拖拽排序
+function initSortable() {
+    const container = document.getElementById('imagesContainer');
+    if (container && productImages.length > 0) {
+        new Sortable(container, {
+            animation: 150,
+            handle: '.badge.bg-secondary',
+            onEnd: function() {
+                updateImageOrder();
+            }
+        });
     }
+}
+
+// 上傳圖片
+function uploadImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('image', file);
     
     $.ajax({
-        url: `/api/categories/${categoryId}`,
-        method: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify({ name, description }),
-        success: function(response) {
-            // 更新下拉選單
-            $(`#productCategory option[value="${categoryId}"]`).text(response.name);
-            editCategoryModal.hide();
-            manageCategoriesModal.show();
-            loadCategoriesForManage();
-            alert('更新成功');
+        url: `/api/products/${productId}/images`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(newImage) {
+            productImages.push(newImage);
+            renderImages();
+            initSortable();
+            alert('上傳成功');
+            $('#imageUpload').val('');
         },
         error: function(xhr) {
             const error = xhr.responseJSON || {};
-            $('#editCategoryError').text(error.error || '更新失敗').show();
+            alert(error.error || '上傳失敗');
+            $('#imageUpload').val('');
         }
     });
 }
 
-// 刪除分類
-function deleteInlineCategory(categoryId) {
-    const cat = allCategoriesData.find(c => c.id === categoryId);
-    if (!cat) return;
-    
-    if (cat.product_count > 0) {
-        alert(`此分類下有 ${cat.product_count} 個產品，無法刪除！`);
-        return;
-    }
-    
-    if (!confirm(`確定要刪除分類「${cat.name}」嗎？`)) return;
+// 刪除圖片
+function deleteImage(imageId) {
+    if (!confirm('確定要刪除此圖片嗎？')) return;
     
     $.ajax({
-        url: `/api/categories/${categoryId}`,
+        url: `/api/product-images/${imageId}`,
         method: 'DELETE',
         success: function() {
-            // 從下拉選單移除
-            $(`#productCategory option[value="${categoryId}"]`).remove();
-            loadCategoriesForManage();
+            productImages = productImages.filter(img => img.id !== imageId);
+            renderImages();
+            initSortable();
             alert('刪除成功');
         },
-        error: function(xhr) {
-            const error = xhr.responseJSON || {};
-            alert(error.message || '刪除失敗');
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 更新圖片順序
+function updateImageOrder() {
+    const order = [];
+    document.querySelectorAll('.image-item').forEach(item => {
+        order.push(parseInt(item.dataset.id));
+    });
+    
+    $.ajax({
+        url: `/api/products/${productId}/images/reorder`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ order: order }),
+        success: function() {
+            loadImages(); // 重新載入以更新主圖標記
+        },
+        error: function() {
+            console.error('排序失敗');
         }
     });
 }

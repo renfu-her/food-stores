@@ -4,8 +4,9 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Product, Shop, Category, Topping, product_topping
-from app.utils.decorators import login_required, get_current_user
+from app.utils.decorators import login_required, get_current_user, role_required
 from app.utils.validators import validate_decimal, validate_integer
+from app.utils.update_logger import log_update
 from sqlalchemy import and_
 
 products_api_bp = Blueprint('products_api', __name__)
@@ -128,6 +129,91 @@ def get_product(product_id):
             'details': {}
         }), 404
 
+@products_api_bp.route('', methods=['POST'])
+@role_required('admin')
+def create_product():
+    """新增產品（僅管理員）"""
+    try:
+        data = request.get_json()
+        
+        # 驗證必填欄位
+        required_fields = ['name', 'shop_id', 'category_id', 'unit_price']
+        for field in required_fields:
+            if field not in data or not data[field]:
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': f'缺少必填欄位：{field}'
+                }), 400
+        
+        # 驗證店鋪存在
+        shop = Shop.query.get(data['shop_id'])
+        if not shop:
+            return jsonify({'error': '店鋪不存在'}), 400
+        
+        # 驗證分類存在
+        category = Category.query.get(data['category_id'])
+        if not category:
+            return jsonify({'error': '分類不存在'}), 400
+        
+        # 驗證價格
+        unit_price = int(data['unit_price'])
+        if unit_price < 0:
+            return jsonify({'error': '單價必須大於等於 0'}), 400
+        
+        discounted_price = None
+        if data.get('discounted_price'):
+            discounted_price = int(data['discounted_price'])
+            if discounted_price >= unit_price:
+                return jsonify({'error': '折扣價必須小於單價'}), 400
+        
+        # 創建產品
+        product = Product(
+            name=data['name'].strip(),
+            shop_id=data['shop_id'],
+            category_id=data['category_id'],
+            description=data.get('description', '').strip(),
+            unit_price=unit_price,
+            discounted_price=discounted_price,
+            stock_quantity=int(data.get('stock_quantity', 0)),
+            is_active=bool(data.get('is_active', True))
+        )
+        
+        db.session.add(product)
+        db.session.flush()
+        
+        log_update(
+            action='create',
+            table_name='product',
+            record_id=product.id,
+            new_data={
+                'name': product.name,
+                'shop_id': product.shop_id,
+                'category_id': product.category_id,
+                'unit_price': float(product.unit_price),
+                'stock_quantity': product.stock_quantity
+            },
+            description=f'新增產品: {product.name}'
+        )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'id': product.id,
+            'name': product.name,
+            'shop_id': product.shop_id,
+            'category_id': product.category_id,
+            'unit_price': float(product.unit_price),
+            'stock_quantity': product.stock_quantity
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': 'internal_error',
+            'message': '新增產品失敗',
+            'details': str(e)
+        }), 500
+
 @products_api_bp.route('/<int:product_id>', methods=['PUT'])
 @login_required
 def update_product(product_id):
@@ -199,6 +285,25 @@ def update_product(product_id):
             product.stock_quantity = stock_value
         if 'is_active' in data:
             product.is_active = bool(data['is_active'])
+        if 'shop_id' in data:
+            shop = Shop.query.get(data['shop_id'])
+            if not shop:
+                return jsonify({'error': '店鋪不存在'}), 400
+            product.shop_id = data['shop_id']
+        
+        log_update(
+            action='update',
+            table_name='product',
+            record_id=product.id,
+            new_data={
+                'name': product.name,
+                'shop_id': product.shop_id,
+                'category_id': product.category_id,
+                'unit_price': float(product.unit_price),
+                'stock_quantity': product.stock_quantity
+            },
+            description=f'更新產品: {product.name}'
+        )
         
         db.session.commit()
         
@@ -247,6 +352,18 @@ def delete_product(product_id):
                 'message': '無權刪除此產品',
                 'details': {}
             }), 403
+        
+        log_update(
+            action='delete',
+            table_name='product',
+            record_id=product.id,
+            old_data={
+                'name': product.name,
+                'shop_id': product.shop_id,
+                'category_id': product.category_id
+            },
+            description=f'刪除產品: {product.name}'
+        )
         
         db.session.delete(product)
         db.session.commit()

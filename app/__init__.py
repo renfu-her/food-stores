@@ -40,6 +40,7 @@ def create_app(config_class=Config):
             from app.routes.api.toppings import toppings_api_bp
             from app.routes.api.users import users_api_bp
             from app.routes.api.shop_images import shop_images_api_bp
+            from app.routes.api.product_images import product_images_api_bp
             from app.routes.api.categories import categories_api_bp
             from app.routes.websocket import websocket_bp
             
@@ -53,6 +54,7 @@ def create_app(config_class=Config):
             app.register_blueprint(toppings_api_bp, url_prefix='/api/toppings')
             app.register_blueprint(users_api_bp, url_prefix='/api/users')
             app.register_blueprint(shop_images_api_bp, url_prefix='/api')
+            app.register_blueprint(product_images_api_bp, url_prefix='/api')
             app.register_blueprint(categories_api_bp, url_prefix='/api/categories')
             app.register_blueprint(websocket_bp)
             
