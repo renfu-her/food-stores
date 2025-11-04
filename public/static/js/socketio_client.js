@@ -1,17 +1,56 @@
 // SocketIO客户端脚本
 (function() {
     let socket = null;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
     
     function initSocket() {
-        // 初始化Socket.IO连接
-        socket = io();
+        // 初始化Socket.IO连接，添加重连配置
+        socket = io({
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+            timeout: 20000,
+            transports: ['polling', 'websocket']
+        });
         
         socket.on('connect', function() {
             console.log('Socket.IO connected');
+            reconnectAttempts = 0;
         });
         
-        socket.on('disconnect', function() {
-            console.log('Socket.IO disconnected');
+        socket.on('disconnect', function(reason) {
+            console.log('Socket.IO disconnected:', reason);
+            if (reason === 'io server disconnect') {
+                // 服务器主动断开，尝试重连
+                socket.connect();
+            }
+        });
+        
+        socket.on('connect_error', function(error) {
+            reconnectAttempts++;
+            console.warn('Socket.IO connection error:', error.message);
+            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                console.error('Socket.IO max reconnection attempts reached');
+            }
+        });
+        
+        socket.on('reconnect', function(attemptNumber) {
+            console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
+            reconnectAttempts = 0;
+        });
+        
+        socket.on('reconnect_attempt', function(attemptNumber) {
+            console.log('Socket.IO reconnection attempt:', attemptNumber);
+        });
+        
+        socket.on('reconnect_error', function(error) {
+            console.warn('Socket.IO reconnection error:', error.message);
+        });
+        
+        socket.on('reconnect_failed', function() {
+            console.error('Socket.IO reconnection failed');
         });
         
         socket.on('connected', function(data) {

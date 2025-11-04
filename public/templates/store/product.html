@@ -342,7 +342,10 @@
     }
 }
 </style>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 const maxToppings = {{ product.shop.max_toppings_per_order }};
 const basePrice = {{ product.discounted_price|float if product.discounted_price else product.unit_price|float }};

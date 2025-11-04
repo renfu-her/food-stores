@@ -7,6 +7,21 @@ from app import db
 def register_error_handlers(app):
     """註冊錯誤處理器"""
     
+    @app.errorhandler(KeyError)
+    def handle_key_error(error):
+        """處理 KeyError，特別是 Socket.IO 的會話斷開錯誤"""
+        if 'Session is disconnected' in str(error):
+            # Socket.IO 會話斷開，靜默處理
+            return '', 200
+        # 其他 KeyError 當作 400 處理
+        if request.path.startswith('/api/'):
+            return jsonify({
+                'error': 'key_error',
+                'message': '缺少必要參數',
+                'details': {'key': str(error)}
+            }), 400
+        return render_template('errors/400.html'), 400
+    
     @app.errorhandler(400)
     def bad_request(error):
         """400 Bad Request"""
@@ -55,7 +70,10 @@ def register_error_handlers(app):
     def internal_error(error):
         """500 Internal Server Error"""
         db.session.rollback()
-        if request.path.startswith('/api/'):
+        # 忽略 Socket.IO 的會話斷開錯誤
+        if 'Session is disconnected' in str(error):
+            return '', 200
+        if request.path.startswith('/api/') or request.path.startswith('/socket.io/'):
             return jsonify({
                 'error': 'internal_error',
                 'message': '伺服器內部錯誤',

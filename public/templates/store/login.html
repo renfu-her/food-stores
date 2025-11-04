@@ -133,7 +133,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 $(document).ready(function() {
     // 登入表單提交

@@ -158,7 +158,10 @@
     background-color: #5a6268;
 }
 </style>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function editProfile() {
     // TODO: 實現編輯資料功能

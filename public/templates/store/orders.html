@@ -194,7 +194,10 @@
     }
 }
 </style>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 // 監聽訂單更新事件
 window.addEventListener('orderUpdated', function(event) {

@@ -16,8 +16,10 @@ def handle_connect():
         # 獲取當前使用者（從session）
         user_id = session.get('user_id')
         if not user_id:
-            emit('error', {'message': '未認證'})
-            return False
+            # 遊客模式，只加入公開頻道
+            join_room('/public')
+            emit('connected', {'message': '已連接（訪客模式）', 'user_id': None, 'role': 'guest'})
+            return True
         
         user = User.query.get(user_id)
         if not user or not user.is_active:
@@ -42,9 +44,11 @@ def handle_connect():
         join_room('/public')
         
         emit('connected', {'message': '連接成功', 'user_id': user_id, 'role': user.role})
+        return True
         
     except Exception as e:
-        emit('error', {'message': f'連接失敗: {str(e)}'})
+        print(f"Socket.IO connect error: {str(e)}")
+        emit('error', {'message': '連接失敗，請重新整理頁面'})
         return False
 
 @socketio.on('disconnect')

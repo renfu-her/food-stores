@@ -208,7 +208,10 @@
     }
 }
 </style>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function filterProducts() {
     const categoryId = document.getElementById('categoryFilter').value;

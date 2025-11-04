@@ -7,7 +7,13 @@ from app.config import Config
 # 初始化擴展
 db = SQLAlchemy()
 migrate = Migrate()
-socketio = SocketIO(cors_allowed_origins="*")
+socketio = SocketIO(
+    cors_allowed_origins="*",
+    logger=False,
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25
+)
 
 def create_app(config_class=Config):
     """應用工廠函數"""

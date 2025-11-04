@@ -29,14 +29,58 @@
 pip install -r requirements.txt
 ```
 
-### 2. 配置資料庫
+### 2. 配置環境變數
+
+複製環境變數範例文件並配置：
+
+```bash
+# 複製範例文件
+cp env.example .env
+
+# 編輯 .env 文件，設定您的配置
+```
+
+**`.env` 文件配置項：**
+
+```ini
+# Flask 應用配置
+SECRET_KEY=your-secret-key-here-change-in-production
+DEBUG=False
+
+# 數據庫配置
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your-mysql-password
+DB_NAME=food-stores
+
+# SQLAlchemy 配置
+SQLALCHEMY_ECHO=False
+
+# Session 配置
+SESSION_LIFETIME_DAYS=7
+
+# SocketIO 配置
+SOCKETIO_ASYNC_MODE=threading
+SOCKETIO_CORS_ALLOWED_ORIGINS=*
+
+# 開發/生產環境
+FLASK_ENV=development
+```
+
+⚠️ **重要提示：**
+- `.env` 文件包含敏感資訊，已被 `.gitignore` 排除
+- 請勿將 `.env` 提交到版本控制系統
+- 使用 `env.example` 作為參考模板
+
+### 3. 配置資料庫
 
 確保MySQL資料庫已建立：
-- 資料庫名：food-stores
-- 使用者名稱：root
-- 密碼：（空）
+- 資料庫名：在 `.env` 中設定（預設：food-stores）
+- 使用者名稱：在 `.env` 中設定（預設：root）
+- 密碼：在 `.env` 中設定
 
-### 3. 初始化資料庫
+### 4. 初始化資料庫
 
 ```bash
 python init_db.py
@@ -46,7 +90,7 @@ python init_db.py
 - Email: admin@admin.com
 - Password: admin123
 
-### 4. 運行應用
+### 5. 運行應用
 
 開發模式：
 ```bash

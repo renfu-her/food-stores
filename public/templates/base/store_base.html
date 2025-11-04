@@ -38,8 +38,9 @@
             </ul>
         </div>
     {% else %}
-        <a href="{{ url_for('customer.login') }}" class="btn btn-outline-primary btn-sm me-2">登入</a>
-        <a href="{{ url_for('customer.register') }}" class="btn btn-primary btn-sm">註冊</a>
+        <a href="{{ url_for('customer.login') }}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-right-to-bracket me-1"></i>登入 / 註冊
+        </a>
     {% endif %}
 {% endblock %}
 
