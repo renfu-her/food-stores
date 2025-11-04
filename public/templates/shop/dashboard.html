@@ -121,7 +121,10 @@
     margin-bottom: 1.5rem;
 }
 </style>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 // 監聽新訂單事件
 window.addEventListener('newOrder', function(event) {

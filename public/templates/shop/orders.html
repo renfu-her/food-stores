@@ -148,7 +148,10 @@
     outline: none;
 }
 </style>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function filterOrders() {
     const status = document.getElementById('statusFilter').value;
