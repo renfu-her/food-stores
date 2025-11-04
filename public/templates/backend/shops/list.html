@@ -4,9 +4,9 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">店鋪管理</h1>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#shopModal" onclick="openShopModal()">
+        <a href="{{ url_for('backend.shop_add') }}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-2"></i>新增店鋪
-        </button>
+        </a>
     </div>
     
     <!-- 搜索和筛选 -->
@@ -78,58 +78,6 @@
     </div>
 </div>
 
-<!-- 店铺模态框 -->
-<div class="modal fade" id="shopModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="shopModalTitle">新增店鋪</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="shopForm">
-                    <input type="hidden" id="shopId">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="shopName" class="form-label">店鋪名稱</label>
-                            <input type="text" class="form-control" id="shopName" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="shopOwner" class="form-label">店主</label>
-                            <select class="form-select" id="shopOwner" required>
-                                <option value="">請選擇店主</option>
-                                {% for user in users if user.role == 'store_admin' %}
-                                <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="shopDescription" class="form-label">店鋪描述</label>
-                        <textarea class="form-control" id="shopDescription" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="shopMaxToppings" class="form-label">最大Toppings數量</label>
-                            <input type="number" class="form-control" id="shopMaxToppings" value="5" min="0" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="shopStatus" class="form-label">狀態</label>
-                            <select class="form-select" id="shopStatus" required>
-                                <option value="active">營業中</option>
-                                <option value="inactive">已關閉</option>
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="saveShop()">儲存</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -206,47 +154,22 @@ function performSearch() {
 }
 
 // 打开店铺模态框
-function openShopModal(shopId = null) {
-    currentEditShopId = shopId;
-    const modal = document.getElementById('shopModal');
-    const title = document.getElementById('shopModalTitle');
-    const form = document.getElementById('shopForm');
-    
-    form.reset();
-    
-    if (shopId) {
-        title.textContent = '編輯店鋪';
-        const shop = allShops.find(s => s.id === shopId);
-        if (shop) {
-            document.getElementById('shopId').value = shop.id;
-            document.getElementById('shopName').value = shop.name;
-            document.getElementById('shopOwner').value = shop.owner_id;
-            document.getElementById('shopDescription').value = shop.description || '';
-            document.getElementById('shopMaxToppings').value = shop.max_toppings_per_order;
-            document.getElementById('shopStatus').value = shop.status;
-        }
+
     } else {
         title.textContent = '新增店鋪';
         document.getElementById('shopId').value = '';
     }
 }
 
-// 编辑店铺
+// 编辑店铺 - 跳转到编辑页面
 function editShop(shopId) {
-    openShopModal(shopId);
-    new bootstrap.Modal(document.getElementById('shopModal')).show();
+    window.location.href = "{{ url_for('backend.shop_edit', shop_id=0) }}".replace('0', shopId);
 }
 
+// 旧代码已移除
+
 // 保存店铺
-function saveShop() {
-    const shopId = document.getElementById('shopId').value;
-    const data = {
-        name: document.getElementById('shopName').value,
-        owner_id: parseInt(document.getElementById('shopOwner').value),
-        description: document.getElementById('shopDescription').value,
-        max_toppings_per_order: parseInt(document.getElementById('shopMaxToppings').value),
-        status: document.getElementById('shopStatus').value
-    };
+;
     
     const url = shopId ? `/api/shops/${shopId}` : '/api/shops';
     const method = shopId ? 'PUT' : 'POST';

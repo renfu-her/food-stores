@@ -6,6 +6,7 @@ from app import db
 from app.models import User
 from app.utils.decorators import role_required
 from app.utils.password import hash_password
+from app.utils.password_validator import validate_password_strength
 from app.utils.update_logger import log_update
 
 users_api_bp = Blueprint('users_api', __name__)
@@ -20,6 +21,11 @@ def create_user():
         # 檢查郵箱是否已存在
         if User.query.filter_by(email=data['email']).first():
             return jsonify({'error': 'email_exists', 'message': '郵箱已被使用'}), 400
+        
+        # 驗證密碼強度
+        is_valid, strength, message = validate_password_strength(data['password'])
+        if not is_valid:
+            return jsonify({'error': 'weak_password', 'message': message, 'strength': strength}), 400
         
         # 創建用戶
         user = User(
@@ -89,6 +95,10 @@ def update_user(user_id):
                 return jsonify({'error': 'email_exists', 'message': '郵箱已被使用'}), 400
             user.email = data['email']
         if 'password' in data and data['password']:
+            # 驗證密碼強度
+            is_valid, strength, message = validate_password_strength(data['password'])
+            if not is_valid:
+                return jsonify({'error': 'weak_password', 'message': message, 'strength': strength}), 400
             user.password_hash = hash_password(data['password'])
         if 'role' in data:
             user.role = data['role']

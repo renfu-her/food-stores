@@ -54,8 +54,20 @@ def users():
             'is_active': u.is_active,
             'created_at': u.created_at.isoformat() if u.created_at else None
         })
-    # 使用工作版本的模板
-    return render_template('backend/users_working.html', users=users_data)
+    return render_template('backend/users/list.html', users=users_data)
+
+@backend_bp.route('/users/add')
+@role_required('admin')
+def user_add():
+    """新增使用者頁面"""
+    return render_template('backend/users/add.html')
+
+@backend_bp.route('/users/<int:user_id>/edit')
+@role_required('admin')
+def user_edit(user_id):
+    """編輯使用者頁面"""
+    user = User.query.get_or_404(user_id)
+    return render_template('backend/users/edit.html', user=user)
 
 @backend_bp.route('/shops')
 @role_required('admin')
@@ -85,7 +97,22 @@ def shops():
             'role': u.role
         })
     
-    return render_template('backend/shops.html', shops=shops_data, users=users_data)
+    return render_template('backend/shops/list.html', shops=shops_data, users=users_data)
+
+@backend_bp.route('/shops/add')
+@role_required('admin')
+def shop_add():
+    """新增店鋪頁面"""
+    users_list = User.query.filter_by(role='store_admin', is_active=True).all()
+    return render_template('backend/shops/add.html', users=users_list)
+
+@backend_bp.route('/shops/<int:shop_id>/edit')
+@role_required('admin')
+def shop_edit(shop_id):
+    """編輯店鋪頁面"""
+    shop = Shop.query.get_or_404(shop_id)
+    users_list = User.query.filter_by(role='store_admin', is_active=True).all()
+    return render_template('backend/shops/edit.html', shop=shop, users=users_list)
 
 @backend_bp.route('/products')
 @role_required('admin')
@@ -114,10 +141,29 @@ def products():
     shops_data = [{'id': s.id, 'name': s.name} for s in shops_list]
     categories_data = [{'id': c.id, 'name': c.name} for c in categories_list]
     
-    return render_template('backend/products.html', 
+    return render_template('backend/products/list.html', 
                          products=products_data,
                          shops=shops_data,
                          categories=categories_data)
+
+@backend_bp.route('/products/add')
+@role_required('admin')
+def product_add():
+    """新增產品頁面"""
+    from app.models import Category
+    shops_list = Shop.query.filter_by(status='active').all()
+    categories_list = Category.query.all()
+    return render_template('backend/products/add.html', shops=shops_list, categories=categories_list)
+
+@backend_bp.route('/products/<int:product_id>/edit')
+@role_required('admin')
+def product_edit(product_id):
+    """編輯產品頁面"""
+    from app.models import Category
+    product = Product.query.get_or_404(product_id)
+    shops_list = Shop.query.all()
+    categories_list = Category.query.all()
+    return render_template('backend/products/edit.html', product=product, shops=shops_list, categories=categories_list)
 
 @backend_bp.route('/orders')
 @role_required('admin')
@@ -141,10 +187,17 @@ def orders():
     shops_data = [{'id': s.id, 'name': s.name} for s in shops_list]
     users_data = [{'id': u.id, 'name': u.name, 'email': u.email} for u in users_list]
     
-    return render_template('backend/orders.html', 
+    return render_template('backend/orders/list.html', 
                          orders=orders_data,
                          shops=shops_data,
                          users=users_data)
+
+@backend_bp.route('/orders/<int:order_id>/edit')
+@role_required('admin')
+def order_edit(order_id):
+    """編輯訂單頁面（主要用於更新狀態）"""
+    order = Order.query.get_or_404(order_id)
+    return render_template('backend/orders/edit.html', order=order)
 
 @backend_bp.route('/shop/<int:shop_id>')
 @role_required('admin')

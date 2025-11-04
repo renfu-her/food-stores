@@ -1,0 +1,134 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <a href="{{ url_for('backend.users') }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            新增使用者
+        </h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form id="userForm">
+                        <div class="mb-3">
+                            <label for="userName" class="form-label">姓名 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="userName" name="name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="userEmail" class="form-label">郵箱 <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="userEmail" name="email" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="userPassword" class="form-label">密碼 <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="userPassword" name="password" required minlength="8">
+                            <div id="passwordStrengthMeter" class="mt-2"></div>
+                            <small class="form-text text-muted">
+                                密碼要求：至少8碼，包含大小寫字母、數字和特殊符號
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="userRole" class="form-label">角色 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="userRole" name="role" required>
+                                <option value="customer">客戶</option>
+                                <option value="store_admin">商店管理者</option>
+                                <option value="admin">管理員</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="userActive" name="is_active" checked>
+                                <label class="form-check-label" for="userActive">
+                                    啟用帳號
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>儲存
+                            </button>
+                            <a href="{{ url_for('backend.users') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>取消
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">說明</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-info-circle text-info me-2"></i>所有標記 * 的欄位為必填</li>
+                        <li class="mb-2"><i class="bi bi-shield-check text-success me-2"></i>密碼將自動加密存儲</li>
+                        <li class="mb-2"><i class="bi bi-people text-primary me-2"></i>角色決定用戶的權限範圍</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/password_strength.js') }}"></script>
+<script>
+$(document).ready(function() {
+    // 初始化密碼強度檢測
+    renderPasswordStrengthMeter('userPassword', 'passwordStrengthMeter');
+    
+    $('#userForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // 檢查密碼強度
+        const passwordInput = document.getElementById('userPassword');
+        const isValid = passwordInput.dataset.passwordValid === 'true';
+        const strength = passwordInput.dataset.passwordStrength;
+        
+        if (!isValid || strength === 'low') {
+            $('#errorMessage').text('密碼強度不足，請確保密碼至少達到「中」等級').show();
+            return;
+        }
+        
+        const data = {
+            name: $('#userName').val(),
+            email: $('#userEmail').val(),
+            password: $('#userPassword').val(),
+            role: $('#userRole').val(),
+            is_active: $('#userActive').is(':checked')
+        };
+        
+        $.ajax({
+            url: '/api/users',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function() {
+                alert('新增成功');
+                window.location.href = "{{ url_for('backend.users') }}";
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                $('#errorMessage').text(error.message || '新增失敗').show();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

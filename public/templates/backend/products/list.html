@@ -1,0 +1,167 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">產品管理</h1>
+        <a href="{{ url_for('backend.product_add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>新增產品
+        </a>
+    </div>
+    
+    {% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
+<script>
+let allProducts = {{ products|tojson }};
+let allShops = {{ shops|tojson }};
+let allCategories = {{ categories|tojson }};
+
+// 渲染产品行
+function renderProductRow(product) {
+    const shop = allShops.find(s => s.id === product.shop_id);
+    const shopName = shop ? shop.name : '-';
+    
+    const category = allCategories.find(c => c.id === product.category_id);
+    const categoryName = category ? category.name : '-';
+    
+    const price = product.discounted_price || product.unit_price;
+    const priceHtml = product.discounted_price 
+        ? `<span class="text-decoration-line-through text-muted">${product.unit_price}</span> <span class="text-danger">${product.discounted_price}</span>`
+        : `${product.unit_price}`;
+    
+    const stockBadge = product.stock > 0 
+        ? `<span class="badge bg-success">${product.stock}</span>` 
+        : '<span class="badge bg-danger">缺貨</span>';
+    
+    const statusBadge = product.is_active 
+        ? '<span class="badge bg-success">上架</span>' 
+        : '<span class="badge bg-secondary">下架</span>';
+    
+    return `
+        <tr>
+            <td>${product.id}</td>
+            <td>
+                <a href="{{ url_for('backend.product_detail', product_id=0) }}".replace('0', product.id) class="text-decoration-none">
+                    ${product.name}
+                </a>
+            </td>
+            <td>${shopName}</td>
+            <td>${categoryName}</td>
+            <td>${priceHtml}</td>
+            <td>${stockBadge}</td>
+            <td>${statusBadge}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-info" onclick="window.location.href='{{ url_for('backend.product_detail', product_id=0) }}'.replace('0', ${product.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="editProduct(${product.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderProductsTable() {
+    renderTable('productsTableBody', renderProductRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const shopFilter = document.getElementById('shopFilter').value;
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const stockFilter = document.getElementById('stockFilter').value;
+    
+    filteredItems = allProducts.filter(product => {
+        const matchSearch = !searchValue || 
+            product.name.toLowerCase().includes(searchValue.toLowerCase());
+        
+        const matchShop = !shopFilter || product.shop_id == shopFilter;
+        const matchCategory = !categoryFilter || product.category_id == categoryFilter;
+        const matchStatus = !statusFilter || 
+            (statusFilter === 'active' && product.is_active) ||
+            (statusFilter === 'inactive' && !product.is_active);
+        const matchStock = !stockFilter ||
+            (stockFilter === 'in' && product.stock > 0) ||
+            (stockFilter === 'out' && product.stock === 0);
+        
+        return matchSearch && matchShop && matchCategory && matchStatus && matchStock;
+    });
+    
+    currentPage = 1;
+    renderProductsTable();
+    updatePagination();
+}
+
+// 打开产品模态框
+
+    } else {
+        title.textContent = '新增產品';
+        document.getElementById('productId').value = '';
+    }
+}
+
+// 编辑产品
+function editProduct(productId) {
+    openProductModal(productId);
+    new bootstrap.Modal(document.getElementById('productModal')).show();
+}
+
+// 保存产品
+;
+    
+    const discountPrice = document.getElementById('productDiscountPrice').value;
+    if (discountPrice) {
+        data.discounted_price = parseFloat(discountPrice);
+    }
+    
+    const url = productId ? `/api/products/${productId}` : '/api/products';
+    const method = productId ? 'PUT' : 'POST';
+    
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            showSuccess(productId ? '更新成功' : '新增成功');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            showError(error.message || '操作失敗');
+        }
+    });
+}
+
+// 删除产品
+function deleteProduct(productId) {
+    confirmDelete('確定要刪除此產品嗎？', function() {
+        $.ajax({
+            url: '/api/products/' + productId,
+            method: 'DELETE',
+            success: function() {
+                showSuccess('刪除成功');
+            },
+            error: function() {
+                showError('刪除失敗');
+            }
+        });
+    });
+}
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderProductsTable;
+    initializeDataTable('productsTableBody', allProducts, renderProductRow);
+});
+</script>
+{% endblock %}

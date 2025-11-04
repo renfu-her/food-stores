@@ -1,0 +1,156 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">訂單管理</h1>
+        <div>
+            <button class="btn btn-outline-secondary" onclick="exportOrders()">
+                <i class="bi bi-download me-2"></i>匯出訂單
+            </button>
+        </div>
+    </div>
+    
+    {% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
+<script>
+let allOrders = {{ orders|tojson }};
+let allShops = {{ shops|tojson }};
+let allUsers = {{ users|tojson }};
+
+// 状态徽章映射
+const statusBadges = {
+    'pending': '<span class="badge bg-warning">待處理</span>',
+    'processing': '<span class="badge bg-info">處理中</span>',
+    'completed': '<span class="badge bg-success">已完成</span>',
+    'cancelled': '<span class="badge bg-secondary">已取消</span>'
+};
+
+// 渲染订单行
+function renderOrderRow(order) {
+    const user = allUsers.find(u => u.id === order.user_id);
+    const userName = user ? user.name : '-';
+    
+    const shop = allShops.find(s => s.id === order.shop_id);
+    const shopName = shop ? shop.name : '-';
+    
+    const createdAt = order.created_at ? new Date(order.created_at).toLocaleString('zh-TW') : '-';
+    
+    return `
+        <tr>
+            <td><strong>#${order.id}</strong></td>
+            <td>${userName}</td>
+            <td>${shopName}</td>
+            <td class="fw-bold">NT$ ${order.total_price.toFixed(2)}</td>
+            <td>${statusBadges[order.status] || order.status}</td>
+            <td><small>${createdAt}</small></td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-info" onclick="window.location.href='{{ url_for('backend.order_detail', order_id=0) }}'.replace('0', ${order.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openStatusModal(${order.id}, '${order.status}')">
+                    <i class="bi bi-arrow-repeat"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderOrdersTable() {
+    renderTable('ordersTableBody', renderOrderRow);
+    updateStatistics();
+}
+
+// 更新统计数据
+function updateStatistics() {
+    document.getElementById('totalOrders').textContent = allOrders.length;
+    document.getElementById('pendingOrders').textContent = allOrders.filter(o => o.status === 'pending').length;
+    document.getElementById('processingOrders').textContent = allOrders.filter(o => o.status === 'processing').length;
+    document.getElementById('completedOrders').textContent = allOrders.filter(o => o.status === 'completed').length;
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const shopFilter = document.getElementById('shopFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    filteredItems = allOrders.filter(order => {
+        const user = allUsers.find(u => u.id === order.user_id);
+        const matchSearch = !searchValue || 
+            order.id.toString().includes(searchValue) ||
+            (user && user.name.toLowerCase().includes(searchValue.toLowerCase()));
+        
+        const matchStatus = !statusFilter || order.status === statusFilter;
+        const matchShop = !shopFilter || order.shop_id == shopFilter;
+        
+        let matchDate = true;
+        if (dateFilter && order.created_at) {
+            const orderDate = new Date(order.created_at).toISOString().split('T')[0];
+            matchDate = orderDate === dateFilter;
+        }
+        
+        return matchSearch && matchStatus && matchShop && matchDate;
+    });
+    
+    currentPage = 1;
+    renderOrdersTable();
+    updatePagination();
+}
+
+// 清除过滤
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('shopFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    performSearch();
+}
+
+// 打开状态更新模态框
+
+// 确认更新状态
+function confirmUpdateStatus() {
+    const orderId = document.getElementById('updateOrderId').value;
+    const newStatus = document.getElementById('newStatus').value;
+    
+    $.ajax({
+        url: `/api/orders/${orderId}/status`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ status: newStatus }),
+        success: function() {
+            bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
+            showSuccess('訂單狀態已更新');
+        },
+        error: function() {
+            showError('更新失敗');
+        }
+    });
+}
+
+// 导出订单
+function exportOrders() {
+    // TODO: 实现导出功能
+    alert('匯出功能開發中...');
+}
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderOrdersTable;
+    initializeDataTable('ordersTableBody', allOrders, renderOrderRow);
+    updateStatistics();
+    
+    // 监听订单更新事件
+    window.addEventListener('orderUpdated', function(event) {
+        console.log('訂單更新:', event.detail);
+        location.reload();
+    });
+});
+</script>
+{% endblock %}
