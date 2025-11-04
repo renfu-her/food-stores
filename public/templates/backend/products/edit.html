@@ -282,6 +282,169 @@ function deleteProduct() {
         }
     });
 }
+
+// 快速新增分類
+function showQuickAddCategory() {
+    document.getElementById('quickCategoryName').value = '';
+    document.getElementById('quickCategoryDesc').value = '';
+    $('#quickCategoryError').hide();
+    quickCategoryModal.show();
+}
+
+function saveQuickCategory() {
+    const name = document.getElementById('quickCategoryName').value.trim();
+    const description = document.getElementById('quickCategoryDesc').value.trim();
+    
+    if (!name) {
+        $('#quickCategoryError').text('請輸入分類名稱').show();
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/categories',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ name, description }),
+        success: function(response) {
+            // 更新下拉選單
+            $('#productCategory').append(`<option value="${response.id}">${response.name}</option>`);
+            $('#productCategory').val(response.id);
+            quickCategoryModal.hide();
+            alert('分類新增成功');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            $('#quickCategoryError').text(error.error || '新增失敗').show();
+        }
+    });
+}
+
+// 內聯管理分類
+function manageCategoriesInline() {
+    loadCategoriesForManage();
+    manageCategoriesModal.show();
+}
+
+function loadCategoriesForManage() {
+    $.ajax({
+        url: '/api/categories',
+        method: 'GET',
+        success: function(categories) {
+            allCategoriesData = categories;
+            renderManageCategories();
+        }
+    });
+}
+
+function renderManageCategories() {
+    const tbody = $('#manageCategoriesBody');
+    if (allCategoriesData.length === 0) {
+        tbody.html('<tr><td colspan="3" class="text-center text-muted">暫無分類</td></tr>');
+        return;
+    }
+    
+    let html = '';
+    allCategoriesData.forEach(cat => {
+        const canDelete = cat.product_count === 0;
+        html += `
+            <tr>
+                <td>
+                    <strong>${cat.name}</strong>
+                    ${cat.description ? '<br><small class="text-muted">' + cat.description + '</small>' : ''}
+                </td>
+                <td>
+                    ${cat.product_count > 0 
+                        ? '<span class="badge bg-primary">' + cat.product_count + '</span>'
+                        : '<span class="badge bg-secondary">0</span>'
+                    }
+                </td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" onclick="showEditCategoryModal(${cat.id})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteInlineCategory(${cat.id})" 
+                        ${!canDelete ? 'disabled title="此分類下有產品"' : ''}>
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    tbody.html(html);
+}
+
+// 顯示編輯分類模態框
+function showEditCategoryModal(categoryId) {
+    const cat = allCategoriesData.find(c => c.id === categoryId);
+    if (!cat) return;
+    
+    document.getElementById('editCategoryId').value = cat.id;
+    document.getElementById('editCategoryName').value = cat.name;
+    document.getElementById('editCategoryDesc').value = cat.description || '';
+    $('#editCategoryError').hide();
+    
+    manageCategoriesModal.hide();
+    editCategoryModal.show();
+}
+
+// 儲存編輯的分類
+function saveEditCategory() {
+    const categoryId = document.getElementById('editCategoryId').value;
+    const name = document.getElementById('editCategoryName').value.trim();
+    const description = document.getElementById('editCategoryDesc').value.trim();
+    
+    if (!name) {
+        $('#editCategoryError').text('請輸入分類名稱').show();
+        return;
+    }
+    
+    $.ajax({
+        url: `/api/categories/${categoryId}`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ name, description }),
+        success: function(response) {
+            // 更新下拉選單
+            $(`#productCategory option[value="${categoryId}"]`).text(response.name);
+            editCategoryModal.hide();
+            manageCategoriesModal.show();
+            loadCategoriesForManage();
+            alert('更新成功');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            $('#editCategoryError').text(error.error || '更新失敗').show();
+        }
+    });
+}
+
+// 刪除分類
+function deleteInlineCategory(categoryId) {
+    const cat = allCategoriesData.find(c => c.id === categoryId);
+    if (!cat) return;
+    
+    if (cat.product_count > 0) {
+        alert(`此分類下有 ${cat.product_count} 個產品，無法刪除！`);
+        return;
+    }
+    
+    if (!confirm(`確定要刪除分類「${cat.name}」嗎？`)) return;
+    
+    $.ajax({
+        url: `/api/categories/${categoryId}`,
+        method: 'DELETE',
+        success: function() {
+            // 從下拉選單移除
+            $(`#productCategory option[value="${categoryId}"]`).remove();
+            loadCategoriesForManage();
+            alert('刪除成功');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert(error.message || '刪除失敗');
+        }
+    });
+}
 </script>
 {% endblock %}
 

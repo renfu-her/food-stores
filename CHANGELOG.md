@@ -88,6 +88,41 @@
 - ✅ 產品列表顯示庫存徽章
 - ✅ 店鋪列表顯示配料數量
 
+### 📁 新增文件
+- ✅ `app/routes/api/categories.py` - 分類 API
+- ✅ `app/routes/api/shop_images.py` - 商店圖片 API
+- ✅ `public/templates/backend/categories.html` - 分類管理頁面
+- ✅ `public/templates/backend/products/add.html` - 產品新增頁面
+- ✅ `public/templates/backend/products/edit.html` - 產品編輯頁面
+- ✅ `public/uploads/shops/.gitkeep` - 上傳目錄結構
+- ✅ `public/uploads/.gitignore` - Git 忽略規則
+
+### 🔄 修改文件
+- ✅ `app/models.py` - 新增 ShopImage 模型、Shop.images 關係
+- ✅ `app/__init__.py` - 註冊新 API、靜態文件路由
+- ✅ `app/config.py` - 文件上傳配置
+- ✅ `app/routes/backend.py` - 新增 categories 路由、修復 products 數據
+- ✅ `public/templates/base/backend_base.html` - 新增分類管理菜單
+- ✅ `public/templates/backend/shops/add.html` - 配料表單優化、繁體中文
+- ✅ `public/templates/backend/shops/edit.html` - 圖片管理、配料優化
+- ✅ `public/templates/backend/shops/list.html` - 修復 URL、語法錯誤
+- ✅ `public/templates/backend/users/list.html` - 修復 URL
+- ✅ `public/templates/backend/products/list.html` - 修復結構、URL
+- ✅ `public/templates/backend/orders/list.html` - 修復 URL、價格顯示
+- ✅ `public/templates/store/index.html` - 圖片顯示、繁體中文
+- ✅ 其他 10+ 個模板文件（價格、繁體中文調整）
+
+### 📈 項目規模
+```
+當前統計：
+├── HTML 模板：41 個
+├── CSS 文件：4 個
+├── JavaScript 文件：4 個
+├── API 路由：8 個
+├── 數據模型：9 個（User, Shop, ShopImage, Product, Category, Topping, Order, OrderItem, UpdateLog）
+└── 後台管理頁面：8 個（儀表板、使用者、店鋪、產品、分類、訂單、系統 Log）
+```
+
 ---
 
 ## 2025-11-04 (上午) - 重大更新
