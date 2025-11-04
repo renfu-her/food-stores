@@ -89,7 +89,18 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <img id="productModalImage" src="" alt="" class="img-fluid rounded">
+                        <!-- 產品圖片輪播 -->
+                        <div id="productImageCarousel" class="carousel slide" data-bs-ride="false">
+                            <div class="carousel-inner" id="productCarouselInner">
+                                <!-- 圖片將動態載入 -->
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#productImageCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#productImageCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <h3 id="productModalName" class="mb-3"></h3>
@@ -103,9 +114,31 @@
                             <span id="productModalStock"></span>
                         </div>
                         
+                        <!-- 配料選擇 -->
+                        <div id="toppingsSection" class="mb-3" style="display: none;">
+                            <label class="form-label mb-2">
+                                配料選擇 
+                                <small class="text-muted" id="toppingLimit"></small>
+                            </label>
+                            <div id="toppingsList" class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                <!-- 配料將動態載入 -->
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                已選 <span id="selectedToppingCount">0</span> 個配料
+                            </small>
+                        </div>
+                        
                         <div class="mb-3">
                             <label for="productQuantity" class="form-label mb-2">數量</label>
-                            <input type="number" class="form-control" id="productQuantity" value="1" min="1">
+                            <input type="number" class="form-control" id="productQuantity" value="1" min="1" onchange="updateTotalPrice()">
+                        </div>
+                        
+                        <!-- 總價顯示 -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="fw-bold">總價：</span>
+                                <span id="totalPrice" class="fs-4 fw-bold text-primary">$0</span>
+                            </div>
                         </div>
                         
                         <div id="productModalError" class="alert alert-danger mt-3" style="display: none;"></div>
@@ -136,6 +169,43 @@ $(document).ready(function() {
     productModal = new bootstrap.Modal(document.getElementById('productModal'));
 });
 
+// 載入產品圖片輪播
+function loadProductImages(product) {
+    const carouselInner = $('#productCarouselInner');
+    carouselInner.empty();
+    
+    if (product.images && product.images.length > 0) {
+        // 有圖片：建立輪播
+        product.images.forEach((image, index) => {
+            const activeClass = index === 0 ? 'active' : '';
+            const carouselItem = `
+                <div class="carousel-item ${activeClass}">
+                    <img src="${image.image_path}" class="d-block w-100 rounded" alt="${product.name}" style="max-height: 400px; object-fit: contain;">
+                </div>
+            `;
+            carouselInner.append(carouselItem);
+        });
+        
+        // 只有一張圖片時隱藏左右切換按鈕
+        if (product.images.length <= 1) {
+            $('.carousel-control-prev, .carousel-control-next').hide();
+        } else {
+            $('.carousel-control-prev, .carousel-control-next').show();
+        }
+    } else {
+        // 無圖片：顯示預設圖標
+        const noImageHtml = `
+            <div class="carousel-item active">
+                <div class="d-flex align-items-center justify-content-center bg-light rounded" style="min-height: 300px;">
+                    <i class="bi bi-box-seam display-1 text-muted"></i>
+                </div>
+            </div>
+        `;
+        carouselInner.html(noImageHtml);
+        $('.carousel-control-prev, .carousel-control-next').hide();
+    }
+}
+
 function filterProducts() {
     const categoryId = document.getElementById('categoryFilter').value;
     const cards = document.querySelectorAll('.product-card-item');
@@ -156,11 +226,8 @@ function showProductDetail(productId) {
         success: function(product) {
             currentProduct = product;
             
-            // 設置圖片
-            const imageSrc = (product.images && product.images.length > 0) 
-                ? product.images[0].image_path 
-                : '/static/img/no-image.png';
-            $('#productModalImage').attr('src', imageSrc).attr('alt', product.name);
+            // 載入產品圖片（支持多張圖片輪播）
+            loadProductImages(product);
             
             // 設置標題和描述
             $('#productModalTitle').text(product.name);
@@ -183,16 +250,22 @@ function showProductDetail(productId) {
             let stockHtml = '';
             if (product.stock_quantity > 0) {
                 stockHtml = `<span class="badge bg-success fs-6">✓ 有庫存 (${product.stock_quantity})</span>`;
-                $('#productQuantity').attr('max', product.stock_quantity);
+                $('#productQuantity').attr('max', product.stock_quantity).attr('disabled', false);
             } else {
                 stockHtml = `<span class="badge bg-danger fs-6">✗ 缺貨</span>`;
                 $('#productQuantity').attr('disabled', true);
             }
             $('#productModalStock').html(stockHtml);
             
+            // 載入配料選項
+            loadToppings(product);
+            
             // 重置數量
             $('#productQuantity').val(1);
             $('#productModalError').hide();
+            
+            // 更新總價
+            updateTotalPrice();
             
             // 顯示模態框
             productModal.show();
@@ -201,6 +274,102 @@ function showProductDetail(productId) {
             alert('無法載入產品詳情');
         }
     });
+}
+
+// 載入配料選項（從店鋪獲取）
+function loadToppings(product) {
+    const toppingsList = $('#toppingsList');
+    toppingsList.empty();
+    
+    // 獲取店鋪的配料和上限
+    $.ajax({
+        url: `/api/shops/${product.shop_id}`,
+        method: 'GET',
+        success: function(shop) {
+            const maxToppings = shop.max_toppings || 5;
+            
+            // 獲取店鋪的配料列表
+            $.ajax({
+                url: `/api/toppings?shop_id=${product.shop_id}&is_active=true`,
+                method: 'GET',
+                success: function(response) {
+                    const toppings = response.toppings || response;
+                    
+                    if (toppings && toppings.length > 0) {
+                        // 顯示配料區域
+                        $('#toppingsSection').show();
+                        $('#toppingLimit').text(`(最多 ${maxToppings} 個)`);
+                        
+                        // 建立配料選項
+                        toppings.forEach(topping => {
+                            const priceDisplay = topping.price == 0 ? 'FREE' : `+$${topping.price}`;
+                            const toppingHtml = `
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input topping-checkbox" 
+                                           type="checkbox" 
+                                           id="topping_${topping.id}" 
+                                           value="${topping.id}"
+                                           data-price="${topping.price}"
+                                           data-name="${topping.name}"
+                                           onchange="handleToppingChange(${maxToppings})">
+                                    <label class="form-check-label d-flex justify-content-between w-100" for="topping_${topping.id}">
+                                        <span>${topping.name}</span>
+                                        <span class="text-muted">${priceDisplay}</span>
+                                    </label>
+                                </div>
+                            `;
+                            toppingsList.append(toppingHtml);
+                        });
+                    } else {
+                        // 無配料
+                        $('#toppingsSection').hide();
+                    }
+                },
+                error: function() {
+                    $('#toppingsSection').hide();
+                }
+            });
+        },
+        error: function() {
+            $('#toppingsSection').hide();
+        }
+    });
+}
+
+// 處理配料勾選變化
+function handleToppingChange(maxToppings) {
+    const selectedCount = $('.topping-checkbox:checked').length;
+    $('#selectedToppingCount').text(selectedCount);
+    
+    // 檢查是否超過上限
+    if (selectedCount >= maxToppings) {
+        // 禁用未選中的配料
+        $('.topping-checkbox:not(:checked)').attr('disabled', true);
+    } else {
+        // 啟用所有配料
+        $('.topping-checkbox').attr('disabled', false);
+    }
+    
+    // 更新總價
+    updateTotalPrice();
+}
+
+// 更新總價
+function updateTotalPrice() {
+    if (!currentProduct) return;
+    
+    const quantity = parseInt($('#productQuantity').val()) || 1;
+    const basePrice = currentProduct.discounted_price || currentProduct.unit_price;
+    
+    // 計算配料總價
+    let toppingsPrice = 0;
+    $('.topping-checkbox:checked').each(function() {
+        toppingsPrice += parseFloat($(this).data('price')) || 0;
+    });
+    
+    // 總價 = (產品價格 + 配料總價) × 數量
+    const totalPrice = (basePrice + toppingsPrice) * quantity;
+    $('#totalPrice').text(`$${totalPrice}`);
 }
 
 // 加入購物車
@@ -219,13 +388,24 @@ function addToCart() {
         return;
     }
     
+    // 收集選中的配料
+    const selectedToppings = [];
+    $('.topping-checkbox:checked').each(function() {
+        selectedToppings.push({
+            id: parseInt($(this).val()),
+            name: $(this).data('name'),
+            price: parseFloat($(this).data('price'))
+        });
+    });
+    
     $.ajax({
         url: '/api/cart/add',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
             product_id: currentProduct.id,
-            quantity: quantity
+            quantity: quantity,
+            toppings: selectedToppings
         }),
         success: function(response) {
             productModal.hide();
@@ -258,6 +438,16 @@ function buyNow() {
         return;
     }
     
+    // 收集選中的配料
+    const selectedToppings = [];
+    $('.topping-checkbox:checked').each(function() {
+        selectedToppings.push({
+            id: parseInt($(this).val()),
+            name: $(this).data('name'),
+            price: parseFloat($(this).data('price'))
+        });
+    });
+    
     // 加入購物車並跳轉到結帳頁面
     $.ajax({
         url: '/api/cart/add',
@@ -265,7 +455,8 @@ function buyNow() {
         contentType: 'application/json',
         data: JSON.stringify({
             product_id: currentProduct.id,
-            quantity: quantity
+            quantity: quantity,
+            toppings: selectedToppings
         }),
         success: function(response) {
             window.location.href = '/store/checkout';

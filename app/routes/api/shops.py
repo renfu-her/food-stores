@@ -341,7 +341,7 @@ def create_topping(shop_id):
         if user.role != 'admin' and shop.owner_id != user.id:
             return jsonify({
                 'error': 'forbidden',
-                'message': '無權為此店鋪添加topping',
+                'message': '無權為此店鋪添加配料',
                 'details': {}
             }), 403
         
@@ -360,7 +360,7 @@ def create_topping(shop_id):
         if not name:
             return jsonify({
                 'error': 'validation_error',
-                'message': 'topping名稱不能為空',
+                'message': '配料名稱不能為空',
                 'details': {}
             }), 400
         
@@ -385,7 +385,7 @@ def create_topping(shop_id):
         db.session.commit()
         
         return jsonify({
-            'message': 'Topping建立成功',
+            'message': '配料建立成功',
             'topping': {
                 'id': new_topping.id,
                 'name': new_topping.name,
@@ -399,7 +399,7 @@ def create_topping(shop_id):
         db.session.rollback()
         return jsonify({
             'error': 'internal_error',
-            'message': '建立topping失败',
+            'message': '建立配料失敗',
             'details': {'error': str(e)}
         }), 500
 

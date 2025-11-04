@@ -498,11 +498,9 @@ function saveNewTopping(id) {
     }
     
     const data = {
-        toppings: [{
-            name: name,
-            price: price,
-            is_active: isActive
-        }]
+        name: name,
+        price: price,
+        is_active: isActive
     };
     
     $.ajax({

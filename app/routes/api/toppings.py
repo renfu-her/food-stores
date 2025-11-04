@@ -9,6 +9,50 @@ from app.utils.validators import validate_decimal
 
 toppings_api_bp = Blueprint('toppings_api', __name__)
 
+@toppings_api_bp.route('', methods=['GET'])
+def get_toppings():
+    """獲取配料列表（公開，可依 shop_id 篩選）"""
+    try:
+        shop_id = request.args.get('shop_id', type=int)
+        is_active = request.args.get('is_active', type=str)
+        
+        query = Topping.query
+        
+        # 篩選條件
+        if shop_id:
+            query = query.filter_by(shop_id=shop_id)
+        
+        # 篩選啟用狀態
+        if is_active == 'true':
+            query = query.filter_by(is_active=True)
+        elif is_active == 'false':
+            query = query.filter_by(is_active=False)
+        
+        toppings = query.order_by(Topping.name).all()
+        
+        toppings_data = []
+        for topping in toppings:
+            toppings_data.append({
+                'id': topping.id,
+                'name': topping.name,
+                'price': int(topping.price),
+                'shop_id': topping.shop_id,
+                'is_active': topping.is_active,
+                'created_at': topping.created_at.isoformat() if topping.created_at else None
+            })
+        
+        return jsonify({
+            'toppings': toppings_data,
+            'total': len(toppings_data)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'internal_error',
+            'message': '獲取配料列表失敗',
+            'details': {'error': str(e)}
+        }), 500
+
 @toppings_api_bp.route('/<int:topping_id>', methods=['PUT'])
 @login_required
 def update_topping(topping_id):
@@ -22,7 +66,7 @@ def update_topping(topping_id):
         if user.role != 'admin' and shop.owner_id != user.id:
             return jsonify({
                 'error': 'forbidden',
-                'message': '無權修改此topping',
+                'message': '無權修改此配料',
                 'details': {}
             }), 403
         
@@ -52,7 +96,7 @@ def update_topping(topping_id):
         db.session.commit()
         
         return jsonify({
-            'message': 'Topping更新成功',
+            'message': '配料更新成功',
             'topping': {
                 'id': topping.id,
                 'name': topping.name,
@@ -66,7 +110,7 @@ def update_topping(topping_id):
         db.session.rollback()
         return jsonify({
             'error': 'internal_error',
-            'message': '更新topping失敗',
+            'message': '更新配料失敗',
             'details': {'error': str(e)}
         }), 500
 
@@ -83,7 +127,7 @@ def delete_topping(topping_id):
         if user.role != 'admin' and shop.owner_id != user.id:
             return jsonify({
                 'error': 'forbidden',
-                'message': '無權刪除此topping',
+                'message': '無權刪除此配料',
                 'details': {}
             }), 403
         
@@ -91,14 +135,14 @@ def delete_topping(topping_id):
         db.session.commit()
         
         return jsonify({
-            'message': 'Topping刪除成功'
+            'message': '配料刪除成功'
         }), 200
         
     except Exception as e:
         db.session.rollback()
         return jsonify({
             'error': 'internal_error',
-            'message': '刪除topping失敗',
+            'message': '刪除配料失敗',
             'details': {'error': str(e)}
         }), 500
 

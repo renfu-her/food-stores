@@ -106,6 +106,15 @@ def get_product(product_id):
                 'display_price': "FREE" if topping_price == 0 else f"${topping_price:.2f}"
             })
         
+        # 獲取產品圖片
+        images_data = []
+        for img in product.images:
+            images_data.append({
+                'id': img.id,
+                'image_path': img.image_path,
+                'display_order': img.display_order
+            })
+        
         return jsonify({
             'id': product.id,
             'name': product.name,
@@ -118,6 +127,7 @@ def get_product(product_id):
             'discounted_price': float(product.discounted_price) if product.discounted_price else None,
             'stock_quantity': product.stock_quantity,
             'is_active': product.is_active,
+            'images': images_data,
             'toppings': toppings_data,
             'created_at': product.created_at.isoformat() if product.created_at else None,
             'updated_at': product.updated_at.isoformat() if product.updated_at else None

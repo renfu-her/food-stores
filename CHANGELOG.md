@@ -44,11 +44,32 @@
 ### 🛒 產品詳情模態框（新增）
 - ✅ 點擊「查看詳情」彈出模態框
 - ✅ 左圖右文佈局（modal-lg 大尺寸）
+- ✅ 產品圖片輪播（Bootstrap 5 Carousel）
+  - 支持多張圖片左右切換（◀ ▶ 按鈕）
+  - 單張圖片時自動隱藏切換按鈕
+  - 無圖片時顯示預設圖標（📦）
+  - 圖片保持原始比例（max-height: 400px, object-fit: contain）
+  - 支持鍵盤導航（← → 鍵）和觸控滑動
 - ✅ 顯示完整產品資訊（名稱、描述、價格、庫存）
+- ✅ 配料勾選功能
+  - 從店鋪獲取配料列表（GET /api/toppings?shop_id=X&is_active=true）
+  - 從店鋪獲取配料上限（shop.max_toppings）
+  - 勾選框（checkbox）選擇配料
+  - 顯示配料名稱和價格（+$X，價格為 0 時顯示 "FREE"）
+  - 顯示店鋪最大配料數量限制（例如：最多 5 個）
+  - 達到上限時自動禁用未選項
+  - 已選配料數量實時顯示
+  - 可滾動配料列表（max-height: 150px）
+  - 所有產品共用店鋪的統一配料列表
+- ✅ 實時價格計算
+  - 公式：總價 = (產品價格 + 配料總價) × 數量
+  - 配料勾選時立即更新
+  - 數量修改時立即更新
+  - 大字體顯示總價（bg-light 背景）
 - ✅ 數量選擇器（含庫存驗證）
 - ✅ 兩個操作按鈕：
-  - 🛒 加入購物車（POST /api/cart/add，停留當前頁）
-  - 💳 直接結帳（加入購物車後跳轉 /store/checkout）
+  - 🛒 加入購物車（POST /api/cart/add + toppings，停留當前頁）
+  - 💳 直接結帳（加入購物車 + toppings 後跳轉 /store/checkout）
 - ✅ 完整錯誤處理和提示
 - ✅ 缺貨時停用數量輸入
 - ✅ 完全使用 Bootstrap 5 原生模態框樣式（無自定義 CSS）
@@ -59,8 +80,16 @@
 - ✅ 移除 z-index、pointer-events、body.modal-open 等自定義規則
 - ✅ 減少代碼量，提升可維護性
 
+### 🐛 Bug 修復
+- ✅ 修復後台配料添加失敗問題（數據格式錯誤）
+- ✅ 免費配料（價格 0）顯示為 "FREE" 而非 "+$0"
+- ✅ API 訊息中文化：所有 "topping/Topping" 改為 "配料"（共 11 處）
+
 ### 🔄 修改文件
-- ✅ `public/templates/store/shop.html` - 間距優化、Bootstrap 5 Card 結構、產品詳情模態框
+- ✅ `public/templates/store/shop.html` - 間距優化、Bootstrap 5 Card 結構、產品詳情模態框、圖片輪播、配料勾選、FREE 顯示
+- ✅ `public/templates/backend/shops/edit.html` - 修復配料添加數據格式
+- ✅ `app/routes/api/products.py` - GET /<product_id> 端點新增 images 陣列
+- ✅ `app/routes/api/toppings.py` - 新增 GET / 端點（支持 shop_id 和 is_active 篩選）
 - ✅ `public/static/css/store.css` - 卡片樣式，移除模態框 CSS
 - ✅ `public/static/css/backend.css` - 移除模態框自定義樣式
 - ✅ `public/static/css/shop_admin.css` - 移除模態框自定義樣式
