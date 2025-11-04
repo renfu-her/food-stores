@@ -1,11 +1,26 @@
 {% extends "base/store_base.html" %}
 
 {% block content %}
+<!-- 店鋪 Banner 橫幅 (4:1 比例) -->
+{% if shop.banner_image %}
+<div class="position-relative mb-4" style="width: 100%; padding-top: 25%; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <img src="{{ shop.banner_image }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ shop.name }} Banner" style="object-fit: cover;">
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%);"></div>
+    <div class="position-absolute bottom-0 start-0 w-100 p-4 text-white">
+        <h1 class="display-4 mb-2">{{ shop.name }}</h1>
+        <p class="lead mb-0">{{ shop.description or '歡迎光臨' }}</p>
+    </div>
+</div>
+{% else %}
 <div class="container">
     <div class="page-header">
         <h1>{{ shop.name }}</h1>
         <p class="shop-description">{{ shop.description or '暫無描述' }}</p>
     </div>
+</div>
+{% endif %}
+
+<div class="container">
     
     <div class="filter-section">
         <select id="categoryFilter" onchange="filterProducts()" class="filter-select">

@@ -46,6 +46,7 @@ class Shop(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
+    banner_image = db.Column(db.String(500), nullable=True)  # Banner 橫幅圖片
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     max_toppings_per_order = db.Column(db.Integer, default=5, nullable=False)
     status = db.Column(db.String(20), default='active', nullable=False)  # active, inactive

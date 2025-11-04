@@ -9,3 +9,6 @@ shops/*
 !products/
 products/*
 !products/.gitkeep
+!banners/
+banners/*
+!banners/.gitkeep
