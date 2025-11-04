@@ -4,6 +4,38 @@
 
 ---
 
+## 2025-11-04 16:00 - 前台店鋪頁面間距優化
+
+### 🎨 店鋪頁面 UI 優化
+- ✅ 分類選擇器改用 Bootstrap 5 `.form-select` 樣式
+- ✅ 移除自定義 `.filter-select` 類
+- ✅ 選擇器最大寬度限制為 300px
+- ✅ Banner 下方間距：mb-4 → mb-3 (24px → 16px)
+- ✅ 分類區塊間距：mb-3 (16px)
+- ✅ 產品網格間距：g-4 → g-3 (24px → 16px)
+
+### 🎴 產品卡片內部間距優化（縮小約 5px）
+- ✅ 卡片內距：p-3 → p-2 (16px → 8px，減少 8px)
+- ✅ 卡片標題間距：mb-2 → mb-1 (8px → 4px，減少 4px)
+- ✅ 卡片描述間距：mb-2 → mb-1 (8px → 4px，減少 4px)
+- ✅ 價格區塊間距：mb-2 → mb-1 (8px → 4px，減少 4px)
+- ✅ 庫存徽章間距：mb-2 → mb-1 (8px → 4px，減少 4px)
+- ✅ 總計縮小：約 24px 垂直間距，卡片更緊湊
+
+### 🎯 重構為標準 Bootstrap 5 Card 結構
+- ✅ 改用 `.card-img-top` 標準類（符合 Bootstrap 5 最佳實踐）
+- ✅ 移除固定 `aspect-ratio: 1/1`，圖片自然適應
+- ✅ 圖片保持原始比例顯示（寬度 100%，高度自動）
+- ✅ 移除自定義 position-relative 容器
+- ✅ 更簡潔的 HTML 結構
+- ✅ 無圖片時使用 `min-height: 200px`（取代固定比例）
+- ✅ 參考：[W3Schools Bootstrap 5 Cards](https://www.w3schools.com/bootstrap5/bootstrap_cards.php)
+
+### 🔄 修改文件
+- ✅ `public/templates/store/shop.html` - 間距優化、Bootstrap 5 表單樣式
+
+---
+
 ## 2025-11-04 15:30 - 首頁 Banner 管理系統與 UI 優化
 
 ### 🎪 首頁 Banner 管理系統（新增）

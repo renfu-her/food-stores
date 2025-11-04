@@ -3,7 +3,7 @@
 {% block content %}
 <!-- 店鋪 Banner 橫幅 (4:1 比例) -->
 {% if shop.banner_image %}
-<div class="position-relative mb-4" style="width: 100%; padding-top: 25%; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<div class="position-relative mb-3" style="width: 100%; padding-top: 25%; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
     <img src="{{ shop.banner_image }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ shop.name }} Banner" style="object-fit: cover;">
     <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%);"></div>
     <div class="position-absolute bottom-0 start-0 w-100 p-4 text-white">
@@ -12,7 +12,7 @@
     </div>
 </div>
 {% else %}
-<div class="container">
+<div class="container mb-3">
     <div class="page-header">
         <h1>{{ shop.name }}</h1>
         <p class="shop-description">{{ shop.description or '暫無描述' }}</p>
@@ -22,8 +22,8 @@
 
 <div class="container">
     
-    <div class="filter-section">
-        <select id="categoryFilter" onchange="filterProducts()" class="filter-select">
+    <div class="mb-3">
+        <select id="categoryFilter" onchange="filterProducts()" class="form-select" style="max-width: 300px;">
             <option value="">全部分類</option>
             {% for category in categories %}
             <option value="{{ category.id }}">{{ category.name }}</option>
@@ -32,26 +32,25 @@
     </div>
     
     {% if products %}
-    <div class="row g-4">
+    <div class="row g-3">
         {% for product in products %}
         <div class="col-sm-6 col-md-4 col-lg-3 product-card-item" data-category="{{ product.category_id }}">
             <div class="card h-100 shadow-sm">
-                <!-- 產品圖片 (1:1 正方形) -->
-                <div class="position-relative" style="width: 100%; padding-top: 100%; overflow: hidden; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
-                    {% if product.images and product.images|length > 0 %}
-                        <img src="{{ product.images[0].image_path }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ product.name }}" style="object-fit: cover;">
-                    {% else %}
-                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
-                            <i class="bi bi-box-seam display-4 text-muted"></i>
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">
+                <!-- 產品圖片 -->
+                {% if product.images and product.images|length > 0 %}
+                    <img src="{{ product.images[0].image_path }}" class="card-img-top" alt="{{ product.name }}">
+                {% else %}
+                    <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="min-height: 200px;">
+                        <i class="bi bi-box-seam display-4 text-muted"></i>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body d-flex flex-column p-2">
+                    <h5 class="card-title mb-1">
                         <a href="{{ url_for('customer.product', product_id=product.id) }}" class="text-decoration-none">{{ product.name }}</a>
                     </h5>
-                    <p class="card-text text-muted small" style="min-height: 40px;">{{ product.description or '暫無描述' }}</p>
-                    <div class="mb-2">
+                    <p class="card-text text-muted small mb-1" style="min-height: 40px;">{{ product.description or '暫無描述' }}</p>
+                    <div class="mb-1">
                         {% if product.discounted_price %}
                             <span class="text-decoration-line-through text-muted me-2">${{ product.unit_price|int }}</span>
                             <span class="text-danger fw-bold fs-5">${{ product.discounted_price|int }}</span>
@@ -59,7 +58,7 @@
                             <span class="fw-bold fs-5">${{ product.unit_price|int }}</span>
                         {% endif %}
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-1">
                         {% if product.stock_quantity > 0 %}
                             <span class="badge bg-success">✓ 有庫存 ({{ product.stock_quantity }})</span>
                         {% else %}
