@@ -44,6 +44,7 @@ def create_app(config_class=Config):
             from app.routes.api.shop_banner import shop_banner_api_bp
             from app.routes.api.categories import categories_api_bp
             from app.routes.api.home_banners import home_banners_api_bp
+            from app.routes.api.cart import cart_api_bp
             from app.routes.websocket import websocket_bp
             
             app.register_blueprint(auth_bp)
@@ -60,6 +61,7 @@ def create_app(config_class=Config):
             app.register_blueprint(shop_banner_api_bp, url_prefix='/api')
             app.register_blueprint(categories_api_bp, url_prefix='/api/categories')
             app.register_blueprint(home_banners_api_bp, url_prefix='/api/home-banners')
+            app.register_blueprint(cart_api_bp, url_prefix='/api/cart')
             app.register_blueprint(websocket_bp)
             
             # 靜態文件路由：提供上傳的圖片

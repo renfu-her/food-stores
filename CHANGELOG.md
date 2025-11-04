@@ -80,16 +80,35 @@
 - ✅ 移除 z-index、pointer-events、body.modal-open 等自定義規則
 - ✅ 減少代碼量，提升可維護性
 
+### 🛒 購物車 API 系統（新增）
+- ✅ 創建完整購物車 API（`app/routes/api/cart.py`）
+- ✅ POST /api/cart/add - 加入購物車
+- ✅ GET /api/cart - 獲取購物車內容
+- ✅ PUT /api/cart/update - 更新數量
+- ✅ DELETE /api/cart/remove - 移除項目
+- ✅ DELETE /api/cart/clear - 清空購物車
+- ✅ 使用 Flask Session 存儲（支持訪客購物車）
+- ✅ 智能合併相同產品和配料組合
+- ✅ 自動計算價格（產品 + 配料）× 數量
+- ✅ 庫存驗證
+
 ### 🐛 Bug 修復
 - ✅ 修復後台配料添加失敗問題（數據格式錯誤）
 - ✅ 免費配料（價格 0）顯示為 "FREE" 而非 "+$0"
 - ✅ API 訊息中文化：所有 "topping/Topping" 改為 "配料"（共 11 處）
+- ✅ 修正配料上限字段：`max_toppings` → `max_toppings_per_order`
+- ✅ 修復購物車 404 錯誤（創建購物車 API）
+
+### 📁 新增文件
+- ✅ `app/routes/api/cart.py` - 購物車 API（完整 CRUD）
 
 ### 🔄 修改文件
+- ✅ `app/__init__.py` - 註冊 cart_api_bp
 - ✅ `public/templates/store/shop.html` - 間距優化、Bootstrap 5 Card 結構、產品詳情模態框、圖片輪播、配料勾選、FREE 顯示
 - ✅ `public/templates/backend/shops/edit.html` - 修復配料添加數據格式
 - ✅ `app/routes/api/products.py` - GET /<product_id> 端點新增 images 陣列
-- ✅ `app/routes/api/toppings.py` - 新增 GET / 端點（支持 shop_id 和 is_active 篩選）
+- ✅ `app/routes/api/toppings.py` - 新增 GET / 端點（支持 shop_id 和 is_active 篩選）、訊息中文化
+- ✅ `app/routes/api/shops.py` - 訊息中文化
 - ✅ `public/static/css/store.css` - 卡片樣式，移除模態框 CSS
 - ✅ `public/static/css/backend.css` - 移除模態框自定義樣式
 - ✅ `public/static/css/shop_admin.css` - 移除模態框自定義樣式

@@ -286,7 +286,7 @@ function loadToppings(product) {
         url: `/api/shops/${product.shop_id}`,
         method: 'GET',
         success: function(shop) {
-            const maxToppings = shop.max_toppings || 5;
+            const maxToppings = shop.max_toppings_per_order || 5;
             
             // 獲取店鋪的配料列表
             $.ajax({
