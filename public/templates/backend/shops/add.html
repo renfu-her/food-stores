@@ -17,30 +17,30 @@
                 <div class="card-body">
                     <form id="shopForm">
                         <div class="mb-3">
-                            <label for="shopName" class="form-label">店鋪名稱 <span class="text-danger">*</span></label>
+                            <label for="shopName" class="form-label mb-2">店鋪名稱 <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="shopName" required>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="shopOwner" class="form-label">店主 <span class="text-danger">*</span></label>
+                        <div class="mb-3 mt-3">
+                            <label for="shopOwner" class="form-label mb-2">店主 <span class="text-danger">*</span></label>
                             <select class="form-select" id="shopOwner" required>
                                 <option value="">請選擇店主</option>
                                 {% for user in users if user.role == 'store_admin' %}
                                 <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
                                 {% endfor %}
                             </select>
-                            <small class="form-text text-muted">只能選擇角色為「商店管理者」的用戶</small>
+                            <small class="form-text text-muted d-block mt-2">只能選擇角色為「商店管理者」的用戶</small>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="shopDescription" class="form-label">店鋪描述</label>
+                        <div class="mb-3 mt-3">
+                            <label for="shopDescription" class="form-label mb-2">店鋪描述</label>
                             <textarea class="form-control" id="shopDescription" rows="4" placeholder="輸入店鋪的詳細描述..."></textarea>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="shopMaxToppings" class="form-label">最大配料數量 <span class="text-danger">*</span></label>
+                        <div class="mb-3 mt-3">
+                            <label for="shopMaxToppings" class="form-label mb-2">最大配料數量 <span class="text-danger">*</span></label>
                             <input type="number" class="form-control" id="shopMaxToppings" value="5" min="0" max="20" required>
-                            <small class="form-text text-muted">每個訂單可選擇的最大配料數量</small>
+                            <small class="form-text text-muted d-block mt-2">每個訂單可選擇的最大配料數量</small>
                         </div>
                         
                         <hr class="my-4">

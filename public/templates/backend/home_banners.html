@@ -10,7 +10,7 @@
     </div>
     
     <!-- Banner 列表 -->
-    <div class="row g-4" id="bannersContainer">
+    <div class="row g-4 mt-1" id="bannersContainer">
         <!-- Banner 將動態載入 -->
     </div>
 </div>
@@ -28,26 +28,26 @@
                     <input type="hidden" id="bannerId">
                     
                     <div class="mb-3">
-                        <label for="bannerName" class="form-label">Banner 名稱 <span class="text-danger">*</span></label>
+                        <label for="bannerName" class="form-label mb-2">Banner 名稱 <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="bannerName" required>
-                        <small class="form-text text-muted">用於管理識別，不會顯示在前台</small>
+                        <small class="form-text text-muted d-block mt-2">用於管理識別，不會顯示在前台</small>
                     </div>
                     
-                    <div class="mb-3" id="imageUploadSection">
-                        <label for="bannerImage" class="form-label">Banner 圖片 <span class="text-danger">*</span></label>
+                    <div class="mb-3 mt-3" id="imageUploadSection">
+                        <label for="bannerImage" class="form-label mb-2">Banner 圖片 <span class="text-danger">*</span></label>
                         <input type="file" class="form-control" id="bannerImage" accept="image/*" required>
-                        <small class="form-text text-muted">建議尺寸：1200x400 像素（3:1 比例）</small>
+                        <small class="form-text text-muted d-block mt-2">建議尺寸：1200x400 像素（3:1 比例）</small>
                     </div>
                     
-                    <div class="mb-3">
+                    <div class="mb-3 mt-3">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="bannerActive" checked>
                             <label class="form-check-label" for="bannerActive">啟用</label>
                         </div>
-                        <small class="form-text text-muted">只有啟用的 Banner 會顯示在首頁</small>
+                        <small class="form-text text-muted d-block mt-2">只有啟用的 Banner 會顯示在首頁</small>
                     </div>
                     
-                    <div id="modalError" class="alert alert-danger" style="display: none;"></div>
+                    <div id="modalError" class="alert alert-danger mt-3" style="display: none;"></div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -94,7 +94,7 @@ function renderBanners() {
         html += `
             <div class="col-md-6 banner-item" data-id="${banner.id}">
                 <div class="card ${activeClass}" style="border-width: 2px;">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
                         <div>
                             <strong>${banner.name}</strong>
                             ${activeText}
@@ -103,10 +103,10 @@ function renderBanners() {
                             <i class="bi bi-grip-vertical"></i> 排序 #${index + 1}
                         </div>
                     </div>
-                    <div class="position-relative" style="width: 100%; padding-top: 33.33%; overflow: hidden; background: #f5f5f5;">
+                    <div class="position-relative mt-2 mx-2" style="width: calc(100% - 1rem); padding-top: 33.33%; overflow: hidden; background: #f5f5f5; border-radius: 4px;">
                         <img src="${banner.image_path}" class="position-absolute top-0 start-0 w-100 h-100" alt="${banner.name}" style="object-fit: cover;">
                     </div>
-                    <div class="card-body">
+                    <div class="card-body mt-2">
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editBanner(${banner.id})">
                                 <i class="bi bi-pencil"></i> 編輯
