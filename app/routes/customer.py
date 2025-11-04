@@ -19,14 +19,14 @@ def login():
     """使用者登入/註冊頁面"""
     if 'user_id' in session:
         return redirect(url_for('customer.index'))
-    return render_template('store/login.html')
+    return render_template('store/login.html', active_tab='login')
 
 @customer_bp.route('/register')
 def register():
-    """使用者註冊頁面"""
+    """使用者註冊頁面（顯示註冊選項卡）"""
     if 'user_id' in session:
         return redirect(url_for('customer.index'))
-    return render_template('store/register.html')
+    return render_template('store/login.html', active_tab='register')
 
 @customer_bp.route('/order/<int:order_id>')
 @login_required

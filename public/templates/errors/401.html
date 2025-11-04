@@ -1,0 +1,25 @@
+{% extends "base/app.html" %}
+
+{% block title %}401 - 未認證{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+        <div class="text-center">
+            <i class="fa-solid fa-lock text-warning" style="font-size: 120px;"></i>
+            <h1 class="display-1 fw-bold mt-4">401</h1>
+            <h2 class="mb-4">未認證</h2>
+            <p class="text-muted mb-4">您需要登入才能訪問此頁面。</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="{{ url_for('customer.login') }}" class="btn btn-primary">
+                    <i class="fa-solid fa-right-to-bracket me-2"></i>前往登入
+                </a>
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-house me-2"></i>返回首頁
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -42,7 +42,7 @@
         <div class="sidebar-footer p-3 border-top position-absolute bottom-0 w-100">
             <div class="d-flex align-items-center justify-content-between">
                 <span class="small">管理員</span>
-                <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light">
+                <a href="#" class="btn btn-sm btn-outline-light" id="logoutBtnSidebar">
                     <i class="bi bi-box-arrow-right me-1"></i>登出
                 </a>
             </div>
@@ -61,7 +61,7 @@
                     <span class="navbar-text me-3">
                         <i class="bi bi-person-circle me-2"></i>管理員
                     </span>
-                    <a class="btn btn-outline-danger btn-sm" href="{{ url_for('auth.logout') }}">
+                    <a class="btn btn-outline-danger btn-sm" href="#" id="logoutBtnTopbar">
                         <i class="bi bi-box-arrow-right me-1"></i>登出
                     </a>
                 </div>
@@ -152,6 +152,23 @@ $(document).ready(function() {
                 $('#sidebar').removeClass('show');
             }
         }
+    });
+    
+    // 登出功能
+    $('#logoutBtnSidebar, #logoutBtnTopbar').on('click', function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            url: '/api/auth/logout',
+            method: 'POST',
+            success: function() {
+                window.location.href = '/backend/login';
+            },
+            error: function(xhr) {
+                console.error('登出失敗:', xhr);
+                alert('登出失敗，請重試');
+            }
+        });
     });
 });
 </script>

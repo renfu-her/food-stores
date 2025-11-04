@@ -3,25 +3,131 @@
 {% block content %}
 <div class="container my-5">
     <div class="row justify-content-center">
-        <div class="col-md-5">
+        <div class="col-md-6 col-lg-5">
             <div class="card shadow">
                 <div class="card-body p-4">
-                    <h2 class="card-title text-center mb-4">使用者登入</h2>
-                    <form id="loginForm">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">郵箱</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                    <h2 class="card-title text-center mb-4">
+                        <i class="fa-solid fa-user-circle me-2"></i>會員中心
+                    </h2>
+                    
+                    <!-- 選項卡導航 -->
+                    <ul class="nav nav-pills nav-fill mb-4" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {% if active_tab != 'register' %}active{% endif %}" 
+                                    id="login-tab" 
+                                    data-bs-toggle="tab" 
+                                    data-bs-target="#login" 
+                                    type="button" 
+                                    role="tab">
+                                <i class="fa-solid fa-right-to-bracket me-1"></i>登入
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link {% if active_tab == 'register' %}active{% endif %}" 
+                                    id="register-tab" 
+                                    data-bs-toggle="tab" 
+                                    data-bs-target="#register" 
+                                    type="button" 
+                                    role="tab">
+                                <i class="fa-solid fa-user-plus me-1"></i>註冊
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- 選項卡內容 -->
+                    <div class="tab-content" id="authTabsContent">
+                        <!-- 登入表單 -->
+                        <div class="tab-pane fade {% if active_tab != 'register' %}show active{% endif %}" 
+                             id="login" 
+                             role="tabpanel">
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="login_email" class="form-label">
+                                        <i class="fa-solid fa-envelope me-1"></i>郵箱
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="login_email" 
+                                           name="email" 
+                                           placeholder="請輸入郵箱地址"
+                                           required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="login_password" class="form-label">
+                                        <i class="fa-solid fa-lock me-1"></i>密碼
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="login_password" 
+                                           name="password"
+                                           placeholder="請輸入密碼" 
+                                           required>
+                                </div>
+                                <div id="loginErrorMessage" class="alert alert-danger" style="display: none;"></div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fa-solid fa-right-to-bracket me-2"></i>登入
+                                </button>
+                            </form>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">密碼</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                        
+                        <!-- 註冊表單 -->
+                        <div class="tab-pane fade {% if active_tab == 'register' %}show active{% endif %}" 
+                             id="register" 
+                             role="tabpanel">
+                            <form id="registerForm">
+                                <div class="mb-3">
+                                    <label for="register_name" class="form-label">
+                                        <i class="fa-solid fa-user me-1"></i>姓名
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="register_name" 
+                                           name="name"
+                                           placeholder="請輸入您的姓名" 
+                                           required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register_email" class="form-label">
+                                        <i class="fa-solid fa-envelope me-1"></i>郵箱
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="register_email" 
+                                           name="email"
+                                           placeholder="請輸入郵箱地址" 
+                                           required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register_password" class="form-label">
+                                        <i class="fa-solid fa-lock me-1"></i>密碼
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="register_password" 
+                                           name="password"
+                                           placeholder="至少6個字符"
+                                           required 
+                                           minlength="6">
+                                    <div class="form-text">密碼長度至少6個字符</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register_confirm_password" class="form-label">
+                                        <i class="fa-solid fa-lock me-1"></i>確認密碼
+                                    </label>
+                                    <input type="password" 
+                                           class="form-control" 
+                                           id="register_confirm_password" 
+                                           name="confirm_password"
+                                           placeholder="再次輸入密碼" 
+                                           required>
+                                </div>
+                                <div id="registerErrorMessage" class="alert alert-danger" style="display: none;"></div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fa-solid fa-user-plus me-2"></i>註冊
+                                </button>
+                            </form>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 mb-3">登入</button>
-                        <div class="text-center">
-                            <p class="mb-0">還沒有帳號？<a href="{{ url_for('customer.register') }}">立即註冊</a></p>
-                        </div>
-                        <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -30,11 +136,14 @@
 
 <script>
 $(document).ready(function() {
+    // 登入表單提交
     $('#loginForm').on('submit', function(e) {
         e.preventDefault();
+        $('#loginErrorMessage').hide();
+        
         const data = {
-            email: $('#email').val(),
-            password: $('#password').val()
+            email: $('#login_email').val(),
+            password: $('#login_password').val()
         };
         
         $.ajax({
@@ -47,9 +156,62 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 const result = xhr.responseJSON || {};
-                $('#errorMessage').text(result.message || '登入失敗').show();
+                $('#loginErrorMessage').text(result.message || '登入失敗，請檢查郵箱和密碼').show();
             }
         });
+    });
+    
+    // 註冊表單提交
+    $('#registerForm').on('submit', function(e) {
+        e.preventDefault();
+        $('#registerErrorMessage').hide();
+        
+        // 密碼確認檢查
+        if ($('#register_password').val() !== $('#register_confirm_password').val()) {
+            $('#registerErrorMessage').text('兩次輸入的密碼不一致').show();
+            return;
+        }
+        
+        const data = {
+            name: $('#register_name').val(),
+            email: $('#register_email').val(),
+            password: $('#register_password').val()
+        };
+        
+        $.ajax({
+            url: '/api/auth/register',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function() {
+                // 註冊成功後自動切換到登入選項卡
+                $('#registerForm')[0].reset();
+                $('#registerErrorMessage').hide();
+                
+                // 顯示成功訊息
+                $('#loginErrorMessage')
+                    .removeClass('alert-danger')
+                    .addClass('alert-success')
+                    .text('註冊成功！請使用您的帳號登入')
+                    .show();
+                
+                // 切換到登入選項卡
+                $('#login-tab').tab('show');
+                
+                // 自動填入郵箱
+                $('#login_email').val(data.email);
+                $('#login_password').focus();
+            },
+            error: function(xhr) {
+                const result = xhr.responseJSON || {};
+                $('#registerErrorMessage').text(result.message || '註冊失敗，請檢查輸入資料').show();
+            }
+        });
+    });
+    
+    // 切換選項卡時清除錯誤訊息
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function() {
+        $('#loginErrorMessage, #registerErrorMessage').hide();
     });
 });
 </script>

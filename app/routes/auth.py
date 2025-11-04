@@ -132,6 +132,7 @@ def login():
         
         # 設置session
         session['user_id'] = user.id
+        session['user_name'] = user.name
         session['user_role'] = user.role
         session.permanent = True
         

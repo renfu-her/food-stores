@@ -10,22 +10,33 @@
     <li class="nav-item">
         <a class="nav-link" href="{{ url_for('customer.orders') }}">我的訂單</a>
     </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('customer.profile') }}">個人資料</a>
-    </li>
     {% endif %}
 {% endblock %}
 
 {% block user_info %}
     {% if session.user_id %}
-        <span class="navbar-text me-3">歡迎，{{ session.user_name }}</span>
-        <a href="{{ url_for('customer.cart') }}" class="btn btn-outline-primary btn-sm me-2 position-relative">
+        <a href="{{ url_for('customer.cart') }}" class="btn btn-outline-primary btn-sm me-3 position-relative">
             <i class="bi bi-cart3"></i> 購物車
             <span id="cartCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
                 0
             </span>
         </a>
-        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary btn-sm">登出</a>
+        
+        <!-- User Dropdown -->
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fa-solid fa-user"></i> {{ session.user_name or '使用者' }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li><a class="dropdown-item" href="{{ url_for('customer.profile') }}">
+                    <i class="fa-solid fa-id-card me-2"></i>個人資料
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logoutBtn">
+                    <i class="fa-solid fa-right-from-bracket me-2"></i>登出
+                </a></li>
+            </ul>
+        </div>
     {% else %}
         <a href="{{ url_for('customer.login') }}" class="btn btn-outline-primary btn-sm me-2">登入</a>
         <a href="{{ url_for('customer.register') }}" class="btn btn-primary btn-sm">註冊</a>
@@ -48,6 +59,23 @@ function updateCartCount() {
 // 頁面載入時更新購物車數量
 $(document).ready(function() {
     updateCartCount();
+    
+    // 登出功能
+    $('#logoutBtn').on('click', function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            url: '/api/auth/logout',
+            method: 'POST',
+            success: function() {
+                window.location.href = "{{ url_for('customer.index') }}";
+            },
+            error: function(xhr) {
+                console.error('登出失敗:', xhr);
+                alert('登出失敗，請重試');
+            }
+        });
+    });
 });
 
 // 監聽購物車變化
