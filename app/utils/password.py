@@ -39,3 +39,6 @@ def check_password(password: str, password_hash: str) -> bool:
     except Exception:
         return False
 
+# 別名，與其他模塊保持一致
+verify_password = check_password
+

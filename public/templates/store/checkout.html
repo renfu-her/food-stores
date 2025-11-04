@@ -1,0 +1,344 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-credit-card me-2"></i>結帳
+            </h2>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- 左側：收貨信息 -->
+        <div class="col-lg-8">
+            <!-- 收貨地址 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>收貨地址</h5>
+                </div>
+                <div class="card-body">
+                    <form id="addressForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="recipient_name" class="form-label">收貨人姓名 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="recipient_name" value="{{ user.name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="recipient_phone" class="form-label">聯絡電話 <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="recipient_phone" value="{{ user.phone or '' }}" required>
+                            </div>
+                            
+                            <!-- TWzipcode 地址選擇器 -->
+                            <div class="col-12">
+                                <label class="form-label">地址 <span class="text-danger">*</span></label>
+                                <div id="twzipcode">
+                                    <div data-role="county" data-name="county" data-style="form-select mb-2"></div>
+                                    <div data-role="district" data-name="district" data-style="form-select mb-2"></div>
+                                    <div data-role="zipcode" data-name="zipcode" data-style="form-control mb-2" data-readonly="true" data-placeholder="郵遞區號"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="recipient_address" class="form-label">詳細地址 <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="recipient_address" rows="2" placeholder="請輸入詳細地址（街道、巷弄、門牌號碼等）" required>{{ user.address or '' }}</textarea>
+                            </div>
+                            
+                            <!-- 完整地址預覽 -->
+                            <div class="col-12">
+                                <div class="alert alert-info" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>完整地址：</strong>
+                                    <span id="fullAddress">
+                                        {% if user.county and user.district and user.zipcode %}
+                                            {{ user.zipcode }} {{ user.county }}{{ user.district }}{{ user.address or '' }}
+                                        {% else %}
+                                            請選擇地址
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="delivery_note" class="form-label">備註</label>
+                                <textarea class="form-control" id="delivery_note" rows="2" placeholder="如有特殊需求，請在此填寫..."></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 購物車商品 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bag-check me-2"></i>訂單商品</h5>
+                </div>
+                <div class="card-body" id="orderItems">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 支付方式 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>支付方式</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="payment_method" id="payment_cod" value="cod" checked>
+                        <label class="form-check-label" for="payment_cod">
+                            <i class="bi bi-cash me-2"></i>貨到付款
+                        </label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card">
+                        <label class="form-check-label" for="payment_card">
+                            <i class="bi bi-credit-card me-2"></i>信用卡支付
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="payment_method" id="payment_transfer" value="transfer">
+                        <label class="form-check-label" for="payment_transfer">
+                            <i class="bi bi-bank me-2"></i>銀行轉帳
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右側：訂單摘要 -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm" style="position: sticky; top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>訂單摘要</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>商品總計</span>
+                        <span id="itemsCount">0 件</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>小計</span>
+                        <span id="subtotal">$0</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>運費</span>
+                        <span id="shippingFee" class="text-success">免運費</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <h5 class="mb-0">總計</h5>
+                        <h5 class="mb-0 text-primary" id="orderTotal">$0</h5>
+                    </div>
+                    <button class="btn btn-primary w-100 btn-lg mb-3" onclick="submitOrder()">
+                        <i class="bi bi-check-circle me-2"></i>確認訂單
+                    </button>
+                    <a href="{{ url_for('customer.cart') }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-left me-2"></i>返回購物車
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/jquery.twzipcode.js') }}"></script>
+<script>
+let cartData = [];
+
+$(document).ready(function() {
+    // 初始化 TWzipcode
+    $('#twzipcode').twzipcode({
+        'css': ['form-select mb-2', 'form-select mb-2', 'form-control mb-2']
+    });
+    
+    {% if user.county and user.district and user.zipcode %}
+    // 設置預設值
+    $('#twzipcode').twzipcode('set', {
+        'county': '{{ user.county }}',
+        'district': '{{ user.district }}',
+        'zipcode': '{{ user.zipcode }}'
+    });
+    {% endif %}
+    
+    // 監聽地址變更，更新完整地址預覽
+    $('#twzipcode').on('change', 'select, input', function() {
+        updateFullAddress();
+    });
+    
+    $('#recipient_address').on('input', function() {
+        updateFullAddress();
+    });
+    
+    function updateFullAddress() {
+        const county = $('select[name="county"]').val();
+        const district = $('select[name="district"]').val();
+        const zipcode = $('input[name="zipcode"]').val();
+        const address = $('#recipient_address').val();
+        
+        if (county && district && zipcode) {
+            const full = zipcode + ' ' + county + district + (address || '');
+            $('#fullAddress').text(full);
+        } else {
+            $('#fullAddress').text('請選擇地址');
+        }
+    }
+});
+
+// 載入購物車數據
+async function loadCheckoutData() {
+    try {
+        const response = await fetch('/api/cart');
+        const data = await response.json();
+        cartData = data.cart || [];
+        
+        if (cartData.length === 0) {
+            alert('購物車是空的');
+            window.location.href = '{{ url_for("customer.cart") }}';
+            return;
+        }
+        
+        displayOrderItems();
+        updateOrderSummary();
+        
+    } catch (error) {
+        console.error('載入購物車失敗:', error);
+        alert('載入失敗，請重試');
+    }
+}
+
+// 顯示訂單商品
+function displayOrderItems() {
+    const container = document.getElementById('orderItems');
+    let html = '';
+    
+    for (const item of cartData) {
+        let toppingsHtml = '';
+        if (item.toppings && item.toppings.length > 0) {
+            const toppingNames = item.toppings.map(t => {
+                return t.price > 0 ? `${t.name} (+$${t.price})` : `${t.name} (FREE)`;
+            }).join('、');
+            toppingsHtml = `<small class="text-muted d-block">配料：${toppingNames}</small>`;
+        }
+        
+        const itemTotal = item.unit_price * item.quantity;
+        
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <div class="flex-grow-1">
+                    <h6 class="mb-1">${item.product_name}</h6>
+                    ${toppingsHtml}
+                    <small class="text-muted">單價：$${item.unit_price} × ${item.quantity}</small>
+                </div>
+                <div class="text-end">
+                    <strong class="text-primary">$${itemTotal}</strong>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+
+// 更新訂單摘要
+function updateOrderSummary() {
+    let total = 0;
+    for (const item of cartData) {
+        total += item.unit_price * item.quantity;
+    }
+    
+    document.getElementById('itemsCount').textContent = cartData.length + ' 件';
+    document.getElementById('subtotal').textContent = '$' + total;
+    document.getElementById('orderTotal').textContent = '$' + total;
+}
+
+// 提交訂單
+async function submitOrder() {
+    // 驗證收貨信息
+    const recipient_name = document.getElementById('recipient_name').value.trim();
+    const recipient_phone = document.getElementById('recipient_phone').value.trim();
+    const county = $('select[name="county"]').val();
+    const district = $('select[name="district"]').val();
+    const zipcode = $('input[name="zipcode"]').val();
+    const recipient_address = document.getElementById('recipient_address').value.trim();
+    
+    if (!recipient_name || !recipient_phone || !county || !district || !zipcode || !recipient_address) {
+        alert('請填寫完整的收貨信息');
+        return;
+    }
+    
+    const delivery_note = document.getElementById('delivery_note').value.trim();
+    const payment_method = document.querySelector('input[name="payment_method"]:checked').value;
+    
+    // 組合完整地址
+    const full_address = zipcode + ' ' + county + district + recipient_address;
+    
+    // 按店鋪分組
+    const shopGroups = {};
+    for (const item of cartData) {
+        if (!shopGroups[item.shop_id]) {
+            shopGroups[item.shop_id] = [];
+        }
+        shopGroups[item.shop_id].push({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            toppings: item.toppings || []
+        });
+    }
+    
+    // 為每個店鋪建立訂單
+    try {
+        for (const [shopId, items] of Object.entries(shopGroups)) {
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shop_id: parseInt(shopId),
+                    items: items,
+                    recipient_name: recipient_name,
+                    recipient_phone: recipient_phone,
+                    recipient_address: full_address,
+                    delivery_note: delivery_note,
+                    payment_method: payment_method
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                alert('建立訂單失敗: ' + (error.message || '未知錯誤'));
+                return;
+            }
+        }
+        
+        // 清空購物車
+        await fetch('/api/cart/clear', { method: 'DELETE' });
+        
+        // 更新徽章
+        if (typeof updateCartCount === 'function') {
+            updateCartCount();
+        }
+        
+        alert('訂單建立成功！');
+        window.location.href = '{{ url_for("customer.orders") }}';
+        
+    } catch (error) {
+        console.error('提交訂單失敗:', error);
+        alert('提交訂單失敗，請重試');
+    }
+}
+
+// 頁面載入時載入數據
+loadCheckoutData();
+</script>
+{% endblock %}
+

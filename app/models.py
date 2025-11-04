@@ -27,7 +27,15 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)  # 電話
     role = db.Column(db.String(20), nullable=False, default='customer')  # admin, store_admin, customer
+    
+    # 地址資訊
+    county = db.Column(db.String(50), nullable=True)  # 縣市
+    district = db.Column(db.String(50), nullable=True)  # 區域
+    zipcode = db.Column(db.String(10), nullable=True)  # 郵遞區號
+    address = db.Column(db.String(500), nullable=True)  # 詳細地址
+    
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

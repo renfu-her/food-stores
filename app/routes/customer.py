@@ -74,6 +74,13 @@ def cart():
     user = get_current_user()
     return render_template('store/cart.html', user=user)
 
+@customer_bp.route('/checkout')
+@login_required
+def checkout():
+    """結帳頁面"""
+    user = get_current_user()
+    return render_template('store/checkout.html', user=user)
+
 @customer_bp.route('/orders')
 @login_required
 def orders():
