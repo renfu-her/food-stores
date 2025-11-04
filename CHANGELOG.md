@@ -4,6 +4,20 @@
 
 ---
 
+## 2025-11-04 21:15 - 購物車空狀態布局優化 & 後台選單順序調整
+
+### 🎨 UI 優化
+- ✅ 購物車為空時改為全寬顯示（col-12）
+- ✅ 購物車有商品時顯示左右分欄（col-lg-8 + col-lg-4）
+- ✅ 動態切換布局（根據購物車狀態）
+- ✅ 後台側邊欄選單順序調整（首頁 Banner 移到第二位）
+
+### 🔄 修改文件
+- ✅ `public/templates/store/cart.html` - 動態布局切換邏輯
+- ✅ `public/templates/base/backend_base.html` - 調整選單順序（首頁 Banner 位置）
+
+---
+
 ## 2025-11-04 21:00 - 訂單創建邏輯重構（自動從 Product 獲取 Shop ID）
 
 ### ✨ 新增功能
@@ -11,6 +25,7 @@
 - ✅ 後端自動按店鋪分組商品
 - ✅ 單次 API 調用創建多個店鋪的訂單
 - ✅ 新增 `_create_single_order()` 輔助函數
+- ✅ 詳細錯誤信息（顯示可用 product_id 列表）
 
 ### 🐛 Bug 修復
 - ✅ 修復「店鋪ID不能為空」錯誤
@@ -19,7 +34,7 @@
 - ✅ 允許所有登入用戶（admin, customer, store_admin）建立訂單
 
 ### 🔄 修改文件
-- ✅ `app/routes/api/orders.py` - 重構訂單創建邏輯，新增輔助函數
+- ✅ `app/routes/api/orders.py` - 重構訂單創建邏輯，新增輔助函數，添加詳細錯誤信息
 - ✅ `public/templates/store/checkout.html` - 簡化前端邏輯，移除手動分組
 
 ### 📊 數據流程改進

@@ -223,6 +223,9 @@ class HomeBanner(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     image_path = db.Column(db.String(500), nullable=False)
+    title = db.Column(db.String(200), nullable=True)  # 標題（顯示在首頁）
+    subtitle = db.Column(db.String(300), nullable=True)  # 副標題（顯示在首頁）
+    link = db.Column(db.String(500), nullable=True)  # 連結（點擊跳轉）
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     display_order = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

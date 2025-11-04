@@ -23,6 +23,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.home_banner') %}active{% endif %}" href="{{ url_for('backend.home_banners') }}">
+                        <i class="bi bi-card-image me-2"></i>首頁 Banner
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.shop') %}active{% endif %}" href="{{ url_for('backend.shops') }}">
                         <i class="bi bi-shop me-2"></i>店鋪管理
                     </a>
@@ -40,11 +45,6 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.order') %}active{% endif %}" href="{{ url_for('backend.orders') }}">
                         <i class="bi bi-receipt me-2"></i>訂單管理
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.home_banner') %}active{% endif %}" href="{{ url_for('backend.home_banners') }}">
-                        <i class="bi bi-card-image me-2"></i>首頁 Banner
                     </a>
                 </li>
                 <li class="nav-item">

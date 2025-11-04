@@ -1,0 +1,191 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">編輯首頁 Banner</h1>
+        <a href="{{ url_for('backend.home_banners') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>返回列表
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form id="bannerForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">Banner 名稱 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" value="{{ banner.name }}" required>
+                        <div class="form-text">用於管理識別，不會顯示在前台</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="is_active" class="form-label">狀態</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="is_active" {% if banner.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">啟用</label>
+                        </div>
+                        <div class="form-text">只有啟用的 Banner 會顯示在首頁</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="title" class="form-label">標題</label>
+                        <input type="text" class="form-control" id="title" value="{{ banner.title or '' }}" placeholder="顯示在首頁的標題">
+                        <div class="form-text">顯示在 Banner 底部的標題文字</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="subtitle" class="form-label">副標題</label>
+                        <input type="text" class="form-control" id="subtitle" value="{{ banner.subtitle or '' }}" placeholder="顯示在首頁的副標題">
+                        <div class="form-text">顯示在標題下方的副標題文字</div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label for="link" class="form-label">連結</label>
+                        <input type="url" class="form-control" id="link" value="{{ banner.link or '' }}" placeholder="https://example.com">
+                        <div class="form-text">點擊 Banner 時跳轉的連結（可選）</div>
+                    </div>
+                    
+                    <!-- 當前圖片 -->
+                    <div class="col-12">
+                        <label class="form-label">當前圖片</label>
+                        <div class="position-relative" style="width: 100%; max-width: 800px; padding-top: 33.33%; overflow: hidden; background: #f5f5f5; border-radius: 4px;">
+                            <img src="{{ banner.image_path }}" class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: cover;">
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label for="image" class="form-label">更換圖片</label>
+                        <input type="file" class="form-control" id="image" accept="image/*">
+                        <div class="form-text">建議尺寸：1200x400 像素（3:1 比例），最大 5MB。留空則不更換圖片</div>
+                    </div>
+                    
+                    <!-- 新圖片預覽 -->
+                    <div class="col-12" id="newImagePreviewContainer" style="display: none;">
+                        <label class="form-label">新圖片預覽</label>
+                        <div class="position-relative" style="width: 100%; max-width: 800px; padding-top: 33.33%; overflow: hidden; background: #f5f5f5; border-radius: 4px;">
+                            <img id="newImagePreview" class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: cover;">
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>儲存變更
+                    </button>
+                    <a href="{{ url_for('backend.home_banners') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-2"></i>取消
+                    </a>
+                    <button type="button" class="btn btn-outline-danger ms-auto" onclick="deleteBanner()">
+                        <i class="bi bi-trash me-2"></i>刪除此 Banner
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+const bannerId = {{ banner.id }};
+
+$(document).ready(function() {
+    // 圖片預覽
+    $('#image').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#newImagePreview').attr('src', e.target.result);
+                $('#newImagePreviewContainer').show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#newImagePreviewContainer').hide();
+        }
+    });
+    
+    // 提交表單
+    $('#bannerForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const name = $('#name').val().trim();
+        const title = $('#title').val().trim();
+        const subtitle = $('#subtitle').val().trim();
+        const link = $('#link').val().trim();
+        const isActive = $('#is_active').is(':checked');
+        const fileInput = document.getElementById('image');
+        
+        if (!name) {
+            alert('請輸入 Banner 名稱');
+            return;
+        }
+        
+        // 如果有上傳新圖片
+        if (fileInput.files && fileInput.files[0]) {
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('name', name);
+            formData.append('title', title);
+            formData.append('subtitle', subtitle);
+            formData.append('link', link);
+            formData.append('is_active', isActive);
+            
+            $.ajax({
+                url: `/api/home-banners/${bannerId}/image`,
+                method: 'PUT',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function() {
+                    alert('更新成功');
+                    window.location.href = "{{ url_for('backend.home_banners') }}";
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON || {};
+                    alert('更新失敗：' + (error.message || error.error || '未知錯誤'));
+                }
+            });
+        } else {
+            // 只更新名稱、標題、副標題、連結和狀態
+            $.ajax({
+                url: `/api/home-banners/${bannerId}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ name, title, subtitle, link, is_active: isActive }),
+                success: function() {
+                    alert('更新成功');
+                    window.location.href = "{{ url_for('backend.home_banners') }}";
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON || {};
+                    alert('更新失敗：' + (error.message || error.error || '未知錯誤'));
+                }
+            });
+        }
+    });
+});
+
+// 刪除 Banner
+function deleteBanner() {
+    if (!confirm('確定要刪除此 Banner 嗎？')) return;
+    
+    $.ajax({
+        url: `/api/home-banners/${bannerId}`,
+        method: 'DELETE',
+        success: function() {
+            alert('刪除成功');
+            window.location.href = "{{ url_for('backend.home_banners') }}";
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+</script>
+{% endblock %}
+

@@ -205,16 +205,22 @@ def create_order():
                     return jsonify({
                         'error': 'validation_error',
                         'message': '產品ID不能為空',
-                        'details': {}
+                        'details': {'item_data': item_data}
                     }), 400
                 
                 # 獲取產品信息
                 product = Product.query.get(product_id)
                 if not product:
+                    # 列出所有可用產品
+                    all_products = Product.query.all()
+                    available_ids = [p.id for p in all_products]
                     return jsonify({
                         'error': 'validation_error',
                         'message': f'產品ID {product_id} 不存在',
-                        'details': {}
+                        'details': {
+                            'requested_id': product_id,
+                            'available_product_ids': available_ids
+                        }
                     }), 400
                 
                 # 按店鋪分組

@@ -292,12 +292,29 @@ def home_banners():
             'id': b.id,
             'name': b.name,
             'image_path': b.image_path,
+            'title': b.title,
+            'subtitle': b.subtitle,
+            'link': b.link,
             'is_active': b.is_active,
             'display_order': b.display_order,
             'created_at': b.created_at.isoformat() if b.created_at else None
         })
     
-    return render_template('backend/home_banners.html', banners=banners_data)
+    return render_template('backend/home_banners/list.html', banners=banners_data)
+
+@backend_bp.route('/home-banners/add')
+@role_required('admin')
+def home_banner_add():
+    """新增首頁 Banner 頁面"""
+    return render_template('backend/home_banners/add.html')
+
+@backend_bp.route('/home-banners/<int:banner_id>/edit')
+@role_required('admin')
+def home_banner_edit(banner_id):
+    """編輯首頁 Banner 頁面"""
+    from app.models import HomeBanner
+    banner = HomeBanner.query.get_or_404(banner_id)
+    return render_template('backend/home_banners/edit.html', banner=banner)
 
 @backend_bp.route('/update-logs')
 @role_required('admin')

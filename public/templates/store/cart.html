@@ -10,9 +10,9 @@
         </div>
     </div>
     
-    <div class="row">
+    <div class="row" id="cartContainer">
         <!-- 購物車項目列表 -->
-        <div class="col-lg-8">
+        <div class="col-lg-8" id="cartItemsColumn">
             <div id="cartItems">
                 <div class="text-center py-5">
                     <div class="spinner-border text-primary" role="status">
@@ -23,7 +23,7 @@
         </div>
         
         <!-- 結帳摘要 -->
-        <div class="col-lg-4">
+        <div class="col-lg-4" id="cartSummaryColumn">
             <div class="card shadow-sm" id="cartSummary" style="display: none; position: sticky; top: 20px;">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>訂單摘要</h5>
@@ -68,6 +68,10 @@ async function loadCart() {
         const cartItemsDiv = document.getElementById('cartItems');
         
         if (cart.length === 0) {
+            // 空購物車：改為全寬顯示
+            document.getElementById('cartItemsColumn').className = 'col-12';
+            document.getElementById('cartSummaryColumn').style.display = 'none';
+            
             cartItemsDiv.innerHTML = `
                 <div class="card shadow-sm text-center py-5">
                     <div class="card-body">
@@ -83,6 +87,10 @@ async function loadCart() {
             document.getElementById('cartSummary').style.display = 'none';
             return;
         }
+        
+        // 有商品時：恢復左右分欄
+        document.getElementById('cartItemsColumn').className = 'col-lg-8';
+        document.getElementById('cartSummaryColumn').style.display = 'block';
         
         // 顯示購物車項目
         let html = '';

@@ -32,6 +32,9 @@ def get_home_banners():
         'id': banner.id,
         'name': banner.name,
         'image_path': banner.image_path,
+        'title': banner.title,
+        'subtitle': banner.subtitle,
+        'link': banner.link,
         'is_active': banner.is_active,
         'display_order': banner.display_order,
         'created_at': banner.created_at.isoformat() if banner.created_at else None,
@@ -47,6 +50,9 @@ def get_home_banner(banner_id):
         'id': banner.id,
         'name': banner.name,
         'image_path': banner.image_path,
+        'title': banner.title,
+        'subtitle': banner.subtitle,
+        'link': banner.link,
         'is_active': banner.is_active,
         'display_order': banner.display_order,
         'created_at': banner.created_at.isoformat() if banner.created_at else None
@@ -61,6 +67,9 @@ def create_home_banner():
     
     file = request.files['image']
     name = request.form.get('name', '').strip()
+    title = request.form.get('title', '').strip() or None
+    subtitle = request.form.get('subtitle', '').strip() or None
+    link = request.form.get('link', '').strip() or None
     is_active = request.form.get('is_active', 'true').lower() == 'true'
     
     if not name:
@@ -94,6 +103,9 @@ def create_home_banner():
         banner = HomeBanner(
             name=name,
             image_path=relative_path,
+            title=title,
+            subtitle=subtitle,
+            link=link,
             is_active=is_active,
             display_order=max_order + 1
         )
@@ -115,6 +127,9 @@ def create_home_banner():
             'id': banner.id,
             'name': banner.name,
             'image_path': banner.image_path,
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'link': banner.link,
             'is_active': banner.is_active,
             'display_order': banner.display_order
         }), 201
@@ -137,16 +152,28 @@ def update_home_banner(banner_id):
     try:
         old_data = {
             'name': banner.name,
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'link': banner.link,
             'is_active': banner.is_active
         }
         
         if 'name' in data:
             banner.name = data['name'].strip()
+        if 'title' in data:
+            banner.title = data['title'].strip() if data['title'] else None
+        if 'subtitle' in data:
+            banner.subtitle = data['subtitle'].strip() if data['subtitle'] else None
+        if 'link' in data:
+            banner.link = data['link'].strip() if data['link'] else None
         if 'is_active' in data:
             banner.is_active = bool(data['is_active'])
         
         new_data = {
             'name': banner.name,
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'link': banner.link,
             'is_active': banner.is_active
         }
         
@@ -164,12 +191,113 @@ def update_home_banner(banner_id):
         return jsonify({
             'id': banner.id,
             'name': banner.name,
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'link': banner.link,
             'is_active': banner.is_active
         })
         
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@home_banners_api_bp.route('/<int:banner_id>/image', methods=['PUT'])
+@role_required('admin')
+def update_home_banner_image(banner_id):
+    """更新首頁 Banner 圖片"""
+    banner = HomeBanner.query.get_or_404(banner_id)
+    
+    if 'image' not in request.files:
+        return jsonify({'error': '沒有上傳文件'}), 400
+    
+    file = request.files['image']
+    name = request.form.get('name', '').strip()
+    title = request.form.get('title', '').strip() or None
+    subtitle = request.form.get('subtitle', '').strip() or None
+    link = request.form.get('link', '').strip() or None
+    is_active = request.form.get('is_active', 'true').lower() == 'true'
+    
+    if file.filename == '':
+        return jsonify({'error': '沒有選擇文件'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'error': '不支持的文件格式'}), 400
+    
+    try:
+        # 刪除舊文件
+        old_file_path = os.path.join(current_app.root_path, '..', 'public', banner.image_path.lstrip('/'))
+        if os.path.exists(old_file_path):
+            os.remove(old_file_path)
+        
+        # 生成安全的文件名
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"home_banner_{timestamp}.{ext}"
+        
+        # 確保目錄存在
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'banners')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # 保存新文件
+        filepath = os.path.join(upload_dir, filename)
+        file.save(filepath)
+        
+        old_data = {
+            'name': banner.name,
+            'image_path': banner.image_path,
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'link': banner.link,
+            'is_active': banner.is_active
+        }
+        
+        # 更新數據庫記錄
+        relative_path = f'/uploads/banners/{filename}'
+        banner.image_path = relative_path
+        if name:
+            banner.name = name
+        if title is not None:
+            banner.title = title
+        if subtitle is not None:
+            banner.subtitle = subtitle
+        if link is not None:
+            banner.link = link
+        banner.is_active = is_active
+        
+        new_data = {
+            'name': banner.name,
+            'image_path': banner.image_path,
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'link': banner.link,
+            'is_active': banner.is_active
+        }
+        
+        log_update(
+            action='update',
+            table_name='home_banner',
+            record_id=banner.id,
+            old_data=old_data,
+            new_data=new_data,
+            description=f'更新首頁 Banner 圖片: {banner.name}'
+        )
+        
+        db.session.commit()
+        
+        return jsonify({
+            'id': banner.id,
+            'name': banner.name,
+            'image_path': banner.image_path,
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'link': banner.link,
+            'is_active': banner.is_active
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'更新 Banner 圖片失敗: {str(e)}')
+        return jsonify({'error': '更新失敗'}), 500
 
 @home_banners_api_bp.route('/<int:banner_id>', methods=['DELETE'])
 @role_required('admin')

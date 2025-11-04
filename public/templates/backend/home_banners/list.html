@@ -1,0 +1,245 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">首頁 Banner 管理</h1>
+        <a href="{{ url_for('backend.home_banner_add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>新增 Banner
+        </a>
+    </div>
+    
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋 Banner 名稱..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
+                        <option value="">所有狀態</option>
+                        <option value="true">啟用</option>
+                        <option value="false">停用</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 60px;">排序</th>
+                            <th style="width: 60px;">ID</th>
+                            <th style="width: 200px;">圖片</th>
+                            <th>Banner 名稱</th>
+                            <th style="width: 100px;">狀態</th>
+                            <th style="width: 150px;">建立時間</th>
+                            <th class="text-end" style="width: 250px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bannersTableBody">
+                        <tr><td colspan="7" class="text-center">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
+<script>
+let allBanners = {{ banners|tojson }};
+
+// 渲染 Banner 行
+function renderBannerRow(banner) {
+    const statusBadge = banner.is_active 
+        ? '<span class="badge bg-success">啟用</span>' 
+        : '<span class="badge bg-secondary">停用</span>';
+    
+    const createdAt = banner.created_at ? new Date(banner.created_at).toLocaleDateString('zh-TW') : '-';
+    
+    // 圖片縮略圖
+    const imageThumbnail = `
+        <div class="position-relative" style="width: 100%; padding-top: 33.33%; overflow: hidden; background: #f5f5f5; border-radius: 4px;">
+            <img src="${banner.image_path}" class="position-absolute top-0 start-0 w-100 h-100" alt="${banner.name}" style="object-fit: cover;">
+        </div>
+    `;
+    
+    return `
+        <tr data-id="${banner.id}">
+            <td>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button class="btn btn-outline-secondary" onclick="moveBanner(${banner.id}, 'up')" title="上移">
+                        <i class="bi bi-arrow-up"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="moveBanner(${banner.id}, 'down')" title="下移">
+                        <i class="bi bi-arrow-down"></i>
+                    </button>
+                </div>
+            </td>
+            <td>${banner.id}</td>
+            <td>${imageThumbnail}</td>
+            <td><strong>${banner.name}</strong></td>
+            <td>${statusBadge}</td>
+            <td>${createdAt}</td>
+            <td class="text-end">
+                <div class="d-flex gap-1 justify-content-end" style="white-space: nowrap;">
+                    <a href="/backend/home-banners/${banner.id}/edit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> 編輯
+                    </a>
+                    <button class="btn btn-sm btn-outline-${banner.is_active ? 'warning' : 'success'}" onclick="toggleActive(${banner.id}, ${banner.is_active ? 'false' : 'true'})">
+                        <i class="bi bi-${banner.is_active ? 'eye-slash' : 'eye'}"></i> ${banner.is_active ? '停用' : '啟用'}
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteBanner(${banner.id}, '${banner.name.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-trash"></i> 刪除
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderBannersTable() {
+    renderTable('bannersTableBody', renderBannerRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredItems = allBanners.filter(banner => {
+        const matchSearch = !searchValue || 
+            banner.name.toLowerCase().includes(searchValue.toLowerCase());
+        
+        const matchStatus = !statusFilter || banner.is_active.toString() === statusFilter;
+        
+        return matchSearch && matchStatus;
+    });
+    
+    currentPage = 1;
+    renderBannersTable();
+    updatePagination();
+}
+
+// 移動 Banner 順序
+function moveBanner(bannerId, direction) {
+    const currentIndex = allBanners.findIndex(b => b.id === bannerId);
+    if (currentIndex === -1) return;
+    
+    let newIndex;
+    if (direction === 'up') {
+        if (currentIndex === 0) return;
+        newIndex = currentIndex - 1;
+    } else {
+        if (currentIndex === allBanners.length - 1) return;
+        newIndex = currentIndex + 1;
+    }
+    
+    // 交換順序
+    [allBanners[currentIndex], allBanners[newIndex]] = [allBanners[newIndex], allBanners[currentIndex]];
+    
+    // 更新顯示順序
+    const order = allBanners.map(b => b.id);
+    
+    $.ajax({
+        url: '/api/home-banners/reorder',
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ order: order }),
+        success: function() {
+            // 重新載入數據以更新順序
+            location.reload();
+        },
+        error: function() {
+            alert('排序失敗');
+            location.reload();
+        }
+    });
+}
+
+// 切換啟用狀態
+function toggleActive(bannerId, newStatus) {
+    // 確保 newStatus 是布爾值
+    const isActive = newStatus === true || newStatus === 'true';
+    
+    $.ajax({
+        url: `/api/home-banners/${bannerId}`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ is_active: isActive }),
+        success: function() {
+            // 更新本地數據
+            const banner = allBanners.find(b => b.id === bannerId);
+            if (banner) {
+                banner.is_active = isActive;
+            }
+            const filteredBanner = filteredItems.find(b => b.id === bannerId);
+            if (filteredBanner) {
+                filteredBanner.is_active = isActive;
+            }
+            renderBannersTable();
+            updatePagination();
+        },
+        error: function() {
+            alert('更新狀態失敗');
+        }
+    });
+}
+
+// 刪除 Banner
+function deleteBanner(bannerId, bannerName) {
+    if (!confirm(`確定要刪除 Banner「${bannerName}」嗎？`)) return;
+    
+    $.ajax({
+        url: `/api/home-banners/${bannerId}`,
+        method: 'DELETE',
+        success: function() {
+            // 從本地數據中移除
+            allBanners = allBanners.filter(b => b.id !== bannerId);
+            filteredItems = filteredItems.filter(b => b.id !== bannerId);
+            renderBannersTable();
+            updatePagination();
+            alert('刪除成功');
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderBannersTable;
+    initializeDataTable('bannersTableBody', allBanners, renderBannerRow);
+});
+</script>
+{% endblock %}
