@@ -43,6 +43,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.home_banner') %}active{% endif %}" href="{{ url_for('backend.home_banners') }}">
+                        <i class="bi bi-card-image me-2"></i>首頁 Banner
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'backend.update_logs' %}active{% endif %}" href="{{ url_for('backend.update_logs') }}">
                         <i class="bi bi-clock-history me-2"></i>系統更新 Log
                     </a>

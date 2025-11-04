@@ -1,0 +1,303 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">首頁 Banner 管理</h1>
+        <button class="btn btn-primary" onclick="showAddBanner()">
+            <i class="bi bi-plus-lg me-2"></i>新增 Banner
+        </button>
+    </div>
+    
+    <!-- Banner 列表 -->
+    <div class="row g-4" id="bannersContainer">
+        <!-- Banner 將動態載入 -->
+    </div>
+</div>
+
+<!-- 新增/編輯 Banner 模態框 -->
+<div class="modal fade" id="bannerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">新增 Banner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bannerForm" enctype="multipart/form-data">
+                    <input type="hidden" id="bannerId">
+                    
+                    <div class="mb-3">
+                        <label for="bannerName" class="form-label">Banner 名稱 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="bannerName" required>
+                        <small class="form-text text-muted">用於管理識別，不會顯示在前台</small>
+                    </div>
+                    
+                    <div class="mb-3" id="imageUploadSection">
+                        <label for="bannerImage" class="form-label">Banner 圖片 <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="bannerImage" accept="image/*" required>
+                        <small class="form-text text-muted">建議尺寸：1200x400 像素（3:1 比例）</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="bannerActive" checked>
+                            <label class="form-check-label" for="bannerActive">啟用</label>
+                        </div>
+                        <small class="form-text text-muted">只有啟用的 Banner 會顯示在首頁</small>
+                    </div>
+                    
+                    <div id="modalError" class="alert alert-danger" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveBanner()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+let allBanners = {{ banners|tojson }};
+let bannerModal;
+
+$(document).ready(function() {
+    bannerModal = new bootstrap.Modal(document.getElementById('bannerModal'));
+    renderBanners();
+    initSortable();
+});
+
+// 渲染 Banner 列表
+function renderBanners() {
+    const container = $('#bannersContainer');
+    
+    if (allBanners.length === 0) {
+        container.html(`
+            <div class="col-12 text-center text-muted py-5">
+                <i class="bi bi-card-image display-1"></i>
+                <p class="mt-3">暫無 Banner，請點擊上方按鈕新增</p>
+            </div>
+        `);
+        return;
+    }
+    
+    let html = '';
+    allBanners.forEach((banner, index) => {
+        const activeClass = banner.is_active ? 'border-success' : 'border-secondary';
+        const activeText = banner.is_active ? '<span class="badge bg-success">啟用</span>' : '<span class="badge bg-secondary">停用</span>';
+        
+        html += `
+            <div class="col-md-6 banner-item" data-id="${banner.id}">
+                <div class="card ${activeClass}" style="border-width: 2px;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${banner.name}</strong>
+                            ${activeText}
+                        </div>
+                        <div class="badge bg-secondary" style="cursor: move;">
+                            <i class="bi bi-grip-vertical"></i> 排序 #${index + 1}
+                        </div>
+                    </div>
+                    <div class="position-relative" style="width: 100%; padding-top: 33.33%; overflow: hidden; background: #f5f5f5;">
+                        <img src="${banner.image_path}" class="position-absolute top-0 start-0 w-100 h-100" alt="${banner.name}" style="object-fit: cover;">
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="editBanner(${banner.id})">
+                                <i class="bi bi-pencil"></i> 編輯
+                            </button>
+                            <button class="btn btn-sm btn-outline-${banner.is_active ? 'warning' : 'success'}" onclick="toggleActive(${banner.id}, ${!banner.is_active})">
+                                <i class="bi bi-${banner.is_active ? 'eye-slash' : 'eye'}"></i> ${banner.is_active ? '停用' : '啟用'}
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteBanner(${banner.id})">
+                                <i class="bi bi-trash"></i> 刪除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.html(html);
+}
+
+// 初始化拖拽排序
+function initSortable() {
+    const container = document.getElementById('bannersContainer');
+    if (container && allBanners.length > 0) {
+        new Sortable(container, {
+            animation: 150,
+            handle: '.badge.bg-secondary',
+            onEnd: function() {
+                updateBannerOrder();
+            }
+        });
+    }
+}
+
+// 顯示新增 Banner 模態框
+function showAddBanner() {
+    document.getElementById('bannerForm').reset();
+    document.getElementById('bannerId').value = '';
+    document.getElementById('modalTitle').textContent = '新增 Banner';
+    document.getElementById('bannerImage').required = true;
+    document.getElementById('imageUploadSection').style.display = 'block';
+    $('#modalError').hide();
+    bannerModal.show();
+}
+
+// 編輯 Banner
+function editBanner(bannerId) {
+    const banner = allBanners.find(b => b.id === bannerId);
+    if (!banner) return;
+    
+    document.getElementById('bannerId').value = banner.id;
+    document.getElementById('bannerName').value = banner.name;
+    document.getElementById('bannerActive').checked = banner.is_active;
+    document.getElementById('modalTitle').textContent = '編輯 Banner';
+    document.getElementById('bannerImage').required = false;
+    document.getElementById('imageUploadSection').style.display = 'none';
+    $('#modalError').hide();
+    bannerModal.show();
+}
+
+// 儲存 Banner
+function saveBanner() {
+    const bannerId = document.getElementById('bannerId').value;
+    const name = document.getElementById('bannerName').value.trim();
+    const isActive = document.getElementById('bannerActive').checked;
+    
+    if (!name) {
+        $('#modalError').text('請輸入 Banner 名稱').show();
+        return;
+    }
+    
+    if (!bannerId) {
+        // 新增模式
+        const fileInput = document.getElementById('bannerImage');
+        if (!fileInput.files || !fileInput.files[0]) {
+            $('#modalError').text('請選擇圖片文件').show();
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        formData.append('name', name);
+        formData.append('is_active', isActive);
+        
+        $.ajax({
+            url: '/api/home-banners',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                allBanners.push(response);
+                renderBanners();
+                initSortable();
+                bannerModal.hide();
+                alert('新增成功');
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                $('#modalError').text(error.error || '新增失敗').show();
+            }
+        });
+    } else {
+        // 編輯模式
+        $.ajax({
+            url: `/api/home-banners/${bannerId}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ name, is_active: isActive }),
+            success: function(response) {
+                const index = allBanners.findIndex(b => b.id == bannerId);
+                if (index !== -1) {
+                    allBanners[index] = response;
+                }
+                renderBanners();
+                initSortable();
+                bannerModal.hide();
+                alert('更新成功');
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                $('#modalError').text(error.error || '更新失敗').show();
+            }
+        });
+    }
+}
+
+// 切換啟用狀態
+function toggleActive(bannerId, newStatus) {
+    $.ajax({
+        url: `/api/home-banners/${bannerId}`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ is_active: newStatus }),
+        success: function(response) {
+            const index = allBanners.findIndex(b => b.id == bannerId);
+            if (index !== -1) {
+                allBanners[index].is_active = newStatus;
+            }
+            renderBanners();
+            initSortable();
+        },
+        error: function() {
+            alert('更新狀態失敗');
+        }
+    });
+}
+
+// 刪除 Banner
+function deleteBanner(bannerId) {
+    const banner = allBanners.find(b => b.id === bannerId);
+    if (!banner) return;
+    
+    if (!confirm(`確定要刪除 Banner「${banner.name}」嗎？`)) return;
+    
+    $.ajax({
+        url: `/api/home-banners/${bannerId}`,
+        method: 'DELETE',
+        success: function() {
+            allBanners = allBanners.filter(b => b.id !== bannerId);
+            renderBanners();
+            initSortable();
+            alert('刪除成功');
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 更新 Banner 順序
+function updateBannerOrder() {
+    const order = [];
+    document.querySelectorAll('.banner-item').forEach(item => {
+        order.push(parseInt(item.dataset.id));
+    });
+    
+    $.ajax({
+        url: '/api/home-banners/reorder',
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ order: order }),
+        success: function() {
+            // 重新載入以更新排序號
+            location.reload();
+        },
+        error: function() {
+            console.error('排序失敗');
+        }
+    });
+}
+</script>
+{% endblock %}
+

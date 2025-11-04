@@ -23,7 +23,8 @@
 - ✅ 前台產品卡片和詳情頁顯示主圖
 - ✅ 創建上傳目錄：public/uploads/products/
 
-### 🎪 店鋪 Banner 橫幅系統
+### 🎪 Banner 橫幅系統
+**店鋪 Banner（單張）**
 - ✅ Shop 模型新增 banner_image 字段（單張橫幅）
 - ✅ Banner 上傳 API（POST /api/shops/:id/banner）
 - ✅ Banner 刪除 API（DELETE /api/shops/:id/banner）
@@ -34,6 +35,18 @@
 - ✅ 前台店鋪頁面頂部全寬顯示
 - ✅ 漸層遮罩和文字疊加效果
 - ✅ 無 Banner 時顯示傳統標題
+
+**首頁 Banner（多張輪播）**
+- ✅ HomeBanner 數據模型（name, image_path, is_active, display_order）
+- ✅ 完整 CRUD API（/api/home-banners）
+- ✅ 後台管理頁面（/backend/home-banners）
+- ✅ 卡片式列表、拖拽排序
+- ✅ 啟用/停用切換（只顯示啟用的）
+- ✅ 前台 Bootstrap 輪播組件
+- ✅ 3:1 橫幅比例（padding-top: 33.33%）
+- ✅ 建議尺寸：1200x400 像素
+- ✅ 自動輪播、指示器、控制按鈕
+- ✅ 漸層遮罩效果
 - ✅ 創建上傳目錄：public/uploads/banners/
 
 ### 📦 產品管理系統完善
@@ -46,6 +59,12 @@
 - ✅ 產品列表包含：搜索、5個篩選器、分頁
 - ✅ 新增產品 API（POST /api/products）含完整驗證
 - ✅ 產品 CRUD 操作全部記錄到 update_log
+- ✅ 前台產品列表優化為響應式網格
+  - 桌面：4 列（col-lg-3）
+  - 平板：3 列（col-md-4）
+  - 手機：2 列（col-sm-6）
+  - 間隔：g-4 (24px)
+  - 使用 Bootstrap Card 組件
 
 ### 🏷️ 分類管理完整系統
 - ✅ 創建分類 API（/api/categories）
@@ -124,60 +143,94 @@
 - ✅ `app/routes/api/categories.py` - 分類 API
 - ✅ `app/routes/api/shop_images.py` - 商店圖片 API
 - ✅ `app/routes/api/product_images.py` - 產品圖片 API
+- ✅ `app/routes/api/shop_banner.py` - 店鋪 Banner API
+- ✅ `app/routes/api/home_banners.py` - 首頁 Banner API
 - ✅ `public/templates/backend/categories.html` - 分類管理頁面
-- ✅ `public/templates/backend/products/add.html` - 產品新增頁面（含快速分類管理）
-- ✅ `public/templates/backend/products/edit.html` - 產品編輯頁面（含圖片和分類管理）
+- ✅ `public/templates/backend/home_banners.html` - 首頁 Banner 管理頁面
+- ✅ `public/templates/backend/products/add.html` - 產品新增頁面
+- ✅ `public/templates/backend/products/edit.html` - 產品編輯頁面（含圖片管理）
 - ✅ `public/uploads/shops/.gitkeep` - 商店上傳目錄
 - ✅ `public/uploads/products/.gitkeep` - 產品上傳目錄
-- ✅ `public/uploads/.gitignore` - Git 忽略規則（shops + products）
+- ✅ `public/uploads/banners/.gitkeep` - Banner 上傳目錄
+- ✅ `public/uploads/.gitignore` - Git 忽略規則（shops + products + banners）
 
 ### 🔄 修改文件
-- ✅ `app/models.py` - 新增 ShopImage 和 ProductImage 模型、images 關係
-- ✅ `app/__init__.py` - 註冊圖片 API、靜態文件路由
+- ✅ `app/models.py` - 新增 ShopImage, ProductImage, HomeBanner 模型
+- ✅ `app/__init__.py` - 註冊所有圖片 API、首頁 Banner
 - ✅ `app/config.py` - 文件上傳配置
-- ✅ `app/routes/backend.py` - 新增 categories 路由、修復 products 數據
-- ✅ `public/templates/base/backend_base.html` - 新增分類管理菜單
+- ✅ `app/routes/backend.py` - 新增 categories, home_banners 路由
+- ✅ `app/routes/api/products.py` - 新增 POST 端點、update_log 整合
+- ✅ `public/templates/base/backend_base.html` - 新增分類管理、首頁 Banner 菜單、修復菜單激活邏輯
 - ✅ `public/templates/backend/shops/add.html` - 配料表單優化、繁體中文
-- ✅ `public/templates/backend/shops/edit.html` - 圖片管理、配料優化
+- ✅ `public/templates/backend/shops/edit.html` - Banner、圖片、配料管理
 - ✅ `public/templates/backend/shops/list.html` - 修復 URL、語法錯誤
-- ✅ `public/templates/backend/users/list.html` - 修復 URL
+- ✅ `public/templates/backend/users/add.html` - 角色選單空白選項
+- ✅ `public/templates/backend/users/edit.html` - 角色選單優化、相容舊角色
+- ✅ `public/templates/backend/users/list.html` - 修復 URL、角色徽章相容
 - ✅ `public/templates/backend/products/list.html` - 修復結構、URL
 - ✅ `public/templates/backend/orders/list.html` - 修復 URL、價格顯示
-- ✅ `public/templates/store/index.html` - 商店圖片顯示、繁體中文
-- ✅ `public/templates/store/shop.html` - 產品圖片顯示、價格整數化
+- ✅ `public/templates/store/index.html` - Banner 輪播、商店圖片顯示
+- ✅ `public/templates/store/shop.html` - 店鋪 Banner、產品網格布局（4列）
 - ✅ `public/templates/store/product.html` - 產品主圖顯示、價格整數化
 - ✅ 其他 10+ 個模板文件（價格、繁體中文調整）
 
 ### 📈 項目規模
 ```
 當前統計：
-├── HTML 模板：42 個
+├── HTML 模板：43 個
 ├── CSS 文件：4 個
 ├── JavaScript 文件：4 個
-├── API 路由：10 個（users, shops, products, orders, toppings, categories, shop_images, product_images, auth, websocket）
-├── 數據模型：10 個（User, Shop, ShopImage, Product, ProductImage, Category, Topping, Order, OrderItem, UpdateLog）
-└── 後台管理頁面：9 個（儀表板、使用者、店鋪、產品、分類、訂單、系統 Log、詳情頁等）
+├── API 路由：12 個
+│   ├── users, shops, products, orders, toppings, categories
+│   └── shop_images, product_images, shop_banner, home_banners, auth, websocket
+├── 數據模型：11 個
+│   ├── User, Shop, Product, Category, Topping
+│   ├── Order, OrderItem
+│   ├── ShopImage, ProductImage, HomeBanner
+│   └── UpdateLog
+└── 後台管理頁面：10 個
+    ├── 儀表板、使用者、店鋪、產品、分類、訂單
+    ├── 首頁 Banner、系統 Log
+    └── 各種詳情頁（shop_detail, product_detail, order_detail）
 ```
 
 ### 🎯 圖片管理功能對比
 ```
+首頁 Banner（輪播）：
+├── 上傳目錄：public/uploads/banners/
+├── 文件命名：home_banner_{timestamp}.{ext}
+├── 數量：多張（可排序、啟用/停用）
+├── 比例：3:1 橫幅（1200x400）
+├── 前台顯示：首頁頂部輪播
+└── 管理位置：/backend/home-banners
+
+店鋪 Banner（單張）：
+├── 上傳目錄：public/uploads/banners/
+├── 文件命名：banner_shop_{id}_{timestamp}.{ext}
+├── 數量：1 張（自動替換）
+├── 比例：4:1 橫幅（1200x300）
+├── 前台顯示：店鋪頁面頂部
+└── 管理位置：/backend/shops/:id/edit
+
 商店圖片管理：
 ├── 上傳目錄：public/uploads/shops/
 ├── 文件命名：shop_{id}_{timestamp}.{ext}
+├── 數量：多張（可排序）
+├── 比例：1:1 正方形
 ├── 前台顯示：首頁店鋪列表
 └── 管理位置：/backend/shops/:id/edit
 
 產品圖片管理：
 ├── 上傳目錄：public/uploads/products/
 ├── 文件命名：product_{id}_{timestamp}.{ext}
+├── 數量：多張（可排序）
+├── 比例：1:1 正方形
 ├── 前台顯示：產品列表、產品詳情頁
 └── 管理位置：/backend/products/:id/edit
 
 共同特點：
-├── 1:1 正方形顯示（padding-top: 100%）
 ├── 拖拽排序（SortableJS）
-├── 主圖標記（第一張）
-├── 無圖片顯示 icon（商店🏪、產品📦）
+├── 無圖片顯示 icon 或預設樣式
 ├── 關聯刪除（刪除記錄時刪除文件）
 └── 更新日誌記錄
 ```

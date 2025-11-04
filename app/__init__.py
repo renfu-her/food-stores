@@ -43,6 +43,7 @@ def create_app(config_class=Config):
             from app.routes.api.product_images import product_images_api_bp
             from app.routes.api.shop_banner import shop_banner_api_bp
             from app.routes.api.categories import categories_api_bp
+            from app.routes.api.home_banners import home_banners_api_bp
             from app.routes.websocket import websocket_bp
             
             app.register_blueprint(auth_bp)
@@ -58,6 +59,7 @@ def create_app(config_class=Config):
             app.register_blueprint(product_images_api_bp, url_prefix='/api')
             app.register_blueprint(shop_banner_api_bp, url_prefix='/api')
             app.register_blueprint(categories_api_bp, url_prefix='/api/categories')
+            app.register_blueprint(home_banners_api_bp, url_prefix='/api/home-banners')
             app.register_blueprint(websocket_bp)
             
             # 靜態文件路由：提供上傳的圖片
@@ -72,9 +74,10 @@ def create_app(config_class=Config):
             @app.route('/')
             def index():
                 from flask import render_template
-                from app.models import Shop
+                from app.models import Shop, HomeBanner
                 shops = Shop.query.filter_by(status='active').all()
-                return render_template('store/index.html', shops=shops)
+                banners = HomeBanner.query.filter_by(is_active=True).order_by(HomeBanner.display_order).all()
+                return render_template('store/index.html', shops=shops, banners=banners)
         except ImportError:
             # 如果路由檔案還不存在，暫時跳過
             pass

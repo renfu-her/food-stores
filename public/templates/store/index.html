@@ -1,11 +1,43 @@
 {% extends "base/store_base.html" %}
 
 {% block content %}
+<!-- 首頁 Banner 輪播 -->
+{% if banners and banners|length > 0 %}
+<div id="homeBannerCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        {% for banner in banners %}
+        <button type="button" data-bs-target="#homeBannerCarousel" data-bs-slide-to="{{ loop.index0 }}" {% if loop.first %}class="active"{% endif %}></button>
+        {% endfor %}
+    </div>
+    <div class="carousel-inner">
+        {% for banner in banners %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+            <div class="position-relative" style="width: 100%; padding-top: 33.33%; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <img src="{{ banner.image_path }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ banner.name }}" style="object-fit: cover;">
+                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%);"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if banners|length > 1 %}
+    <button class="carousel-control-prev" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#homeBannerCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+    {% endif %}
+</div>
+{% else %}
 <div class="container my-5">
     <div class="jumbotron bg-gradient text-white text-center p-5 rounded-3 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
         <h1 class="display-4 mb-3">歡迎來到 Food Stores</h1>
         <p class="lead">探索各種美味的食品店鋪</p>
     </div>
+</div>
+{% endif %}
+
+<div class="container my-5">
     
     <div class="row mb-4">
         <div class="col-md-8 mx-auto">

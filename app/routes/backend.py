@@ -279,6 +279,26 @@ def categories():
     
     return render_template('backend/categories.html', categories=categories_data)
 
+@backend_bp.route('/home-banners')
+@role_required('admin')
+def home_banners():
+    """首頁 Banner 管理頁面"""
+    from app.models import HomeBanner
+    banners_list = HomeBanner.query.order_by(HomeBanner.display_order).all()
+    
+    banners_data = []
+    for b in banners_list:
+        banners_data.append({
+            'id': b.id,
+            'name': b.name,
+            'image_path': b.image_path,
+            'is_active': b.is_active,
+            'display_order': b.display_order,
+            'created_at': b.created_at.isoformat() if b.created_at else None
+        })
+    
+    return render_template('backend/home_banners.html', banners=banners_data)
+
 @backend_bp.route('/update-logs')
 @role_required('admin')
 def update_logs():

@@ -208,6 +208,26 @@ class ProductImage(db.Model):
     def __repr__(self):
         return f'<ProductImage product_id={self.product_id} order={self.display_order}>'
 
+class HomeBanner(db.Model):
+    """首頁 Banner 模型"""
+    __tablename__ = 'home_banner'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    image_path = db.Column(db.String(500), nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    display_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    __table_args__ = (
+        Index('idx_home_banner_active', 'is_active'),
+        Index('idx_home_banner_order', 'display_order'),
+    )
+    
+    def __repr__(self):
+        return f'<HomeBanner {self.name}>'
+
 class UpdateLog(db.Model):
     """系統更新日誌模型"""
     __tablename__ = 'update_log'
