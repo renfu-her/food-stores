@@ -6,3 +6,6 @@
 !shops/
 shops/*
 !shops/.gitkeep
+!products/
+products/*
+!products/.gitkeep

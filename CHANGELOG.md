@@ -2,7 +2,7 @@
 
 ## 2025-11-04 (下午) - 產品管理與分類系統完善
 
-### 🖼️ 商店多圖片管理系統
+### 🖼️ 商店與產品多圖片管理系統
 - ✅ 新增 ShopImage 數據模型（圖片路徑、排序、索引）
 - ✅ Shop 模型新增 images 關係和 get_primary_image() 方法
 - ✅ 圖片上傳 API（POST /api/shops/:id/images）
@@ -14,6 +14,14 @@
 - ✅ 圖片比例：1:1 正方形（padding-top: 100%）
 - ✅ 文件上傳配置（16MB、支持 PNG/JPG/GIF/WEBP）
 - ✅ 創建上傳目錄：public/uploads/shops/
+- ✅ 新增 ProductImage 數據模型（同樣支持排序和索引）
+- ✅ Product 模型新增 images 關係和 get_primary_image() 方法
+- ✅ 產品圖片上傳 API（POST /api/products/:id/images）
+- ✅ 產品圖片刪除 API（DELETE /api/product-images/:id）
+- ✅ 產品圖片排序 API（PUT /api/products/:id/images/reorder）
+- ✅ products/edit.html 新增圖片管理區域
+- ✅ 前台產品卡片和詳情頁顯示主圖
+- ✅ 創建上傳目錄：public/uploads/products/
 
 ### 📦 產品管理系統完善
 - ✅ 修復產品列表頁面（完整的 HTML 結構）
