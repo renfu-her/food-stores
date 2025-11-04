@@ -1,23 +1,56 @@
 {% extends "base/store_base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1>購物車</h1>
-    
-    <div id="cartItems">
-        <p>載入中...</p>
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-cart3 me-2"></i>購物車
+            </h2>
+        </div>
     </div>
     
-    <div class="cart-summary" id="cartSummary" style="display: none;">
-        <div class="summary-row">
-            <span>小計</span>
-            <span id="subtotal">$0.00</span>
+    <div class="row">
+        <!-- 購物車項目列表 -->
+        <div class="col-lg-8">
+            <div id="cartItems">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="summary-row total-row">
-            <strong>總計</strong>
-            <strong id="cartTotal">$0.00</strong>
+        
+        <!-- 結帳摘要 -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm" id="cartSummary" style="display: none; position: sticky; top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>訂單摘要</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>商品總計</span>
+                        <span id="itemsCount" class="fw-bold">0 件</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>小計</span>
+                        <span id="subtotal">$0</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <h5 class="mb-0">總計</h5>
+                        <h5 class="mb-0 text-primary" id="cartTotal">$0</h5>
+                    </div>
+                    <button class="btn btn-primary w-100 btn-lg" onclick="checkout()">
+                        <i class="bi bi-credit-card me-2"></i>前往結帳
+                    </button>
+                    <a href="{{ url_for('customer.index') }}" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="bi bi-arrow-left me-2"></i>繼續購物
+                    </a>
+                </div>
+            </div>
         </div>
-        <button class="btn btn-primary btn-block btn-large" onclick="checkout()">前往結算</button>
     </div>
 </div>
 {% endblock %}
@@ -26,133 +59,156 @@
 {{ super() }}
 <script>
 async function loadCart() {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const cartItemsDiv = document.getElementById('cartItems');
-    
-    if (cart.length === 0) {
-        cartItemsDiv.innerHTML = '<div class="empty-state"><p>購物車是空的</p><a href="{{ url_for("customer.index") }}" class="btn btn-primary">去購物</a></div>';
-        document.getElementById('cartSummary').style.display = 'none';
-        return;
-    }
-    
-    // 獲取產品詳情
-    let html = '';
-    let total = 0;
-    
-    for (const item of cart) {
-        try {
-            const response = await fetch('/api/products/' + item.product_id);
-            const product = await response.json();
-            
-            // 計算單價（使用折扣價如果有）
-            const unitPrice = product.discounted_price || product.unit_price;
-            const itemTotal = parseFloat(unitPrice) * item.quantity;
-            total += itemTotal;
-            
-            html += `
-                <div class="cart-item">
-                    <div class="cart-item-info">
-                        <h3>${product.name}</h3>
-                        <p>數量: ${item.quantity}</p>
-                        <p>單價: $${parseFloat(unitPrice).toFixed(2)}</p>
-                        ${item.toppings && item.toppings.length > 0 ? '<p style="color: #999; font-size: 0.9rem;">含 ' + item.toppings.length + ' 個配料</p>' : ''}
-                    </div>
-                    <div class="cart-item-actions">
-                        <span class="item-price">$${itemTotal.toFixed(2)}</span>
-                        <button class="btn btn-danger" onclick="removeFromCart(${item.product_id})">刪除</button>
+    try {
+        // 從 API 獲取購物車
+        const response = await fetch('/api/cart');
+        const data = await response.json();
+        const cart = data.cart || [];
+        
+        const cartItemsDiv = document.getElementById('cartItems');
+        
+        if (cart.length === 0) {
+            cartItemsDiv.innerHTML = `
+                <div class="card shadow-sm text-center py-5">
+                    <div class="card-body">
+                        <i class="bi bi-cart-x display-1 text-muted mb-3"></i>
+                        <h4 class="mb-3">購物車是空的</h4>
+                        <p class="text-muted mb-4">還沒有添加任何商品，快去選購吧！</p>
+                        <a href="{{ url_for('customer.index') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-shop me-2"></i>開始購物
+                        </a>
                     </div>
                 </div>
             `;
-        } catch (error) {
-            console.error('載入產品失敗:', error);
+            document.getElementById('cartSummary').style.display = 'none';
+            return;
         }
+        
+        // 顯示購物車項目
+        let html = '';
+        let total = 0;
+        
+        for (const item of cart) {
+            // 計算小計（已包含配料價格）
+            const itemTotal = item.unit_price * item.quantity;
+            total += itemTotal;
+            
+            // 顯示配料
+            let toppingsHtml = '';
+            if (item.toppings && item.toppings.length > 0) {
+                const toppingNames = item.toppings.map(t => {
+                    return t.price > 0 ? `${t.name} (+$${t.price})` : `${t.name} (FREE)`;
+                }).join('、');
+                toppingsHtml = `<p class="text-muted small mb-1">配料：${toppingNames}</p>`;
+            }
+            
+            html += `
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="mb-2">${item.product_name}</h5>
+                                ${toppingsHtml}
+                                <p class="text-muted mb-0 small">單價：$${item.unit_price}</p>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="input-group input-group-sm">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${item.product_id}, ${item.quantity - 1})">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="number" class="form-control text-center" value="${item.quantity}" min="1" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${item.product_id}, ${item.quantity + 1})">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <h5 class="mb-0 text-primary">$${itemTotal}</h5>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${item.product_id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        cartItemsDiv.innerHTML = html;
+        document.getElementById('itemsCount').textContent = cart.length + ' 件';
+        document.getElementById('cartTotal').textContent = '$' + total;
+        document.getElementById('subtotal').textContent = '$' + total;
+        document.getElementById('cartSummary').style.display = 'block';
+        
+    } catch (error) {
+        console.error('載入購物車失敗:', error);
+        document.getElementById('cartItems').innerHTML = '<div class="alert alert-danger">載入購物車失敗</div>';
     }
-    
-    cartItemsDiv.innerHTML = html;
-    document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
-    document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
-    document.getElementById('cartSummary').style.display = 'block';
 }
 
 function removeFromCart(productId) {
     if (confirm('確定要從購物車中移除這個商品嗎？')) {
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        cart = cart.filter(item => item.product_id !== productId);
-        localStorage.setItem('cart', JSON.stringify(cart));
-        loadCart();
+        $.ajax({
+            url: '/api/cart/remove',
+            method: 'DELETE',
+            contentType: 'application/json',
+            data: JSON.stringify({ product_id: productId }),
+            success: function() {
+                loadCart();
+                updateCartCount();
+            },
+            error: function() {
+                alert('移除失敗');
+            }
+        });
     }
 }
 
+function updateQuantity(productId, quantity) {
+    if (quantity < 1) {
+        removeFromCart(productId);
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/cart/update',
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ 
+            product_id: productId, 
+            quantity: parseInt(quantity) 
+        }),
+        success: function() {
+            loadCart();
+            updateCartCount();
+        },
+        error: function() {
+            alert('更新失敗');
+            loadCart();
+        }
+    });
+}
+
 async function checkout() {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    if (cart.length === 0) {
-        alert('購物車是空的');
-        return;
-    }
-    
-    // 檢查是否已登入
     try {
-        const response = await fetch('/api/auth/me');
-        if (!response.ok) {
-            alert('請先登入');
-            window.location.href = "{{ url_for('customer.login') }}";
+        // 從 API 獲取購物車
+        const response = await fetch('/api/cart');
+        const data = await response.json();
+        const cart = data.cart || [];
+        
+        if (cart.length === 0) {
+            alert('購物車是空的');
             return;
         }
+        
+        // 跳轉到結帳頁面
+        window.location.href = '/store/checkout';
+        
     } catch (error) {
-        alert('請先登入');
-        window.location.href = "{{ url_for('customer.login') }}";
-        return;
+        alert('結帳失敗，請重試');
     }
-    
-    // 按店鋪分組
-    const shopGroups = {};
-    for (const item of cart) {
-        try {
-            const response = await fetch('/api/products/' + item.product_id);
-            const product = await response.json();
-            
-            if (!shopGroups[product.shop_id]) {
-                shopGroups[product.shop_id] = [];
-            }
-            shopGroups[product.shop_id].push({
-                product_id: item.product_id,
-                quantity: item.quantity,
-                toppings: item.toppings || []
-            });
-        } catch (error) {
-            console.error('獲取產品資訊失敗:', error);
-        }
-    }
-    
-    // 為每個店鋪建立訂單
-    for (const [shopId, items] of Object.entries(shopGroups)) {
-        try {
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shop_id: parseInt(shopId),
-                    items: items
-                })
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                alert('建立訂單失敗: ' + error.message);
-                return;
-            }
-        } catch (error) {
-            alert('建立訂單失敗，請重試');
-            return;
-        }
-    }
-    
-    // 清空購物車
-    localStorage.removeItem('cart');
-    alert('訂單建立成功！');
-    window.location.href = "{{ url_for('customer.orders') }}";
 }
 
 // 頁面載入時載入購物車

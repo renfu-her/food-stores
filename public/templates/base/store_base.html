@@ -52,13 +52,22 @@
 <script>
 // 更新購物車數量
 function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const cartCountEl = $('#cartCount');
-    if (cartCountEl.length) {
-        const count = cart.length;
-        cartCountEl.text(count);
-        cartCountEl.toggle(count > 0);
-    }
+    $.ajax({
+        url: '/api/cart',
+        method: 'GET',
+        success: function(response) {
+            const count = response.total_items || 0;
+            const cartCountEl = $('#cartCount');
+            if (cartCountEl.length) {
+                cartCountEl.text(count);
+                cartCountEl.toggle(count > 0);
+            }
+        },
+        error: function() {
+            // 錯誤時隱藏徽章
+            $('#cartCount').hide();
+        }
+    });
 }
 
 // 頁面載入時更新購物車數量

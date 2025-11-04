@@ -91,6 +91,8 @@
 - ✅ 智能合併相同產品和配料組合
 - ✅ 自動計算價格（產品 + 配料）× 數量
 - ✅ 庫存驗證
+- ✅ 導航欄購物車數量徽章（紅色圓點 + 數字）
+- ✅ 實時更新購物車數量（加入/移除時自動更新）
 
 ### 🐛 Bug 修復
 - ✅ 修復後台配料添加失敗問題（數據格式錯誤）
@@ -104,6 +106,8 @@
 
 ### 🔄 修改文件
 - ✅ `app/__init__.py` - 註冊 cart_api_bp
+- ✅ `public/templates/base/store_base.html` - 購物車徽章改用 API 獲取數量
+- ✅ `public/templates/store/cart.html` - 改用 API（移除 localStorage），顯示配料、數量更新、移除功能
 - ✅ `public/templates/store/shop.html` - 間距優化、Bootstrap 5 Card 結構、產品詳情模態框、圖片輪播、配料勾選、FREE 顯示
 - ✅ `public/templates/backend/shops/edit.html` - 修復配料添加數據格式
 - ✅ `app/routes/api/products.py` - GET /<product_id> 端點新增 images 陣列
