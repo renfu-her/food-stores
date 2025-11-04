@@ -38,17 +38,17 @@
             <div class="card h-100 shadow-sm">
                 <!-- 產品圖片 -->
                 {% if product.images and product.images|length > 0 %}
-                    <img src="{{ product.images[0].image_path }}" class="card-img-top" alt="{{ product.name }}">
+                    <img class="card-img-top" src="{{ product.images[0].image_path }}" alt="{{ product.name }}" style="width:100%">
                 {% else %}
                     <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="min-height: 200px;">
                         <i class="bi bi-box-seam display-4 text-muted"></i>
                     </div>
                 {% endif %}
                 
-                <div class="card-body d-flex flex-column p-2">
-                    <h5 class="card-title mb-1">
+                <div class="card-body p-2">
+                    <h4 class="card-title mb-1">
                         <a href="{{ url_for('customer.product', product_id=product.id) }}" class="text-decoration-none">{{ product.name }}</a>
-                    </h5>
+                    </h4>
                     <p class="card-text text-muted small mb-1" style="min-height: 40px;">{{ product.description or '暫無描述' }}</p>
                     <div class="mb-1">
                         {% if product.discounted_price %}
@@ -65,7 +65,7 @@
                             <span class="badge bg-danger">✗ 缺貨</span>
                         {% endif %}
                     </div>
-                    <a href="{{ url_for('customer.product', product_id=product.id) }}" class="btn btn-primary w-100 mt-auto">查看詳情</a>
+                    <a href="{{ url_for('customer.product', product_id=product.id) }}" class="btn btn-primary w-100">查看詳情</a>
                 </div>
             </div>
         </div>
