@@ -54,7 +54,8 @@ def users():
             'is_active': u.is_active,
             'created_at': u.created_at.isoformat() if u.created_at else None
         })
-    return render_template('backend/users.html', users=users_data)
+    # 使用工作版本的模板
+    return render_template('backend/users_working.html', users=users_data)
 
 @backend_bp.route('/shops')
 @role_required('admin')

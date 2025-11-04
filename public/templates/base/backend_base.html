@@ -103,15 +103,6 @@ $(document).ready(function() {
         }
     });
     
-    // 确保侧边栏链接可点击
-    $('.sidebar-nav .nav-link').on('click', function(e) {
-        // 允许默认行为（导航）
-        const href = $(this).attr('href');
-        if (href && href !== '#') {
-            window.location.href = href;
-        }
-    });
-    
     // 登出功能
     $('#logoutBtnSidebar, #logoutBtnTopbar').on('click', function(e) {
         e.preventDefault();
@@ -130,18 +121,43 @@ $(document).ready(function() {
         });
     });
     
-    // 确保模态框关闭时清理所有backdrop
-    $('.modal').on('hidden.bs.modal', function() {
+    // 彻底清理模态框
+    $(document).on('hidden.bs.modal', '.modal', function() {
+        console.log('✓ 模態框已關閉，清理中...');
+        
+        // 移除所有 backdrop
         $('.modal-backdrop').remove();
+        
+        // 移除 body 的 modal-open 类
         $('body').removeClass('modal-open');
-        $('body').css('padding-right', '');
+        
+        // 重置 body 样式
+        $('body').css({
+            'overflow': '',
+            'padding-right': ''
+        });
+        
+        // 确保模态框完全隐藏
+        $(this).removeClass('show');
+        $(this).css('display', 'none');
+        
+        console.log('✓ 清理完成');
     });
     
-    // 防止模态框阻止后续操作
-    $('.modal').on('shown.bs.modal', function() {
-        $(this).css('z-index', 1050);
-        $('.modal-backdrop').css('z-index', 1040);
+    // 模态框显示时的设置
+    $(document).on('show.bs.modal', '.modal', function() {
+        console.log('✓ 模態框準備顯示...');
+        
+        // 确保正确的 z-index
+        setTimeout(() => {
+            $(this).css('z-index', 1050);
+            $('.modal-backdrop').css('z-index', 1040);
+        }, 10);
     });
+    
+    // 额外的清理：当页面加载时清除任何残留的 backdrop
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open').css({'overflow': '', 'padding-right': ''});
 });
 </script>
 {% endblock %}

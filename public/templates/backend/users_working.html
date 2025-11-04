@@ -1,0 +1,380 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">使用者管理</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="openUserModal()">
+            <i class="bi bi-plus-lg me-2"></i>新增使用者
+        </button>
+    </div>
+    
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋姓名、郵箱..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="roleFilter" onchange="performSearch()">
+                        <option value="">所有角色</option>
+                        <option value="admin">管理員</option>
+                        <option value="store_admin">商店管理者</option>
+                        <option value="customer">客戶</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
+                        <option value="">所有狀態</option>
+                        <option value="active">啟用</option>
+                        <option value="inactive">禁用</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage()">
+                        <option value="10">10 筆/頁</option>
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>姓名</th>
+                            <th>郵箱</th>
+                            <th>角色</th>
+                            <th>狀態</th>
+                            <th>註冊時間</th>
+                            <th class="text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="7" class="text-center">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户模态框 -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle">新增使用者</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    <div class="mb-3">
+                        <label for="userName" class="form-label">姓名</label>
+                        <input type="text" class="form-control" id="userName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label">郵箱</label>
+                        <input type="email" class="form-control" id="userEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userPassword" class="form-label">密碼</label>
+                        <input type="password" class="form-control" id="userPassword">
+                        <small class="form-text text-muted">編輯時留空表示不修改密碼</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="userRole" class="form-label">角色</label>
+                        <select class="form-select" id="userRole" required>
+                            <option value="customer">客戶</option>
+                            <option value="store_admin">商店管理者</option>
+                            <option value="admin">管理員</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="userActive" checked>
+                            <label class="form-check-label" for="userActive">啟用帳號</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+// 所有功能都内嵌在页面中，不依赖外部文件
+console.log('✓ Users 頁面 JavaScript 開始載入');
+
+let allUsers = {{ users|tojson }};
+let filteredUsers = allUsers;
+let currentPage = 1;
+let itemsPerPage = 10;
+
+console.log('✓ 用戶數據:', allUsers.length, '筆');
+
+// 渲染用户行
+function renderUserRow(user) {
+    const roleBadges = {
+        'admin': '<span class="badge bg-danger">管理員</span>',
+        'store_admin': '<span class="badge bg-primary">商店管理者</span>',
+        'customer': '<span class="badge bg-info">客戶</span>'
+    };
+    
+    const statusBadge = user.is_active 
+        ? '<span class="badge bg-success">啟用</span>' 
+        : '<span class="badge bg-secondary">禁用</span>';
+    
+    const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString('zh-TW') : '-';
+    
+    return `
+        <tr>
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${roleBadges[user.role] || user.role}</td>
+            <td>${statusBadge}</td>
+            <td>${createdAt}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.id})">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) {
+        console.error('❌ 找不到表格元素');
+        return;
+    }
+    
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const usersToShow = filteredUsers.slice(startIndex, endIndex);
+    
+    if (usersToShow.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">沒有數據</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = usersToShow.map(user => renderUserRow(user)).join('');
+    updatePagination();
+    
+    console.log('✓ 渲染完成:', usersToShow.length, '筆數據');
+}
+
+// 更新分页信息
+function updatePagination() {
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const paginationInfo = document.getElementById('paginationInfo');
+    const paginationControls = document.getElementById('paginationControls');
+    
+    if (paginationInfo) {
+        const startItem = (currentPage - 1) * itemsPerPage + 1;
+        const endItem = Math.min(currentPage * itemsPerPage, filteredUsers.length);
+        paginationInfo.textContent = `顯示 ${startItem}-${endItem} / 共 ${filteredUsers.length} 筆`;
+    }
+    
+    if (paginationControls) {
+        let html = '';
+        
+        // 上一页
+        html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">上一頁</a>
+        </li>`;
+        
+        // 页码
+        for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+            html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>`;
+        }
+        
+        // 下一页
+        html += `<li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">下一頁</a>
+        </li>`;
+        
+        paginationControls.innerHTML = html;
+    }
+}
+
+// 切换页码
+function changePage(page) {
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    renderTable();
+}
+
+// 改变每页显示数量
+function changeItemsPerPage() {
+    itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
+    currentPage = 1;
+    renderTable();
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredUsers = allUsers.filter(user => {
+        const matchSearch = !searchValue || 
+            user.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchValue.toLowerCase());
+        
+        const matchRole = !roleFilter || user.role === roleFilter;
+        const matchStatus = !statusFilter || 
+            (statusFilter === 'active' && user.is_active) ||
+            (statusFilter === 'inactive' && !user.is_active);
+        
+        return matchSearch && matchRole && matchStatus;
+    });
+    
+    currentPage = 1;
+    renderTable();
+}
+
+// 打开用户模态框
+function openUserModal(userId = null) {
+    const modal = document.getElementById('userModal');
+    const title = document.getElementById('userModalTitle');
+    const form = document.getElementById('userForm');
+    
+    form.reset();
+    
+    if (userId) {
+        title.textContent = '編輯使用者';
+        const user = allUsers.find(u => u.id === userId);
+        if (user) {
+            document.getElementById('userId').value = user.id;
+            document.getElementById('userName').value = user.name;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userActive').checked = user.is_active;
+        }
+    } else {
+        title.textContent = '新增使用者';
+        document.getElementById('userId').value = '';
+    }
+    
+    console.log('✓ 模態框已準備:', userId ? '編輯' : '新增');
+}
+
+// 编辑用户
+function editUser(userId) {
+    console.log('✓ 編輯用戶:', userId);
+    openUserModal(userId);
+    const modalEl = document.getElementById('userModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+}
+
+// 保存用户
+function saveUser() {
+    const userId = document.getElementById('userId').value;
+    const data = {
+        name: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        role: document.getElementById('userRole').value,
+        is_active: document.getElementById('userActive').checked
+    };
+    
+    const password = document.getElementById('userPassword').value;
+    if (password) {
+        data.password = password;
+    }
+    
+    const url = userId ? `/api/users/${userId}` : '/api/users';
+    const method = userId ? 'PUT' : 'POST';
+    
+    console.log('✓ 保存用戶:', method, url, data);
+    
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            alert(userId ? '更新成功' : '新增成功');
+            location.reload();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('錯誤：' + (error.message || '操作失敗'));
+        }
+    });
+}
+
+// 删除用户
+function deleteUser(userId) {
+    console.log('✓ 刪除用戶:', userId);
+    
+    if (!confirm('確定要刪除此使用者嗎？')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/users/' + userId,
+        method: 'DELETE',
+        success: function() {
+            alert('刪除成功');
+            location.reload();
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 初始化
+$(document).ready(function() {
+    console.log('✓ Document Ready');
+    console.log('✓ jQuery 版本:', $.fn.jquery);
+    console.log('✓ Bootstrap:', typeof bootstrap);
+    console.log('✓ 用戶數據:', allUsers.length, '筆');
+    
+    // 渲染表格
+    renderTable();
+    
+    console.log('✓ 初始化完成');
+});
+</script>
+{% endblock %}
+
