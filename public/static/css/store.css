@@ -305,3 +305,14 @@
     height: 3rem;
 }
 
+/* 移除卡片的 padding 和 margin-bottom */
+.card {
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* 卡片内容区域 padding 调整为 0.7rem */
+.card-body {
+    padding: 0.7rem !important;
+}
+
