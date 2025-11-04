@@ -56,9 +56,16 @@ class Shop(db.Model):
     products = db.relationship('Product', backref='shop', lazy=True, cascade='all, delete-orphan')
     toppings = db.relationship('Topping', backref='shop', lazy=True, cascade='all, delete-orphan')
     orders = db.relationship('Order', backref='shop', lazy=True)
+    images = db.relationship('ShopImage', backref='shop', lazy=True, cascade='all, delete-orphan', order_by='ShopImage.display_order')
     
     def __repr__(self):
         return f'<Shop {self.name}>'
+    
+    def get_primary_image(self):
+        """獲取主要圖片（第一張）"""
+        if self.images:
+            return self.images[0].image_path
+        return None
 
 class Category(db.Model):
     """產品分類模型"""
@@ -156,6 +163,24 @@ class OrderItem(db.Model):
     
     def __repr__(self):
         return f'<OrderItem {self.id}>'
+
+class ShopImage(db.Model):
+    """店鋪圖片模型"""
+    __tablename__ = 'shop_image'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False)
+    image_path = db.Column(db.String(500), nullable=False)
+    display_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    __table_args__ = (
+        Index('idx_shop_image_shop', 'shop_id'),
+        Index('idx_shop_image_order', 'shop_id', 'display_order'),
+    )
+    
+    def __repr__(self):
+        return f'<ShopImage shop_id={self.shop_id} order={self.display_order}>'
 
 class UpdateLog(db.Model):
     """系統更新日誌模型"""

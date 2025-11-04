@@ -23,6 +23,17 @@
         {% for shop in shops %}
         <div class="col-md-6 col-lg-4 shop-card-item" data-shop-name="{{ shop.name|lower }}">
             <div class="card h-100 shadow-sm">
+                <!-- 店鋪圖片 -->
+                <div class="position-relative" style="height: 200px; overflow: hidden; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+                    {% if shop.images and shop.images|length > 0 %}
+                        <img src="{{ shop.images[0].image_path }}" class="w-100 h-100" alt="{{ shop.name }}" style="object-fit: cover;">
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center h-100">
+                            <i class="bi bi-shop display-1 text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
                 <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">
                         <a href="{{ url_for('customer.shop', shop_id=shop.id) }}" class="text-white text-decoration-none">{{ shop.name }}</a>

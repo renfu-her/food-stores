@@ -1,0 +1,8 @@
+# 忽略所有上傳的文件
+*
+
+# 但保留目錄結構
+!.gitignore
+!shops/
+shops/*
+!shops/.gitkeep

@@ -75,6 +75,29 @@
                 </div>
             </div>
             
+            <!-- 圖片管理 -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-images me-2"></i>店鋪圖片</h5>
+                    <label class="btn btn-sm btn-primary" for="imageUpload">
+                        <i class="bi bi-upload me-1"></i>上傳圖片
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(event)">
+                    </label>
+                </div>
+                <div class="card-body">
+                    <div id="imagesContainer" class="row g-3">
+                        <!-- 圖片將動態載入 -->
+                        <div class="col-12 text-center text-muted py-4">
+                            <i class="bi bi-image fs-1"></i>
+                            <p>暫無圖片，請點擊上方按鈕上傳</p>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted d-block mt-3">
+                        <i class="bi bi-info-circle me-1"></i>支持 PNG, JPG, GIF, WEBP 格式，最大 16MB。第一張圖片將顯示在前台。
+                    </small>
+                </div>
+            </div>
+            
             <!-- 配料管理 -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
@@ -161,12 +184,153 @@
 
 {% block extra_js %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 const shopId = {{ shop.id }};
 let newToppingCounter = 0;
+let shopImages = [];
+
+// 載入圖片列表
+function loadImages() {
+    $.ajax({
+        url: `/api/shops/${shopId}/images`,
+        method: 'GET',
+        success: function(images) {
+            shopImages = images;
+            renderImages();
+            initSortable();
+        },
+        error: function() {
+            console.error('載入圖片失敗');
+        }
+    });
+}
+
+// 渲染圖片
+function renderImages() {
+    const container = $('#imagesContainer');
+    
+    if (shopImages.length === 0) {
+        container.html(`
+            <div class="col-12 text-center text-muted py-4">
+                <i class="bi bi-image fs-1"></i>
+                <p>暫無圖片，請點擊上方按鈕上傳</p>
+            </div>
+        `);
+        return;
+    }
+    
+    let html = '';
+    shopImages.forEach((img, index) => {
+        html += `
+            <div class="col-md-3 image-item" data-id="${img.id}">
+                <div class="card position-relative">
+                    ${index === 0 ? '<div class="badge bg-primary position-absolute top-0 start-0 m-2">主圖</div>' : ''}
+                    <div class="badge bg-secondary position-absolute top-0 end-0 m-2" style="cursor: move;">
+                        <i class="bi bi-grip-vertical"></i>
+                    </div>
+                    <img src="${img.image_path}" class="card-img-top" alt="Shop Image" style="height: 200px; object-fit: cover;">
+                    <div class="card-body p-2 text-center">
+                        <button class="btn btn-sm btn-danger w-100" onclick="deleteImage(${img.id})">
+                            <i class="bi bi-trash"></i> 刪除
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.html(html);
+}
+
+// 初始化拖拽排序
+function initSortable() {
+    const container = document.getElementById('imagesContainer');
+    if (container && shopImages.length > 0) {
+        new Sortable(container, {
+            animation: 150,
+            handle: '.badge.bg-secondary',
+            onEnd: function() {
+                updateImageOrder();
+            }
+        });
+    }
+}
+
+// 上傳圖片
+function uploadImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    $.ajax({
+        url: `/api/shops/${shopId}/images`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(newImage) {
+            shopImages.push(newImage);
+            renderImages();
+            initSortable();
+            alert('上傳成功');
+            $('#imageUpload').val('');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert(error.error || '上傳失敗');
+            $('#imageUpload').val('');
+        }
+    });
+}
+
+// 刪除圖片
+function deleteImage(imageId) {
+    if (!confirm('確定要刪除此圖片嗎？')) return;
+    
+    $.ajax({
+        url: `/api/shop-images/${imageId}`,
+        method: 'DELETE',
+        success: function() {
+            shopImages = shopImages.filter(img => img.id !== imageId);
+            renderImages();
+            initSortable();
+            alert('刪除成功');
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 更新圖片順序
+function updateImageOrder() {
+    const order = [];
+    document.querySelectorAll('.image-item').forEach(item => {
+        order.push(parseInt(item.dataset.id));
+    });
+    
+    $.ajax({
+        url: `/api/shops/${shopId}/images/reorder`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ order: order }),
+        success: function() {
+            loadImages(); // 重新載入以更新主圖標記
+        },
+        error: function() {
+            console.error('排序失敗');
+        }
+    });
+}
 
 // 更新店铺基本信息
 $(document).ready(function() {
+    // 載入圖片
+    loadImages();
+    
     $('#shopForm').on('submit', function(e) {
         e.preventDefault();
         
