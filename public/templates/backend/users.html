@@ -60,7 +60,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function editUser(userId) {
     // TODO: 實現編輯使用者功能

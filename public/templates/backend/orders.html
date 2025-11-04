@@ -72,7 +72,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function filterOrders() {
     const status = $('#statusFilter').val();

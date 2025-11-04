@@ -67,7 +67,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 // 監聽新訂單事件
 window.addEventListener('newOrder', function(event) {

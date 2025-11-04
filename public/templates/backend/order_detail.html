@@ -202,7 +202,10 @@
     background-color: #5a6268;
 }
 </style>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function updateOrderStatus(orderId, status) {
     fetch('/api/orders/' + orderId + '/status', {
