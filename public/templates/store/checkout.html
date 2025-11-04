@@ -281,44 +281,37 @@ async function submitOrder() {
     // 組合完整地址
     const full_address = zipcode + ' ' + county + district + recipient_address;
     
-    // 按店鋪分組
-    const shopGroups = {};
-    for (const item of cartData) {
-        if (!shopGroups[item.shop_id]) {
-            shopGroups[item.shop_id] = [];
-        }
-        shopGroups[item.shop_id].push({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            toppings: item.toppings || []
-        });
-    }
+    // 準備訂單項目（不需要按店鋪分組，後端會自動處理）
+    const items = cartData.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        toppings: item.toppings || []
+    }));
     
-    // 為每個店鋪建立訂單
+    // 建立訂單（後端會自動按店鋪分組）
     try {
-        for (const [shopId, items] of Object.entries(shopGroups)) {
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shop_id: parseInt(shopId),
-                    items: items,
-                    recipient_name: recipient_name,
-                    recipient_phone: recipient_phone,
-                    recipient_address: full_address,
-                    delivery_note: delivery_note,
-                    payment_method: payment_method
-                })
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                alert('建立訂單失敗: ' + (error.message || '未知錯誤'));
-                return;
-            }
+        const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                items: items,  // 不再需要 shop_id
+                recipient_name: recipient_name,
+                recipient_phone: recipient_phone,
+                recipient_address: full_address,
+                delivery_note: delivery_note,
+                payment_method: payment_method
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            alert('建立訂單失敗: ' + (error.message || '未知錯誤'));
+            return;
         }
+        
+        const result = await response.json();
         
         // 清空購物車
         await fetch('/api/cart/clear', { method: 'DELETE' });

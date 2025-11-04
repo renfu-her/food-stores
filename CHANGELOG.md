@@ -4,6 +4,45 @@
 
 ---
 
+## 2025-11-04 21:00 - 訂單創建邏輯重構（自動從 Product 獲取 Shop ID）
+
+### ✨ 新增功能
+- ✅ 訂單創建支持不提供 shop_id（從 product_id 自動獲取）
+- ✅ 後端自動按店鋪分組商品
+- ✅ 單次 API 調用創建多個店鋪的訂單
+- ✅ 新增 `_create_single_order()` 輔助函數
+
+### 🐛 Bug 修復
+- ✅ 修復「店鋪ID不能為空」錯誤
+- ✅ 修復訂單創建權限過於嚴格的問題
+- ✅ 將 `@role_required('customer')` 改為 `@login_required`
+- ✅ 允許所有登入用戶（admin, customer, store_admin）建立訂單
+
+### 🔄 修改文件
+- ✅ `app/routes/api/orders.py` - 重構訂單創建邏輯，新增輔助函數
+- ✅ `public/templates/store/checkout.html` - 簡化前端邏輯，移除手動分組
+
+### 📊 數據流程改進
+```
+【修改前】前端手動分組
+items → 前端按 shop_id 分組 → 多次 POST /api/orders
+
+【修改後】後端自動分組
+items → 單次 POST /api/orders → 後端自動分組並創建多個訂單
+
+【優勢】
+✓ 前端邏輯簡化
+✓ 減少網絡請求
+✓ 利用資料庫關聯（Product.shop_id）
+✓ 更好的錯誤處理
+```
+
+---
+
+## 2025-11-04 20:45 - 修復訂單權限問題（已合併到上方）
+
+---
+
 ## 2025-11-04 20:30 - 結帳頁面整合個人資料
 
 ### ✨ 新增功能

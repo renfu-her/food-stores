@@ -6,6 +6,7 @@ from app import db
 from app.models import Order, OrderItem, Product, Shop, Topping, order_item_topping
 from app.utils.decorators import login_required, get_current_user, role_required
 from app.utils.validators import validate_integer, validate_order_status, validate_topping_count
+from app.utils.update_logger import log_update
 from decimal import Decimal
 from sqlalchemy import and_
 
@@ -165,10 +166,14 @@ def get_order(order_id):
             'details': {'error': str(e)}
         }), 500
 
-@orders_api_bp.route('/', methods=['POST'])
-@role_required('customer')
+@orders_api_bp.route('', methods=['POST'])
+@login_required
 def create_order():
-    """建立訂單（需要登入customer，狀態預設為pending）"""
+    """建立訂單（需要登入，狀態預設為pending）
+    支持兩種模式：
+    1. 傳統模式：提供 shop_id 和 items（單店鋪訂單）
+    2. 購物車模式：只提供 items，自動按 product.shop_id 分組創建多個訂單
+    """
     try:
         user = get_current_user()
         data = request.get_json()
@@ -180,15 +185,8 @@ def create_order():
                 'details': {}
             }), 400
         
-        shop_id = data.get('shop_id')
         items = data.get('items', [])
-        
-        if not shop_id:
-            return jsonify({
-                'error': 'validation_error',
-                'message': '店鋪ID不能為空',
-                'details': {}
-            }), 400
+        shop_id = data.get('shop_id')  # 可選參數
         
         if not items or not isinstance(items, list):
             return jsonify({
@@ -197,6 +195,54 @@ def create_order():
                 'details': {}
             }), 400
         
+        # 如果沒有提供 shop_id，從商品自動分組
+        if not shop_id:
+            # 購物車模式：按店鋪分組商品
+            shop_groups = {}
+            for item_data in items:
+                product_id = item_data.get('product_id')
+                if not product_id:
+                    return jsonify({
+                        'error': 'validation_error',
+                        'message': '產品ID不能為空',
+                        'details': {}
+                    }), 400
+                
+                # 獲取產品信息
+                product = Product.query.get(product_id)
+                if not product:
+                    return jsonify({
+                        'error': 'validation_error',
+                        'message': f'產品ID {product_id} 不存在',
+                        'details': {}
+                    }), 400
+                
+                # 按店鋪分組
+                if product.shop_id not in shop_groups:
+                    shop_groups[product.shop_id] = []
+                shop_groups[product.shop_id].append(item_data)
+            
+            # 為每個店鋪創建訂單
+            created_orders = []
+            for sid, shop_items in shop_groups.items():
+                order_data = {
+                    'shop_id': sid,
+                    'items': shop_items,
+                    'recipient_name': data.get('recipient_name'),
+                    'recipient_phone': data.get('recipient_phone'),
+                    'recipient_address': data.get('recipient_address'),
+                    'delivery_note': data.get('delivery_note'),
+                    'payment_method': data.get('payment_method', 'cod')
+                }
+                order = _create_single_order(user, order_data)
+                created_orders.append(order)
+            
+            return jsonify({
+                'message': f'成功建立 {len(created_orders)} 個訂單',
+                'orders': [{'order_id': o.id, 'shop_id': o.shop_id, 'total_price': int(o.total_price)} for o in created_orders]
+            }), 201
+        
+        # 傳統模式：單店鋪訂單
         # 驗證店鋪是否存在
         shop = Shop.query.get_or_404(shop_id)
         if shop.status != 'active':
@@ -463,3 +509,153 @@ def update_order_status(order_id):
             'message': '更新訂單狀態失敗',
             'details': {'error': str(e)}
         }), 500
+
+def _create_single_order(user, data):
+    """創建單個訂單的輔助函數
+    
+    Args:
+        user: 當前用戶
+        data: 訂單數據，包含 shop_id, items, recipient_name 等
+        
+    Returns:
+        Order: 創建的訂單對象
+    """
+    shop_id = data.get('shop_id')
+    items = data.get('items', [])
+    
+    # 驗證店鋪
+    shop = Shop.query.get(shop_id)
+    if not shop or shop.status != 'active':
+        raise ValueError(f'店鋪ID {shop_id} 不可用')
+    
+    # 計算總價並建立訂單項
+    total_price = Decimal('0')
+    order_items_data = []
+    
+    for item_data in items:
+        product_id = item_data.get('product_id')
+        quantity = item_data.get('quantity', 1)
+        toppings = item_data.get('toppings', [])
+        
+        # 驗證產品
+        product = Product.query.get(product_id)
+        if not product:
+            raise ValueError(f'產品ID {product_id} 不存在')
+        
+        if product.shop_id != shop_id:
+            raise ValueError(f'產品 {product_id} 不屬於店鋪 {shop_id}')
+        
+        if not product.is_active:
+            raise ValueError(f'產品 {product.name} 已下架')
+        
+        # 驗證庫存
+        is_valid, qty_value, error_msg = validate_integer(quantity, '數量', min_value=1)
+        if not is_valid:
+            raise ValueError(error_msg)
+        
+        if product.stock_quantity < qty_value:
+            raise ValueError(f'產品 {product.name} 庫存不足')
+        
+        # 驗證配料數量
+        is_valid, error_msg = validate_topping_count(shop_id, len(toppings))
+        if not is_valid:
+            raise ValueError(error_msg)
+        
+        # 計算單價
+        unit_price = product.discounted_price if product.discounted_price else product.unit_price
+        
+        # 計算配料價格
+        topping_price = Decimal('0')
+        topping_instances = []
+        for topping_data in toppings:
+            topping_id = topping_data.get('topping_id') or topping_data.get('id')
+            if topping_id:
+                topping = Topping.query.get(topping_id)
+                if topping and topping.shop_id == shop_id and topping.is_active:
+                    topping_price += topping.price
+                    topping_instances.append((topping, topping.price))
+        
+        # 項目總價
+        item_unit_price = unit_price + topping_price
+        item_total = item_unit_price * qty_value
+        total_price += item_total
+        
+        # 保存訂單項數據
+        order_items_data.append({
+            'product': product,
+            'quantity': qty_value,
+            'unit_price': item_unit_price,
+            'toppings': topping_instances
+        })
+        
+        # 減少庫存
+        product.stock_quantity -= qty_value
+    
+    # 創建訂單
+    order = Order(
+        user_id=user.id,
+        shop_id=shop_id,
+        total_price=total_price,
+        status='pending',
+        recipient_name=data.get('recipient_name'),
+        recipient_phone=data.get('recipient_phone'),
+        recipient_address=data.get('recipient_address'),
+        delivery_note=data.get('delivery_note'),
+        payment_method=data.get('payment_method', 'cod')
+    )
+    
+    db.session.add(order)
+    db.session.flush()
+    
+    # 添加訂單項
+    for item_data in order_items_data:
+        order_item = OrderItem(
+            order_id=order.id,
+            product_id=item_data['product'].id,
+            quantity=item_data['quantity'],
+            unit_price=item_data['unit_price']
+        )
+        db.session.add(order_item)
+        db.session.flush()
+        
+        # 添加配料關聯
+        for topping, topping_price in item_data['toppings']:
+            stmt = order_item_topping.insert().values(
+                order_item_id=order_item.id,
+                topping_id=topping.id,
+                price=topping_price
+            )
+            db.session.execute(stmt)
+    
+    # 記錄日誌
+    log_update(
+        action='create',
+        table_name='order',
+        record_id=order.id,
+        new_data={
+            'shop_id': order.shop_id,
+            'user_id': order.user_id,
+            'total_price': float(order.total_price),
+            'status': order.status
+        },
+        description=f'創建訂單: 店鋪 {shop_id}, 用戶 {user.name}, 總價 ${order.total_price}'
+    )
+    
+    # 觸發SocketIO事件
+    from app import socketio
+    socketio.emit('new_order', {
+        'order_id': order.id,
+        'shop_id': shop_id,
+        'user_id': user.id,
+        'total_price': float(total_price)
+    }, namespace=f'/shop/{shop_id}')
+    
+    socketio.emit('new_order', {
+        'order_id': order.id,
+        'shop_id': shop_id,
+        'user_id': user.id,
+        'total_price': float(total_price)
+    }, namespace='/backend')
+    
+    db.session.commit()
+    return order
