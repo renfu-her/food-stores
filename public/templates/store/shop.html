@@ -65,7 +65,7 @@
                             <span class="badge bg-danger">✗ 缺貨</span>
                         {% endif %}
                     </div>
-                    <a href="{{ url_for('customer.product', product_id=product.id) }}" class="btn btn-primary w-100">查看詳情</a>
+                    <button type="button" class="btn btn-primary w-100" onclick="showProductDetail({{ product.id }})">查看詳情</button>
                 </div>
             </div>
         </div>
@@ -77,11 +77,65 @@
     </div>
     {% endif %}
 </div>
+
+<!-- 產品詳情模態框 -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalTitle">產品詳情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <img id="productModalImage" src="" alt="" class="img-fluid rounded">
+                    </div>
+                    <div class="col-md-6">
+                        <h3 id="productModalName" class="mb-3"></h3>
+                        <p id="productModalDescription" class="text-muted mb-3"></p>
+                        
+                        <div class="mb-3">
+                            <div id="productModalPrice"></div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span id="productModalStock"></span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="productQuantity" class="form-label mb-2">數量</label>
+                            <input type="number" class="form-control" id="productQuantity" value="1" min="1">
+                        </div>
+                        
+                        <div id="productModalError" class="alert alert-danger mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" onclick="addToCart()">
+                    <i class="bi bi-cart-plus me-2"></i>加入購物車
+                </button>
+                <button type="button" class="btn btn-primary" onclick="buyNow()">
+                    <i class="bi bi-credit-card me-2"></i>直接結帳
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 {{ super() }}
 <script>
+let currentProduct = null;
+let productModal;
+
+$(document).ready(function() {
+    productModal = new bootstrap.Modal(document.getElementById('productModal'));
+});
+
 function filterProducts() {
     const categoryId = document.getElementById('categoryFilter').value;
     const cards = document.querySelectorAll('.product-card-item');
@@ -90,6 +144,135 @@ function filterProducts() {
             card.style.display = '';
         } else {
             card.style.display = 'none';
+        }
+    });
+}
+
+// 顯示產品詳情模態框
+function showProductDetail(productId) {
+    $.ajax({
+        url: `/api/products/${productId}`,
+        method: 'GET',
+        success: function(product) {
+            currentProduct = product;
+            
+            // 設置圖片
+            const imageSrc = (product.images && product.images.length > 0) 
+                ? product.images[0].image_path 
+                : '/static/img/no-image.png';
+            $('#productModalImage').attr('src', imageSrc).attr('alt', product.name);
+            
+            // 設置標題和描述
+            $('#productModalTitle').text(product.name);
+            $('#productModalName').text(product.name);
+            $('#productModalDescription').text(product.description || '暫無描述');
+            
+            // 設置價格
+            let priceHtml = '';
+            if (product.discounted_price) {
+                priceHtml = `
+                    <span class="text-decoration-line-through text-muted me-2 fs-5">$${product.unit_price}</span>
+                    <span class="text-danger fw-bold fs-3">$${product.discounted_price}</span>
+                `;
+            } else {
+                priceHtml = `<span class="fw-bold fs-3">$${product.unit_price}</span>`;
+            }
+            $('#productModalPrice').html(priceHtml);
+            
+            // 設置庫存
+            let stockHtml = '';
+            if (product.stock_quantity > 0) {
+                stockHtml = `<span class="badge bg-success fs-6">✓ 有庫存 (${product.stock_quantity})</span>`;
+                $('#productQuantity').attr('max', product.stock_quantity);
+            } else {
+                stockHtml = `<span class="badge bg-danger fs-6">✗ 缺貨</span>`;
+                $('#productQuantity').attr('disabled', true);
+            }
+            $('#productModalStock').html(stockHtml);
+            
+            // 重置數量
+            $('#productQuantity').val(1);
+            $('#productModalError').hide();
+            
+            // 顯示模態框
+            productModal.show();
+        },
+        error: function() {
+            alert('無法載入產品詳情');
+        }
+    });
+}
+
+// 加入購物車
+function addToCart() {
+    if (!currentProduct) return;
+    
+    const quantity = parseInt($('#productQuantity').val());
+    
+    if (quantity < 1) {
+        $('#productModalError').text('請輸入有效數量').show();
+        return;
+    }
+    
+    if (currentProduct.stock_quantity < quantity) {
+        $('#productModalError').text('庫存不足').show();
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/cart/add',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            product_id: currentProduct.id,
+            quantity: quantity
+        }),
+        success: function(response) {
+            productModal.hide();
+            alert('已加入購物車！');
+            // 更新購物車數量顯示（如果有）
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            $('#productModalError').text(error.error || '加入購物車失敗').show();
+        }
+    });
+}
+
+// 直接結帳
+function buyNow() {
+    if (!currentProduct) return;
+    
+    const quantity = parseInt($('#productQuantity').val());
+    
+    if (quantity < 1) {
+        $('#productModalError').text('請輸入有效數量').show();
+        return;
+    }
+    
+    if (currentProduct.stock_quantity < quantity) {
+        $('#productModalError').text('庫存不足').show();
+        return;
+    }
+    
+    // 加入購物車並跳轉到結帳頁面
+    $.ajax({
+        url: '/api/cart/add',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            product_id: currentProduct.id,
+            quantity: quantity
+        }),
+        success: function(response) {
+            window.location.href = '/store/checkout';
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            $('#productModalError').text(error.error || '操作失敗').show();
         }
     });
 }
