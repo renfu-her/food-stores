@@ -101,8 +101,6 @@ function renderUserRow(user) {
     
     const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString('zh-TW') : '-';
     
-    const editUrl = "{{ url_for('backend.user_edit', user_id=0) }}".replace('0', user.id);
-    
     return `
         <tr>
             <td>${user.id}</td>
@@ -112,7 +110,7 @@ function renderUserRow(user) {
             <td>${statusBadge}</td>
             <td>${createdAt}</td>
             <td class="text-end">
-                <a href="${editUrl}" class="btn btn-sm btn-outline-primary">
+                <a href="/backend/users/${user.id}/edit" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-pencil"></i> 編輯
                 </a>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">

@@ -43,7 +43,39 @@
                             <small class="form-text text-muted">每個訂單可選擇的最大 Topping 數量</small>
                         </div>
                         
-                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        <hr class="my-4">
+                        
+                        <h5 class="mb-3">
+                            <i class="bi bi-list-ul me-2"></i>初始配料 Toppings
+                            <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="addToppingRow()">
+                                <i class="bi bi-plus-circle me-1"></i>添加配料
+                            </button>
+                        </h5>
+                        
+                        <div id="toppingsContainer">
+                            <div class="row mb-2 topping-row">
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control topping-name" placeholder="配料名稱（例如：珍珠）">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" class="form-control topping-price" placeholder="價格" step="0.01" min="0" value="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input topping-active" type="checkbox" checked>
+                                        <label class="form-check-label small">啟用</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <button type="button" class="btn btn-outline-danger w-100" onclick="removeToppingRow(this)">
+                                        <i class="bi bi-trash"></i> 移除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">配料可選填，也可在店鋪創建後再添加</small>
+                        
+                        <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
                         
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
@@ -77,6 +109,43 @@
 {% block extra_js %}
 {{ super() }}
 <script>
+// 添加配料行
+function addToppingRow() {
+    const container = document.getElementById('toppingsContainer');
+    const row = document.createElement('div');
+    row.className = 'row mb-2 topping-row';
+    row.innerHTML = `
+        <div class="col-md-3">
+            <input type="text" class="form-control topping-name" placeholder="配料名稱">
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control topping-price" placeholder="價格" step="0.01" min="0" value="0">
+        </div>
+        <div class="col-md-2">
+            <div class="form-check form-switch">
+                <input class="form-check-input topping-active" type="checkbox" checked>
+                <label class="form-check-label small">啟用</label>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <button type="button" class="btn btn-outline-danger w-100" onclick="removeToppingRow(this)">
+                <i class="bi bi-trash"></i> 移除
+            </button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+// 移除配料行
+function removeToppingRow(btn) {
+    const row = btn.closest('.topping-row');
+    if (document.querySelectorAll('.topping-row').length > 1) {
+        row.remove();
+    } else {
+        alert('至少需要保留一行配料欄位');
+    }
+}
+
 $(document).ready(function() {
     $('#shopForm').on('submit', function(e) {
         e.preventDefault();
@@ -89,18 +158,40 @@ $(document).ready(function() {
             status: 'active'
         };
         
+        // 收集 Toppings
+        const toppings = [];
+        $('.topping-row').each(function() {
+            const name = $(this).find('.topping-name').val().trim();
+            const price = parseFloat($(this).find('.topping-price').val()) || 0;
+            const isActive = $(this).find('.topping-active').is(':checked');
+            
+            if (name) {  // 只添加有名稱的配料
+                toppings.push({
+                    name: name,
+                    price: price,
+                    is_active: isActive
+                });
+            }
+        });
+        
+        data.toppings = toppings;
+        
+        console.log('提交數據:', data);
+        
         $.ajax({
             url: '/api/shops',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: function() {
-                alert('新增成功');
+            success: function(response) {
+                console.log('創建成功:', response);
+                alert('店鋪新增成功！');
                 window.location.href = "{{ url_for('backend.shops') }}";
             },
             error: function(xhr) {
+                console.error('創建失敗:', xhr);
                 const error = xhr.responseJSON || {};
-                $('#errorMessage').text(error.message || '新增失敗').show();
+                $('#errorMessage').text(error.message || '新增失敗，請檢查表單').show();
             }
         });
     });

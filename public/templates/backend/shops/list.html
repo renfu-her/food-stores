@@ -103,7 +103,7 @@ function renderShopRow(shop) {
         <tr>
             <td>${shop.id}</td>
             <td>
-                <a href="{{ url_for('backend.shop_detail', shop_id=0) }}".replace('0', shop.id) class="text-decoration-none">
+                <a href="/backend/shop/${shop.id}" class="text-decoration-none">
                     ${shop.name}
                 </a>
             </td>
@@ -112,14 +112,14 @@ function renderShopRow(shop) {
             <td>${statusBadge}</td>
             <td>${createdAt}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-info" onclick="window.location.href='{{ url_for('backend.shop_detail', shop_id=0) }}'.replace('0', ${shop.id})">
-                    <i class="bi bi-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-primary" onclick="editShop(${shop.id})">
-                    <i class="bi bi-pencil"></i>
-                </button>
+                <a href="/backend/shop/${shop.id}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-eye"></i> 詳情
+                </a>
+                <a href="/backend/shops/${shop.id}/edit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> 編輯
+                </a>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteShop(${shop.id})">
-                    <i class="bi bi-trash"></i>
+                    <i class="bi bi-trash"></i> 刪除
                 </button>
             </td>
         </tr>
@@ -153,40 +153,9 @@ function performSearch() {
     updatePagination();
 }
 
-// 打开店铺模态框
-
-    } else {
-        title.textContent = '新增店鋪';
-        document.getElementById('shopId').value = '';
-    }
-}
-
 // 编辑店铺 - 跳转到编辑页面
 function editShop(shopId) {
     window.location.href = "{{ url_for('backend.shop_edit', shop_id=0) }}".replace('0', shopId);
-}
-
-// 旧代码已移除
-
-// 保存店铺
-;
-    
-    const url = shopId ? `/api/shops/${shopId}` : '/api/shops';
-    const method = shopId ? 'PUT' : 'POST';
-    
-    $.ajax({
-        url: url,
-        method: method,
-        contentType: 'application/json',
-        data: JSON.stringify(data),
-        success: function() {
-            showSuccess(shopId ? '更新成功' : '新增成功');
-        },
-        error: function(xhr) {
-            const error = xhr.responseJSON || {};
-            showError(error.message || '操作失敗');
-        }
-    });
 }
 
 // 删除店铺

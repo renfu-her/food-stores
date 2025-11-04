@@ -48,12 +48,12 @@ function renderOrderRow(order) {
             <td>${statusBadges[order.status] || order.status}</td>
             <td><small>${createdAt}</small></td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-info" onclick="window.location.href='{{ url_for('backend.order_detail', order_id=0) }}'.replace('0', ${order.id})">
-                    <i class="bi bi-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openStatusModal(${order.id}, '${order.status}')">
-                    <i class="bi bi-arrow-repeat"></i>
-                </button>
+                <a href="/backend/order/${order.id}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-eye"></i> 詳情
+                </a>
+                <a href="/backend/orders/${order.id}/edit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> 編輯
+                </a>
             </td>
         </tr>
     `;
@@ -110,28 +110,6 @@ function clearFilters() {
     document.getElementById('shopFilter').value = '';
     document.getElementById('dateFilter').value = '';
     performSearch();
-}
-
-// 打开状态更新模态框
-
-// 确认更新状态
-function confirmUpdateStatus() {
-    const orderId = document.getElementById('updateOrderId').value;
-    const newStatus = document.getElementById('newStatus').value;
-    
-    $.ajax({
-        url: `/api/orders/${orderId}/status`,
-        method: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify({ status: newStatus }),
-        success: function() {
-            bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
-            showSuccess('訂單狀態已更新');
-        },
-        error: function() {
-            showError('更新失敗');
-        }
-    });
 }
 
 // 导出订单

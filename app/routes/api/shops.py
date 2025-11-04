@@ -123,6 +123,18 @@ def create_shop():
         db.session.add(new_shop)
         db.session.flush()  # 獲取店鋪ID
         
+        # 如果有 toppings 數據，批量創建
+        toppings_data = data.get('toppings', [])
+        if toppings_data:
+            for topping_item in toppings_data:
+                topping = Topping(
+                    shop_id=new_shop.id,
+                    name=topping_item.get('name', '').strip(),
+                    price=topping_item.get('price', 0),
+                    is_active=topping_item.get('is_active', True)
+                )
+                db.session.add(topping)
+        
         # 記錄日誌
         log_update(
             action='create',
@@ -133,9 +145,10 @@ def create_shop():
                 'description': new_shop.description,
                 'owner_id': new_shop.owner_id,
                 'max_toppings_per_order': new_shop.max_toppings_per_order,
-                'status': new_shop.status
+                'status': new_shop.status,
+                'toppings_count': len(toppings_data)
             },
-            description=f'新增店鋪: {new_shop.name}'
+            description=f'新增店鋪: {new_shop.name}（含 {len(toppings_data)} 個配料）'
         )
         
         db.session.commit()

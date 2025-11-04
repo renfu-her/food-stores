@@ -1,0 +1,355 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <a href="{{ url_for('backend.shops') }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            編輯店鋪
+        </h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <!-- 店铺基本信息 -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-shop me-2"></i>店鋪基本資訊</h5>
+                </div>
+                <div class="card-body">
+                    <form id="shopForm">
+                        <input type="hidden" id="shopId" value="{{ shop.id }}">
+                        
+                        <div class="mb-3">
+                            <label for="shopName" class="form-label">店鋪名稱 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shopName" value="{{ shop.name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="shopOwner" class="form-label">店主 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="shopOwner" required>
+                                <option value="">請選擇店主</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" {% if user.id == shop.owner_id %}selected{% endif %}>
+                                    {{ user.name }} ({{ user.email }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="shopDescription" class="form-label">店鋪描述</label>
+                            <textarea class="form-control" id="shopDescription" rows="4">{{ shop.description or '' }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="shopMaxToppings" class="form-label">最大Toppings數量 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="shopMaxToppings" value="{{ shop.max_toppings_per_order }}" min="0" max="20" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="shopStatus" class="form-label">狀態 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="shopStatus" required>
+                                    <option value="active" {% if shop.status == 'active' %}selected{% endif %}>營業中</option>
+                                    <option value="inactive" {% if shop.status == 'inactive' %}selected{% endif %}>已關閉</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="shopErrorMessage" class="alert alert-danger" style="display: none;"></div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>更新店鋪資訊
+                            </button>
+                            <a href="{{ url_for('backend.shops') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>取消
+                            </a>
+                            <button type="button" class="btn btn-danger ms-auto" onclick="deleteShop()">
+                                <i class="bi bi-trash me-2"></i>刪除店鋪
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 配料管理 -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>配料管理 Toppings</h5>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addNewTopping()">
+                        <i class="bi bi-plus-circle me-1"></i>添加配料
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="toppingsContainer">
+                        {% if shop.toppings %}
+                            {% for topping in shop.toppings %}
+                            <div class="row mb-3 topping-item border-bottom pb-3" data-topping-id="{{ topping.id }}">
+                                <div class="col-md-3">
+                                    <label class="form-label small">配料名稱</label>
+                                    <input type="text" class="form-control topping-name" value="{{ topping.name }}" data-original="{{ topping.name }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">價格</label>
+                                    <input type="number" class="form-control topping-price" value="{{ topping.price }}" step="0.01" min="0" data-original="{{ topping.price }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">狀態</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input topping-active" type="checkbox" {% if topping.is_active %}checked{% endif %} data-original="{{ topping.is_active }}">
+                                        <label class="form-check-label small">啟用</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-5 d-flex align-items-end gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary flex-fill" onclick="updateTopping({{ topping.id }})">
+                                        <i class="bi bi-save"></i> 更新
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTopping({{ topping.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center py-3">尚無配料，點擊上方按鈕添加</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 新配料表单 -->
+                    <div id="newToppingsContainer" style="display: none;">
+                        <hr class="my-3">
+                        <h6 class="text-primary">新增配料</h6>
+                        <div id="newToppingsRows"></div>
+                    </div>
+                    
+                    <div id="toppingErrorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">店鋪資訊</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><strong>ID:</strong> {{ shop.id }}</li>
+                        <li class="mb-2"><strong>建立時間:</strong> {{ shop.created_at.strftime('%Y-%m-%d %H:%M') if shop.created_at else '-' }}</li>
+                        <li class="mb-2"><strong>更新時間:</strong> {{ shop.updated_at.strftime('%Y-%m-%d %H:%M') if shop.updated_at else '-' }}</li>
+                        <li class="mb-2"><strong>配料數量:</strong> {{ shop.toppings|length }} 個</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">說明</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-info-circle text-info me-2"></i>修改店鋪資訊後需點擊「更新」</li>
+                        <li class="mb-2"><i class="bi bi-list-ul text-primary me-2"></i>配料可以單獨更新或刪除</li>
+                        <li class="mb-2"><i class="bi bi-plus-circle text-success me-2"></i>點擊「添加配料」可新增配料</li>
+                        <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i>刪除店鋪會同時刪除所有配料</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+const shopId = {{ shop.id }};
+let newToppingCounter = 0;
+
+// 更新店铺基本信息
+$(document).ready(function() {
+    $('#shopForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const data = {
+            name: $('#shopName').val(),
+            owner_id: parseInt($('#shopOwner').val()),
+            description: $('#shopDescription').val(),
+            max_toppings_per_order: parseInt($('#shopMaxToppings').val()),
+            status: $('#shopStatus').val()
+        };
+        
+        $.ajax({
+            url: '/api/shops/' + shopId,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function() {
+                alert('店鋪資訊更新成功');
+                location.reload();
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                $('#shopErrorMessage').text(error.message || '更新失敗').show();
+            }
+        });
+    });
+});
+
+// 添加新配料
+function addNewTopping() {
+    const container = document.getElementById('newToppingsContainer');
+    const rowsContainer = document.getElementById('newToppingsRows');
+    
+    container.style.display = 'block';
+    
+    newToppingCounter++;
+    const row = document.createElement('div');
+    row.className = 'row mb-2 new-topping-row border-bottom pb-2';
+    row.id = 'newTopping' + newToppingCounter;
+    row.innerHTML = `
+        <div class="col-md-3">
+            <input type="text" class="form-control new-topping-name" placeholder="配料名稱" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control new-topping-price" placeholder="價格" step="0.01" min="0" value="0">
+        </div>
+        <div class="col-md-2">
+            <div class="form-check form-switch">
+                <input class="form-check-input new-topping-active" type="checkbox" checked>
+                <label class="form-check-label small">啟用</label>
+            </div>
+        </div>
+        <div class="col-md-5 d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-success flex-fill" onclick="saveNewTopping(${newToppingCounter})">
+                <i class="bi bi-save"></i> 保存
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="removeNewToppingRow(${newToppingCounter})">
+                <i class="bi bi-x"></i> 取消
+            </button>
+        </div>
+    `;
+    rowsContainer.appendChild(row);
+}
+
+// 移除新配料行
+function removeNewToppingRow(id) {
+    document.getElementById('newTopping' + id).remove();
+    if (document.querySelectorAll('.new-topping-row').length === 0) {
+        document.getElementById('newToppingsContainer').style.display = 'none';
+    }
+}
+
+// 保存新配料
+function saveNewTopping(id) {
+    const row = document.getElementById('newTopping' + id);
+    const name = row.querySelector('.new-topping-name').value.trim();
+    const price = parseFloat(row.querySelector('.new-topping-price').value) || 0;
+    const isActive = row.querySelector('.new-topping-active').checked;
+    
+    if (!name) {
+        alert('請輸入配料名稱');
+        return;
+    }
+    
+    const data = {
+        toppings: [{
+            name: name,
+            price: price,
+            is_active: isActive
+        }]
+    };
+    
+    $.ajax({
+        url: '/api/shops/' + shopId + '/toppings',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            alert('配料添加成功');
+            location.reload();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('添加失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+}
+
+// 更新配料
+function updateTopping(toppingId) {
+    const row = document.querySelector(`[data-topping-id="${toppingId}"]`);
+    const name = row.querySelector('.topping-name').value.trim();
+    const price = parseFloat(row.querySelector('.topping-price').value) || 0;
+    const isActive = row.querySelector('.topping-active').checked;
+    
+    if (!name) {
+        alert('配料名稱不能為空');
+        return;
+    }
+    
+    const data = {
+        name: name,
+        price: price,
+        is_active: isActive
+    };
+    
+    $.ajax({
+        url: '/api/toppings/' + toppingId,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            alert('配料更新成功');
+            // 更新原始值
+            row.querySelector('.topping-name').dataset.original = name;
+            row.querySelector('.topping-price').dataset.original = price;
+            row.querySelector('.topping-active').dataset.original = isActive;
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('更新失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+}
+
+// 删除配料
+function deleteTopping(toppingId) {
+    if (!confirm('確定要刪除此配料嗎？')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/toppings/' + toppingId,
+        method: 'DELETE',
+        success: function() {
+            alert('配料刪除成功');
+            location.reload();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('刪除失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+}
+
+// 删除店铺
+function deleteShop() {
+    if (!confirm('確定要刪除此店鋪嗎？此操作將同時刪除所有配料和產品，且無法復原！')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/shops/' + shopId,
+        method: 'DELETE',
+        success: function() {
+            alert('店鋪刪除成功');
+            window.location.href = "{{ url_for('backend.shops') }}";
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+</script>
+{% endblock %}
+

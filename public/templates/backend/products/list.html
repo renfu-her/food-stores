@@ -44,7 +44,7 @@ function renderProductRow(product) {
         <tr>
             <td>${product.id}</td>
             <td>
-                <a href="{{ url_for('backend.product_detail', product_id=0) }}".replace('0', product.id) class="text-decoration-none">
+                <a href="/backend/product/${product.id}" class="text-decoration-none">
                     ${product.name}
                 </a>
             </td>
@@ -54,14 +54,14 @@ function renderProductRow(product) {
             <td>${stockBadge}</td>
             <td>${statusBadge}</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-info" onclick="window.location.href='{{ url_for('backend.product_detail', product_id=0) }}'.replace('0', ${product.id})">
-                    <i class="bi bi-eye"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-primary" onclick="editProduct(${product.id})">
-                    <i class="bi bi-pencil"></i>
-                </button>
+                <a href="/backend/product/${product.id}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-eye"></i> 詳情
+                </a>
+                <a href="/backend/products/${product.id}/edit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> 編輯
+                </a>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
-                    <i class="bi bi-trash"></i>
+                    <i class="bi bi-trash"></i> 刪除
                 </button>
             </td>
         </tr>
@@ -100,46 +100,6 @@ function performSearch() {
     currentPage = 1;
     renderProductsTable();
     updatePagination();
-}
-
-// 打开产品模态框
-
-    } else {
-        title.textContent = '新增產品';
-        document.getElementById('productId').value = '';
-    }
-}
-
-// 编辑产品
-function editProduct(productId) {
-    openProductModal(productId);
-    new bootstrap.Modal(document.getElementById('productModal')).show();
-}
-
-// 保存产品
-;
-    
-    const discountPrice = document.getElementById('productDiscountPrice').value;
-    if (discountPrice) {
-        data.discounted_price = parseFloat(discountPrice);
-    }
-    
-    const url = productId ? `/api/products/${productId}` : '/api/products';
-    const method = productId ? 'PUT' : 'POST';
-    
-    $.ajax({
-        url: url,
-        method: method,
-        contentType: 'application/json',
-        data: JSON.stringify(data),
-        success: function() {
-            showSuccess(productId ? '更新成功' : '新增成功');
-        },
-        error: function(xhr) {
-            const error = xhr.responseJSON || {};
-            showError(error.message || '操作失敗');
-        }
-    });
 }
 
 // 删除产品
