@@ -1,0 +1,287 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <a href="{{ url_for('backend.products') }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            編輯產品
+        </h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>產品資訊</h5>
+                </div>
+                <div class="card-body">
+                    <form id="productForm">
+                        <input type="hidden" id="productId" value="{{ product.id }}">
+                        
+                        <div class="mb-3">
+                            <label for="productName" class="form-label">產品名稱 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="productName" value="{{ product.name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="productShop" class="form-label">所屬店鋪 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="productShop" required>
+                                <option value="">請選擇店鋪</option>
+                                {% for shop in shops %}
+                                <option value="{{ shop.id }}" {% if shop.id == product.shop_id %}selected{% endif %}>{{ shop.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="productCategory" class="form-label">產品分類 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select class="form-select" id="productCategory" required>
+                                    <option value="">請選擇分類</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if category.id == product.category_id %}selected{% endif %}>{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-outline-primary" type="button" onclick="showQuickAddCategory()">
+                                    <i class="bi bi-plus-circle"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" onclick="manageCategoriesInline()">
+                                    <i class="bi bi-gear"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">快速新增或管理分類</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="productDescription" class="form-label">產品描述</label>
+                            <textarea class="form-control" id="productDescription" rows="4">{{ product.description or '' }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="productPrice" class="form-label">單價 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="productPrice" value="{{ product.unit_price|int }}" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="productDiscountPrice" class="form-label">折扣價</label>
+                                <input type="number" class="form-control" id="productDiscountPrice" value="{% if product.discounted_price %}{{ product.discounted_price|int }}{% endif %}" min="0">
+                                <small class="form-text text-muted">選填，留空表示無折扣</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="productStock" class="form-label">庫存數量 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="productStock" value="{{ product.stock_quantity }}" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="productStatus" class="form-label">狀態 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="productStatus" required>
+                                    <option value="true" {% if product.is_active %}selected{% endif %}>上架</option>
+                                    <option value="false" {% if not product.is_active %}selected{% endif %}>下架</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>更新
+                            </button>
+                            <a href="{{ url_for('backend.products') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>取消
+                            </a>
+                            <button type="button" class="btn btn-danger ms-auto" onclick="deleteProduct()">
+                                <i class="bi bi-trash me-2"></i>刪除產品
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">產品資訊</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><strong>ID:</strong> {{ product.id }}</li>
+                        <li class="mb-2"><strong>建立時間:</strong> {{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '-' }}</li>
+                        <li class="mb-2"><strong>更新時間:</strong> {{ product.updated_at.strftime('%Y-%m-%d %H:%M') if product.updated_at else '-' }}</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">說明</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-info-circle text-info me-2"></i>修改後需點擊「更新」</li>
+                        <li class="mb-2"><i class="bi bi-tag text-primary me-2"></i>折扣價必須小於單價</li>
+                        <li class="mb-2"><i class="bi bi-box-seam text-success me-2"></i>庫存為 0 時將顯示缺貨</li>
+                        <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i>刪除產品無法復原</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快速新增分類模態框 -->
+<div class="modal fade" id="quickCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">快速新增分類</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="quickCategoryName" class="form-label">分類名稱 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="quickCategoryName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="quickCategoryDesc" class="form-label">描述</label>
+                    <textarea class="form-control" id="quickCategoryDesc" rows="2"></textarea>
+                </div>
+                <div id="quickCategoryError" class="alert alert-danger" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveQuickCategory()">新增</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 管理分類模態框 -->
+<div class="modal fade" id="manageCategoriesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">管理分類</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-sm">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>名稱</th>
+                                <th>產品數</th>
+                                <th class="text-end">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manageCategoriesBody">
+                            <tr><td colspan="3" class="text-center">載入中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯分類模態框 -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">編輯分類</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCategoryId">
+                <div class="mb-3">
+                    <label for="editCategoryName" class="form-label">分類名稱 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="editCategoryName" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editCategoryDesc" class="form-label">描述</label>
+                    <textarea class="form-control" id="editCategoryDesc" rows="2"></textarea>
+                </div>
+                <div id="editCategoryError" class="alert alert-danger" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveEditCategory()">更新</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+const productId = {{ product.id }};
+let quickCategoryModal, manageCategoriesModal, editCategoryModal;
+let allCategoriesData = [];
+
+$(document).ready(function() {
+    quickCategoryModal = new bootstrap.Modal(document.getElementById('quickCategoryModal'));
+    manageCategoriesModal = new bootstrap.Modal(document.getElementById('manageCategoriesModal'));
+    editCategoryModal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    
+    $('#productForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const unitPrice = parseInt($('#productPrice').val());
+        const discountPrice = $('#productDiscountPrice').val() ? parseInt($('#productDiscountPrice').val()) : null;
+        
+        // 驗證折扣價
+        if (discountPrice && discountPrice >= unitPrice) {
+            $('#errorMessage').text('折扣價必須小於單價').show();
+            return;
+        }
+        
+        const data = {
+            name: $('#productName').val(),
+            shop_id: parseInt($('#productShop').val()),
+            category_id: parseInt($('#productCategory').val()),
+            description: $('#productDescription').val(),
+            unit_price: unitPrice,
+            discounted_price: discountPrice,
+            stock_quantity: parseInt($('#productStock').val()),
+            is_active: $('#productStatus').val() === 'true'
+        };
+        
+        $.ajax({
+            url: '/api/products/' + productId,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function() {
+                alert('更新成功');
+                location.reload();
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                $('#errorMessage').text(error.message || '更新失敗').show();
+            }
+        });
+    });
+});
+
+function deleteProduct() {
+    if (!confirm('確定要刪除此產品嗎？此操作無法復原！')) return;
+    
+    $.ajax({
+        url: '/api/products/' + productId,
+        method: 'DELETE',
+        success: function() {
+            alert('刪除成功');
+            window.location.href = "{{ url_for('backend.products') }}";
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+</script>
+{% endblock %}
+

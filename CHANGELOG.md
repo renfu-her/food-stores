@@ -1,13 +1,103 @@
 # 更新日誌 (Changelog)
 
-## 2025-11-04 - 重大更新
+## 2025-11-04 (下午) - 產品管理與分類系統完善
 
-### ��� CSS 架構優化
+### 🖼️ 商店多圖片管理系統
+- ✅ 新增 ShopImage 數據模型（圖片路徑、排序、索引）
+- ✅ Shop 模型新增 images 關係和 get_primary_image() 方法
+- ✅ 圖片上傳 API（POST /api/shops/:id/images）
+- ✅ 圖片刪除 API（DELETE /api/shop-images/:id）
+- ✅ 圖片排序 API（PUT /api/shops/:id/images/reorder）
+- ✅ 後台圖片管理界面（拖拽排序、主圖標記）
+- ✅ 使用 SortableJS 實現拖拽排序
+- ✅ 前台顯示第一張圖片或默認 icon
+- ✅ 圖片比例：1:1 正方形（padding-top: 100%）
+- ✅ 文件上傳配置（16MB、支持 PNG/JPG/GIF/WEBP）
+- ✅ 創建上傳目錄：public/uploads/shops/
+
+### 📦 產品管理系統完善
+- ✅ 修復產品列表頁面（完整的 HTML 結構）
+- ✅ 創建產品新增頁面（/backend/products/add）
+- ✅ 創建產品編輯頁面（/backend/products/:id/edit）
+- ✅ 產品表單包含：名稱、店鋪、分類、描述、單價、折扣價、庫存、狀態
+- ✅ 價格驗證：折扣價必須小於單價
+- ✅ 修復數據字段：stock → stock_quantity
+- ✅ 產品列表包含：搜索、5個篩選器、分頁
+
+### 🏷️ 分類管理完整系統
+- ✅ 創建分類 API（/api/categories）
+  - GET - 獲取所有分類（含產品數量統計）
+  - POST - 新增分類（名稱唯一性驗證）
+  - PUT - 更新分類
+  - DELETE - 刪除分類（檢查關聯產品）
+- ✅ 後台分類管理頁面（/backend/categories）
+- ✅ 分類 CRUD 操作（搜索、新增、編輯、刪除）
+- ✅ 產品頁面快速管理分類
+  - 快速新增按鈕（+ 圖標）
+  - 管理按鈕（齒輪圖標）
+  - 內聯編輯和刪除
+- ✅ 數據保護：有產品的分類無法刪除
+- ✅ 禁用刪除按鈕並顯示提示
+- ✅ 左側菜單新增「分類管理」
+
+### 🔧 JavaScript 和 URL 修復
+- ✅ 修復 shops/list.html 語法錯誤（移除廢棄代碼）
+- ✅ 修復 products/list.html 語法錯誤（移除不完整結構）
+- ✅ 修復所有列表頁面 URL 生成問題
+  - shops/list.html：詳情和編輯鏈接
+  - users/list.html：編輯鏈接
+  - products/list.html：詳情和編輯鏈接
+  - orders/list.html：詳情和編輯鏈接
+- ✅ 從 Jinja2 模板語法改為 JavaScript 模板字符串
+
+### 💰 價格系統標準化
+- ✅ 所有價格改為整數（無小數點）
+- ✅ 移除所有 step="0.01" 屬性
+- ✅ parseFloat → parseInt
+- ✅ toFixed(2) → Math.round() 或 |int 過濾器
+- ✅ 影響文件：
+  - 配料價格輸入（shops/add.html, shops/edit.html）
+  - 產品價格顯示（shop_detail.html, product_detail.html）
+  - 訂單價格顯示（orders/list.html, order_detail.html）
+
+### 📐 配料表單優化
+- ✅ 配料名稱框：col-5 (42%) → col-3 (25%)
+- ✅ 價格框：col-3/4 → col-2 (17%)
+- ✅ 新增狀態開關：col-2 (17%)
+- ✅ 按鈕區域擴大：col-2/3 → col-5 (41%)
+- ✅ 統一 shops/add.html 和 shops/edit.html 布局
+- ✅ 新增配料表單支持狀態字段
+
+### 🌏 繁體中文完善
+- ✅ Backend 所有用戶可見文本檢查
+- ✅ Topping/Toppings → 配料（13 個文件）
+- ✅ 影響範圍：
+  - 後台管理界面（6 個文件）
+  - 店主管理界面（4 個文件）
+  - 前台顧客界面（3 個文件）
+- ✅ 保留技術名稱（變量、函數、API 路徑）
+
+### 🐛 Bug 修復
+- ✅ 修復產品編輯頁面 JavaScript 代碼重複
+- ✅ 修復訂單列表移除廢棄的 confirmUpdateStatus() 函數
+- ✅ 修復所有列表頁面的 404 問題
+- ✅ 清理所有模態框重構遺留的廢代碼
+
+### 📊 數據統計
+- ✅ 分類顯示產品數量統計
+- ✅ 產品列表顯示庫存徽章
+- ✅ 店鋪列表顯示配料數量
+
+---
+
+## 2025-11-04 (上午) - 重大更新
+
+### ��� CSS 架構優化
 - ✅ 創建 4 個獨立 CSS 文件（22.4KB）
 - ✅ 從 14 個頁面移除內聯樣式
 - ✅ 改善代碼維護性和緩存效率
 
-### ��� Backend 完整 CRUD 系統
+### ��� Backend 完整 CRUD 系統
 - ✅ Users 管理：搜索、過濾、新增/編輯/刪除、分頁
 - ✅ Shops 管理：搜索、過濾、新增/編輯/刪除、分頁
 - ✅ Products 管理：搜索、過濾、新增/編輯/刪除、分頁
@@ -15,7 +105,7 @@
 - ✅ 每頁筆數可選：10/20/50/100 筆
 - ✅ Bootstrap 5 模態框表單
 
-### ��� 系統更新 Log
+### ��� 系統更新 Log
 - ✅ 新增 UpdateLog 數據模型
 - ✅ 自動記錄所有 CRUD 操作
 - ✅ 保存修改前後數據對比（JSON格式）
@@ -24,7 +114,7 @@
 - ✅ 詳情模態框（數據對比視圖）
 - ✅ 已集成 Users 和 Shops API
 
-### ��� JavaScript 優化
+### ��� JavaScript 優化
 - ✅ 創建 backend_common.js 通用組件庫
 - ✅ jQuery 載入順序修復（確保最先載入）
 - ✅ 所有頁面添加 {{ super() }} 保留父模板腳本
@@ -38,26 +128,26 @@
 - ✅ 創建 env.example 範例文件
 - ✅ 完整的中文註釋和說明
 
-### ��� 錯誤處理
+### ��� 錯誤處理
 - ✅ 創建友好的錯誤頁面（400/401/403/404/500）
 - ✅ 區分 API 和網頁請求
 - ✅ Socket.IO 會話斷開錯誤靜默處理
 - ✅ KeyError 處理器
 
-### ��� UI/UX 改進
+### ��� UI/UX 改進
 - ✅ 登入/註冊合併為一個按鈕
 - ✅ 登入頁面使用 Bootstrap 選項卡
 - ✅ Font Awesome 7 圖標集成
 - ✅ 用戶下拉菜單（個人資料、登出）
 - ✅ 響應式設計優化
 
-### ��� 重命名和重構
+### ��� 重命名和重構
 - ✅ shop_owner → store_admin
 - ✅ admin → backend（路由）
 - ✅ 簡體中文 → 繁體中文
 - ✅ 管理員密碼重置腳本
 
-### ��� 項目結構
+### ��� 項目結構
 ```
 public/
 ├── static/
@@ -77,7 +167,7 @@ public/
     └── errors/ (5個錯誤頁面)
 ```
 
-### ��� 測試帳號
+### ��� 測試帳號
 - **Backend**: admin@admin.com / admin123
 - **環境配置**: 複製 env.example 為 .env
 

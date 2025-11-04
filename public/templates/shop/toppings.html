@@ -3,8 +3,8 @@
 {% block content %}
 <div class="container">
     <div class="page-header">
-        <h1>Toppings管理</h1>
-        <button class="btn btn-primary" onclick="showAddToppingModal()">新增Topping</button>
+        <h1>配料管理</h1>
+        <button class="btn btn-primary" onclick="showAddToppingModal()">新增配料</button>
     </div>
     
     <div class="filter-bar">
@@ -56,11 +56,11 @@
     </div>
 </div>
 
-<!-- 新增/編輯Topping模態框 -->
+<!-- 新增/編輯配料模態框 -->
 <div id="toppingModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeToppingModal()">&times;</span>
-        <h2 id="modalTitle">新增Topping</h2>
+        <h2 id="modalTitle">新增配料</h2>
         <form id="toppingForm">
             <input type="hidden" id="toppingId" name="topping_id">
             <input type="hidden" name="shop_id" value="{{ shop.id }}">
@@ -107,7 +107,7 @@ function filterToppings() {
 function showAddToppingModal() {
     document.getElementById('toppingForm').reset();
     document.getElementById('toppingId').value = '';
-    document.getElementById('modalTitle').textContent = '新增Topping';
+    document.getElementById('modalTitle').textContent = '新增配料';
     document.getElementById('toppingModal').style.display = 'flex';
 }
 
@@ -138,7 +138,7 @@ async function editTopping(toppingId) {
 }
 
 function deleteTopping(toppingId) {
-    if (confirm('確定要刪除此Topping嗎？')) {
+    if (confirm('確定要刪除此配料嗎？')) {
         fetch('/api/toppings/' + toppingId, {
             method: 'DELETE',
             headers: {
@@ -178,7 +178,7 @@ document.getElementById('toppingForm').addEventListener('submit', async function
                 body: JSON.stringify(data)
             });
         } else {
-            // 新增Topping
+            // 新增配料
             response = await fetch('/api/shops/' + shopId + '/toppings', {
                 method: 'POST',
                 headers: {

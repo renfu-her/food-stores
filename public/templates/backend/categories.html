@@ -1,0 +1,258 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">分類管理</h1>
+        <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="bi bi-plus-lg me-2"></i>新增分類
+        </button>
+    </div>
+    
+    <!-- 搜索 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋分類名稱..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="25">25 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>分類名稱</th>
+                            <th>描述</th>
+                            <th>產品數量</th>
+                            <th>建立時間</th>
+                            <th class="text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        <tr><td colspan="6" class="text-center">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="paginationInfo"></div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增/編輯模態框 -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">新增分類</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId">
+                    
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">分類名稱 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="categoryName" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">描述</label>
+                        <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
+                    </div>
+                    
+                    <div id="modalError" class="alert alert-danger" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
+<script>
+let allCategories = {{ categories|tojson }};
+let categoryModal;
+
+$(document).ready(function() {
+    categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+    window.currentRenderFunction = renderCategoriesTable;
+    initializeDataTable('categoriesTableBody', allCategories, renderCategoryRow);
+});
+
+// 渲染分類行
+function renderCategoryRow(category) {
+    const createdAt = category.created_at ? new Date(category.created_at).toLocaleDateString('zh-TW') : '-';
+    const canDelete = category.product_count === 0;
+    
+    return `
+        <tr>
+            <td>${category.id}</td>
+            <td><strong>${category.name}</strong></td>
+            <td>${category.description || '-'}</td>
+            <td>
+                ${category.product_count > 0 
+                    ? `<span class="badge bg-primary">${category.product_count}</span>`
+                    : '<span class="badge bg-secondary">0</span>'
+                }
+            </td>
+            <td>${createdAt}</td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary" onclick="editCategory(${category.id})">
+                    <i class="bi bi-pencil"></i> 編輯
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${category.id})" ${!canDelete ? 'disabled title="此分類下有產品，無法刪除"' : ''}>
+                    <i class="bi bi-trash"></i> 刪除
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderCategoriesTable() {
+    renderTable('categoriesTableBody', renderCategoryRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    
+    filteredItems = allCategories.filter(category => {
+        const matchSearch = !searchValue || 
+            category.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+            (category.description && category.description.toLowerCase().includes(searchValue.toLowerCase()));
+        
+        return matchSearch;
+    });
+    
+    currentPage = 1;
+    renderCategoriesTable();
+    updatePagination();
+}
+
+// 顯示新增模態框
+function showAddModal() {
+    document.getElementById('categoryForm').reset();
+    document.getElementById('categoryId').value = '';
+    document.getElementById('modalTitle').textContent = '新增分類';
+    $('#modalError').hide();
+    categoryModal.show();
+}
+
+// 編輯分類
+function editCategory(categoryId) {
+    const category = allCategories.find(c => c.id === categoryId);
+    if (!category) return;
+    
+    document.getElementById('categoryId').value = category.id;
+    document.getElementById('categoryName').value = category.name;
+    document.getElementById('categoryDescription').value = category.description || '';
+    document.getElementById('modalTitle').textContent = '編輯分類';
+    $('#modalError').hide();
+    categoryModal.show();
+}
+
+// 儲存分類
+function saveCategory() {
+    const categoryId = document.getElementById('categoryId').value;
+    const name = document.getElementById('categoryName').value.trim();
+    const description = document.getElementById('categoryDescription').value.trim();
+    
+    if (!name) {
+        $('#modalError').text('請輸入分類名稱').show();
+        return;
+    }
+    
+    const data = { name, description };
+    const url = categoryId ? `/api/categories/${categoryId}` : '/api/categories';
+    const method = categoryId ? 'PUT' : 'POST';
+    
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            categoryModal.hide();
+            showSuccess(categoryId ? '更新成功' : '新增成功');
+            // 重新載入數據
+            loadCategories();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            $('#modalError').text(error.error || error.message || '操作失敗').show();
+        }
+    });
+}
+
+// 刪除分類
+function deleteCategory(categoryId) {
+    const category = allCategories.find(c => c.id === categoryId);
+    if (!category) return;
+    
+    if (category.product_count > 0) {
+        alert(`此分類下有 ${category.product_count} 個產品，無法刪除！\n請先將產品移至其他分類或刪除產品。`);
+        return;
+    }
+    
+    if (!confirm(`確定要刪除分類「${category.name}」嗎？`)) return;
+    
+    $.ajax({
+        url: '/api/categories/' + categoryId,
+        method: 'DELETE',
+        success: function() {
+            showSuccess('刪除成功');
+            loadCategories();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert(error.message || '刪除失敗');
+        }
+    });
+}
+
+// 重新載入分類數據
+function loadCategories() {
+    $.ajax({
+        url: '/api/categories',
+        method: 'GET',
+        success: function(data) {
+            allCategories = data;
+            filteredItems = allCategories;
+            currentPage = 1;
+            renderCategoriesTable();
+            updatePagination();
+        }
+    });
+}
+</script>
+{% endblock %}
+

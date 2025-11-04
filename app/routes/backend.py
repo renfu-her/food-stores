@@ -133,7 +133,7 @@ def products():
             'category_id': p.category_id,
             'unit_price': float(p.unit_price),
             'discounted_price': float(p.discounted_price) if p.discounted_price else None,
-            'stock': p.stock,
+            'stock': p.stock_quantity,
             'is_active': p.is_active,
             'created_at': p.created_at.isoformat() if p.created_at else None
         })
@@ -258,6 +258,26 @@ def users_v2():
             'created_at': u.created_at.isoformat() if u.created_at else None
         })
     return render_template('backend/users_v2.html', users=users_data)
+
+@backend_bp.route('/categories')
+@role_required('admin')
+def categories():
+    """分類管理頁面"""
+    from app.models import Category
+    categories_list = Category.query.order_by(Category.name).all()
+    
+    categories_data = []
+    for c in categories_list:
+        product_count = Product.query.filter_by(category_id=c.id).count()
+        categories_data.append({
+            'id': c.id,
+            'name': c.name,
+            'description': c.description,
+            'product_count': product_count,
+            'created_at': c.created_at.isoformat() if c.created_at else None
+        })
+    
+    return render_template('backend/categories.html', categories=categories_data)
 
 @backend_bp.route('/update-logs')
 @role_required('admin')

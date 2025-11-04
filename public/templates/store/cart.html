@@ -55,7 +55,7 @@ async function loadCart() {
                         <h3>${product.name}</h3>
                         <p>數量: ${item.quantity}</p>
                         <p>單價: $${parseFloat(unitPrice).toFixed(2)}</p>
-                        ${item.toppings && item.toppings.length > 0 ? '<p style="color: #999; font-size: 0.9rem;">含 ' + item.toppings.length + ' 個Toppings</p>' : ''}
+                        ${item.toppings && item.toppings.length > 0 ? '<p style="color: #999; font-size: 0.9rem;">含 ' + item.toppings.length + ' 個配料</p>' : ''}
                     </div>
                     <div class="cart-item-actions">
                         <span class="item-price">$${itemTotal.toFixed(2)}</span>

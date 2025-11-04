@@ -9,7 +9,89 @@
         </a>
     </div>
     
-    {% endblock %}
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋產品名稱..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="shopFilter" onchange="performSearch()">
+                        <option value="">所有店鋪</option>
+                        {% for shop in shops %}
+                        <option value="{{ shop.id }}">{{ shop.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="categoryFilter" onchange="performSearch()">
+                        <option value="">所有分類</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
+                        <option value="">所有狀態</option>
+                        <option value="active">上架</option>
+                        <option value="inactive">下架</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="stockFilter" onchange="performSearch()">
+                        <option value="">所有庫存</option>
+                        <option value="in">有庫存</option>
+                        <option value="out">缺貨</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select class="form-select" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="25">25 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>產品名稱</th>
+                            <th>店鋪</th>
+                            <th>分類</th>
+                            <th>價格</th>
+                            <th>庫存</th>
+                            <th>狀態</th>
+                            <th class="text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <tr><td colspan="8" class="text-center">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="paginationInfo"></div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
 {% block extra_js %}
 {{ super() }}

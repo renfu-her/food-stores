@@ -53,7 +53,7 @@
                             <th>ID</th>
                             <th>店鋪名稱</th>
                             <th>店主</th>
-                            <th>最大Toppings</th>
+                            <th>最大配料</th>
                             <th>狀態</th>
                             <th>建立時間</th>
                             <th class="text-end">操作</th>
@@ -160,7 +160,7 @@ function editShop(shopId) {
 
 // 删除店铺
 function deleteShop(shopId) {
-    confirmDelete('確定要刪除此店鋪嗎？此操作將同時刪除店鋪下的所有產品和Toppings！', function() {
+    confirmDelete('確定要刪除此店鋪嗎？此操作將同時刪除店鋪下的所有產品和配料！', function() {
         $.ajax({
             url: '/api/shops/' + shopId,
             method: 'DELETE',

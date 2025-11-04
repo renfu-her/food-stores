@@ -23,12 +23,12 @@
         {% for shop in shops %}
         <div class="col-md-6 col-lg-4 shop-card-item" data-shop-name="{{ shop.name|lower }}">
             <div class="card h-100 shadow-sm">
-                <!-- 店鋪圖片 -->
-                <div class="position-relative" style="height: 200px; overflow: hidden; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+                <!-- 店鋪圖片 (1:1 正方形) -->
+                <div class="position-relative" style="width: 100%; padding-top: 100%; overflow: hidden; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
                     {% if shop.images and shop.images|length > 0 %}
-                        <img src="{{ shop.images[0].image_path }}" class="w-100 h-100" alt="{{ shop.name }}" style="object-fit: cover;">
+                        <img src="{{ shop.images[0].image_path }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ shop.name }}" style="object-fit: cover;">
                     {% else %}
-                        <div class="d-flex align-items-center justify-content-center h-100">
+                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
                             <i class="bi bi-shop display-1 text-muted"></i>
                         </div>
                     {% endif %}
@@ -43,7 +43,7 @@
                     <p class="card-text text-muted">{{ shop.description or '暫無描述' }}</p>
                     <div class="mt-auto">
                         <small class="text-muted">
-                            <i class="bi bi-tag"></i> 最大Toppings: {{ shop.max_toppings_per_order }}
+                            <i class="bi bi-tag"></i> 最大配料: {{ shop.max_toppings_per_order }}
                         </small>
                     </div>
                 </div>

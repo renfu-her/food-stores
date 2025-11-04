@@ -34,8 +34,8 @@
         
         <div class="product-order-section">
             <div class="order-card">
-                <h2>選擇Toppings</h2>
-                <p class="topping-limit">最多可選擇 {{ product.shop.max_toppings_per_order }} 個Toppings</p>
+                <h2>選擇配料</h2>
+                <p class="topping-limit">最多可選擇 {{ product.shop.max_toppings_per_order }} 個配料</p>
                 
                 <form id="orderForm">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
@@ -60,7 +60,7 @@
                             </label>
                             {% endfor %}
                         {% else %}
-                            <p class="no-toppings">此產品暫無可用Toppings</p>
+                            <p class="no-toppings">此產品暫無可用配料</p>
                         {% endif %}
                     </div>
                     
@@ -135,7 +135,7 @@ document.querySelectorAll('input[name="toppings[]"]').forEach(checkbox => {
         if (this.checked) {
             const checkedCount = document.querySelectorAll('input[name="toppings[]"]:checked').length;
             if (checkedCount > maxToppings) {
-                alert('最多只能選擇' + maxToppings + '個toppings');
+                alert('最多只能選擇' + maxToppings + '個配料');
                 this.checked = false;
                 return;
             }
