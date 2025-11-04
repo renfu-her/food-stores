@@ -28,6 +28,16 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'backend.about' %}active{% endif %}" href="{{ url_for('backend.about') }}">
+                        <i class="bi bi-info-circle me-2"></i>關於我們
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.news') %}active{% endif %}" href="{{ url_for('backend.news') }}">
+                        <i class="bi bi-newspaper me-2"></i>最新消息
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.shop') %}active{% endif %}" href="{{ url_for('backend.shops') }}">
                         <i class="bi bi-shop me-2"></i>店鋪管理
                     </a>

@@ -1,0 +1,107 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">關於我們管理</h1>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form id="aboutForm">
+                <div class="mb-3">
+                    <label for="content" class="form-label">內容 <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="content" rows="20" required>{{ about.content if about else '' }}</textarea>
+                    <div class="form-text">支持 Markdown 語法</div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="mb-3">
+                    <h5>預覽</h5>
+                    <div id="preview" class="border rounded p-3" style="min-height: 200px; background: #f8f9fa;"></div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>儲存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+let easyMDE;
+
+$(document).ready(function() {
+    // 初始化 Markdown 編輯器
+    easyMDE = new EasyMDE({
+        element: document.getElementById('content'),
+        spellChecker: false,
+        status: false,
+        toolbar: [
+            'bold', 'italic', 'heading', '|',
+            'quote', 'unordered-list', 'ordered-list', '|',
+            'link', 'image', '|',
+            'preview', 'side-by-side', 'fullscreen', '|',
+            'guide'
+        ]
+    });
+    
+    // 實時更新預覽
+    easyMDE.codemirror.on('change', function() {
+        updatePreview();
+    });
+    
+    // 初始預覽
+    updatePreview();
+    
+    // 提交表單
+    $('#aboutForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const content = easyMDE.value().trim();
+        
+        if (!content) {
+            alert('請輸入內容');
+            return;
+        }
+        
+        $.ajax({
+            url: '/api/about',
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({ content: content }),
+            success: function(response) {
+                alert('儲存成功');
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                alert('儲存失敗：' + (error.message || error.error || '未知錯誤'));
+            }
+        });
+    });
+});
+
+// 更新預覽
+function updatePreview() {
+    const markdown = easyMDE.value();
+    const html = marked.parse(markdown);
+    document.getElementById('preview').innerHTML = html;
+}
+</script>
+{% endblock %}
+

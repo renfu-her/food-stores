@@ -1,0 +1,61 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="mb-4">最新消息</h1>
+    
+    {% if news_list %}
+    <div class="row g-4">
+        {% for news in news_list %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm hover-shadow transition">
+                {% if news.image_path %}
+                <div class="position-relative" style="width: 100%; padding-top: 66.67%; overflow: hidden;">
+                    <img src="{{ news.image_path }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ news.name }}" style="object-fit: cover;">
+                </div>
+                {% else %}
+                <div class="position-relative d-flex align-items-center justify-content-center" style="width: 100%; padding-top: 66.67%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <i class="bi bi-newspaper position-absolute text-white" style="font-size: 3rem;"></i>
+                </div>
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ news.name }}</h5>
+                    {% if news.description %}
+                    <p class="card-text text-muted">{{ news.description[:100] }}{% if news.description|length > 100 %}...{% endif %}</p>
+                    {% endif %}
+                    <div class="mt-auto">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar3"></i> {{ news.publish_date.strftime('%Y/%m/%d') if news.publish_date else '' }}
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('customer.news_detail', news_id=news.id) }}" class="btn btn-primary w-100">閱讀更多</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        暫無最新消息
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hover-shadow {
+    transition: all 0.3s ease;
+}
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+.transition {
+    transition: all 0.3s ease;
+}
+</style>
+{% endblock %}
+

@@ -1,0 +1,137 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">新增最新消息</h1>
+        <a href="{{ url_for('backend.news') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>返回列表
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form id="newsForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="name" class="form-label">標題 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="publish_date" class="form-label">發布日期</label>
+                        <input type="datetime-local" class="form-control" id="publish_date">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="is_active" class="form-label">狀態</label>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="is_active" checked>
+                            <label class="form-check-label" for="is_active">啟用</label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label for="description" class="form-label">描述/內容</label>
+                        <textarea class="form-control" id="description" rows="6"></textarea>
+                    </div>
+                    
+                    <div class="col-12">
+                        <label for="image" class="form-label">圖片</label>
+                        <input type="file" class="form-control" id="image" accept="image/*">
+                        <div class="form-text">建議尺寸：800x600 像素，最大 5MB</div>
+                    </div>
+                    
+                    <!-- 圖片預覽 -->
+                    <div class="col-12" id="imagePreviewContainer" style="display: none;">
+                        <label class="form-label">圖片預覽</label>
+                        <div class="position-relative" style="width: 100%; max-width: 600px; padding-top: 75%; overflow: hidden; background: #f5f5f5; border-radius: 4px;">
+                            <img id="imagePreview" class="position-absolute top-0 start-0 w-100 h-100" style="object-fit: cover;">
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>儲存
+                    </button>
+                    <a href="{{ url_for('backend.news') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-2"></i>取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // 設置當前時間為預設發布日期
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('publish_date').value = now.toISOString().slice(0, 16);
+    
+    // 圖片預覽
+    $('#image').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#imagePreview').attr('src', e.target.result);
+                $('#imagePreviewContainer').show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#imagePreviewContainer').hide();
+        }
+    });
+    
+    // 提交表單
+    $('#newsForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const name = $('#name').val().trim();
+        const description = $('#description').val().trim();
+        const publishDate = $('#publish_date').val();
+        const isActive = $('#is_active').is(':checked');
+        const fileInput = document.getElementById('image');
+        
+        if (!name) {
+            alert('請輸入標題');
+            return;
+        }
+        
+        const formData = new FormData();
+        if (fileInput.files && fileInput.files[0]) {
+            formData.append('image', fileInput.files[0]);
+        }
+        formData.append('name', name);
+        formData.append('description', description);
+        formData.append('publish_date', publishDate);
+        formData.append('is_active', isActive);
+        
+        $.ajax({
+            url: '/api/news',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                alert('新增成功');
+                window.location.href = "{{ url_for('backend.news') }}";
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                alert('新增失敗：' + (error.message || error.error || '未知錯誤'));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

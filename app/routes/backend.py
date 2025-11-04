@@ -316,6 +316,49 @@ def home_banner_edit(banner_id):
     banner = HomeBanner.query.get_or_404(banner_id)
     return render_template('backend/home_banners/edit.html', banner=banner)
 
+@backend_bp.route('/about')
+@role_required('admin')
+def about():
+    """關於我們管理頁面"""
+    from app.models import About
+    about_record = About.query.first()
+    return render_template('backend/about.html', about=about_record)
+
+@backend_bp.route('/news')
+@role_required('admin')
+def news():
+    """最新消息管理頁面"""
+    from app.models import News
+    news_list = News.query.order_by(News.publish_date.desc()).all()
+    
+    news_data = []
+    for n in news_list:
+        news_data.append({
+            'id': n.id,
+            'name': n.name,
+            'description': n.description,
+            'image_path': n.image_path,
+            'is_active': n.is_active,
+            'publish_date': n.publish_date.isoformat() if n.publish_date else None,
+            'created_at': n.created_at.isoformat() if n.created_at else None
+        })
+    
+    return render_template('backend/news/list.html', news=news_data)
+
+@backend_bp.route('/news/add')
+@role_required('admin')
+def news_add():
+    """新增最新消息頁面"""
+    return render_template('backend/news/add.html')
+
+@backend_bp.route('/news/<int:news_id>/edit')
+@role_required('admin')
+def news_edit(news_id):
+    """編輯最新消息頁面"""
+    from app.models import News
+    news = News.query.get_or_404(news_id)
+    return render_template('backend/news/edit.html', news=news)
+
 @backend_bp.route('/update-logs')
 @role_required('admin')
 def update_logs():

@@ -2,7 +2,7 @@
 商城使用者路由
 """
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
-from app.models import Shop, Product, Order, Category
+from app.models import Shop, Product, Order, Category, About, News
 from app.utils.decorators import login_required, get_current_user
 from app import db
 
@@ -13,6 +13,26 @@ def index():
     """商城首頁"""
     shops = Shop.query.filter_by(status='active').all()
     return render_template('store/index.html', shops=shops)
+
+@customer_bp.route('/about')
+def about():
+    """關於我們頁面"""
+    about_record = About.query.first()
+    return render_template('store/about.html', about=about_record)
+
+@customer_bp.route('/news')
+def news():
+    """最新消息列表頁面"""
+    news_list = News.query.filter_by(is_active=True).order_by(News.publish_date.desc()).all()
+    return render_template('store/news.html', news_list=news_list)
+
+@customer_bp.route('/news/<int:news_id>')
+def news_detail(news_id):
+    """最新消息詳情頁面"""
+    news = News.query.get_or_404(news_id)
+    if not news.is_active:
+        return redirect(url_for('customer.news'))
+    return render_template('store/news_detail.html', news=news)
 
 @customer_bp.route('/login')
 def login():

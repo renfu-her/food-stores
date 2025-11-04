@@ -1,0 +1,55 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('customer.index') }}">首頁</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('customer.news') }}">最新消息</a></li>
+            <li class="breadcrumb-item active">{{ news.name }}</li>
+        </ol>
+    </nav>
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+            <h1 class="mb-3">{{ news.name }}</h1>
+            
+            <div class="d-flex align-items-center text-muted mb-4">
+                <i class="bi bi-calendar3 me-2"></i>
+                <span>發布日期：{{ news.publish_date.strftime('%Y年%m月%d日') if news.publish_date else '' }}</span>
+            </div>
+            
+            {% if news.image_path %}
+            <div class="mb-4">
+                <img src="{{ news.image_path }}" alt="{{ news.name }}" class="img-fluid rounded">
+            </div>
+            {% endif %}
+            
+            {% if news.description %}
+            <div class="news-content">
+                {{ news.description|replace('\n', '<br>')|safe }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="{{ url_for('customer.news') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>返回列表
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.news-content {
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+.news-content p {
+    margin-bottom: 1rem;
+}
+</style>
+{% endblock %}
+

@@ -1,0 +1,209 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">最新消息管理</h1>
+        <a href="{{ url_for('backend.news_add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>新增消息
+        </a>
+    </div>
+    
+    <!-- 搜索和篩選 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋消息標題..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
+                        <option value="">所有狀態</option>
+                        <option value="true">啟用</option>
+                        <option value="false">停用</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 60px;">ID</th>
+                            <th style="width: 150px;">圖片</th>
+                            <th>標題</th>
+                            <th style="width: 100px;">狀態</th>
+                            <th style="width: 150px;">發布日期</th>
+                            <th class="text-end" style="width: 200px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="newsTableBody">
+                        <tr><td colspan="6" class="text-center">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
+<script>
+let allNews = {{ news|tojson }};
+
+// 渲染消息行
+function renderNewsRow(news) {
+    const statusBadge = news.is_active 
+        ? '<span class="badge bg-success">啟用</span>' 
+        : '<span class="badge bg-secondary">停用</span>';
+    
+    const publishDate = news.publish_date ? new Date(news.publish_date).toLocaleDateString('zh-TW') : '-';
+    
+    // 圖片縮略圖
+    let imageThumbnail = '';
+    if (news.image_path) {
+        imageThumbnail = `
+            <div class="position-relative" style="width: 100%; padding-top: 66.67%; overflow: hidden; background: #f5f5f5; border-radius: 4px;">
+                <img src="${news.image_path}" class="position-absolute top-0 start-0 w-100 h-100" alt="${news.name}" style="object-fit: cover;">
+            </div>
+        `;
+    } else {
+        imageThumbnail = `
+            <div class="position-relative d-flex align-items-center justify-content-center" style="width: 100%; padding-top: 66.67%; background: #e9ecef; border-radius: 4px;">
+                <i class="bi bi-image position-absolute text-muted" style="font-size: 2rem;"></i>
+            </div>
+        `;
+    }
+    
+    return `
+        <tr data-id="${news.id}">
+            <td>${news.id}</td>
+            <td>${imageThumbnail}</td>
+            <td><strong>${news.name}</strong></td>
+            <td>${statusBadge}</td>
+            <td>${publishDate}</td>
+            <td class="text-end">
+                <div class="d-flex gap-1 justify-content-end" style="white-space: nowrap;">
+                    <a href="/backend/news/${news.id}/edit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> 編輯
+                    </a>
+                    <button class="btn btn-sm btn-outline-${news.is_active ? 'warning' : 'success'}" onclick="toggleActive(${news.id}, ${news.is_active ? 'false' : 'true'})">
+                        <i class="bi bi-${news.is_active ? 'eye-slash' : 'eye'}"></i> ${news.is_active ? '停用' : '啟用'}
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteNews(${news.id}, '${news.name.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-trash"></i> 刪除
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderNewsTable() {
+    renderTable('newsTableBody', renderNewsRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredItems = allNews.filter(news => {
+        const matchSearch = !searchValue || 
+            news.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+            (news.description && news.description.toLowerCase().includes(searchValue.toLowerCase()));
+        
+        const matchStatus = !statusFilter || news.is_active.toString() === statusFilter;
+        
+        return matchSearch && matchStatus;
+    });
+    
+    currentPage = 1;
+    renderNewsTable();
+    updatePagination();
+}
+
+// 切換啟用狀態
+function toggleActive(newsId, newStatus) {
+    // 確保 newStatus 是布爾值
+    const isActive = newStatus === true || newStatus === 'true';
+    
+    $.ajax({
+        url: `/api/news/${newsId}`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ is_active: isActive }),
+        success: function() {
+            // 更新本地數據
+            const news = allNews.find(n => n.id === newsId);
+            if (news) {
+                news.is_active = isActive;
+            }
+            const filteredNews = filteredItems.find(n => n.id === newsId);
+            if (filteredNews) {
+                filteredNews.is_active = isActive;
+            }
+            renderNewsTable();
+            updatePagination();
+        },
+        error: function() {
+            alert('更新狀態失敗');
+        }
+    });
+}
+
+// 刪除消息
+function deleteNews(newsId, newsName) {
+    if (!confirm(`確定要刪除消息「${newsName}」嗎？`)) return;
+    
+    $.ajax({
+        url: `/api/news/${newsId}`,
+        method: 'DELETE',
+        success: function() {
+            // 從本地數據中移除
+            allNews = allNews.filter(n => n.id !== newsId);
+            filteredItems = filteredItems.filter(n => n.id !== newsId);
+            renderNewsTable();
+            updatePagination();
+            alert('刪除成功');
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderNewsTable;
+    initializeDataTable('newsTableBody', allNews, renderNewsRow);
+});
+</script>
+{% endblock %}
+

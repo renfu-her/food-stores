@@ -239,6 +239,38 @@ class HomeBanner(db.Model):
     def __repr__(self):
         return f'<HomeBanner {self.name}>'
 
+class About(db.Model):
+    """關於我們模型（單例）"""
+    __tablename__ = 'about'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)  # Markdown 內容
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<About {self.id}>'
+
+class News(db.Model):
+    """最新消息模型"""
+    __tablename__ = 'news'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)  # 標題
+    description = db.Column(db.Text, nullable=True)  # 描述/內容
+    image_path = db.Column(db.String(500), nullable=True)  # 圖片路徑
+    is_active = db.Column(db.Boolean, default=True, nullable=False)  # 是否啟用
+    publish_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # 發布日期
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    __table_args__ = (
+        Index('idx_news_active', 'is_active'),
+        Index('idx_news_publish_date', 'publish_date'),
+    )
+    
+    def __repr__(self):
+        return f'<News {self.name}>'
+
 class UpdateLog(db.Model):
     """系統更新日誌模型"""
     __tablename__ = 'update_log'
