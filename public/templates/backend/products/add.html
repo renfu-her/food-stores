@@ -20,12 +20,12 @@
                 <div class="card-body">
                     <form id="productForm">
                         <div class="mb-3">
-                            <label for="productName" class="form-label">產品名稱 <span class="text-danger">*</span></label>
+                            <label for="productName" class="form-label mb-2">產品名稱 <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="productName" required>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="productShop" class="form-label">所屬店鋪 <span class="text-danger">*</span></label>
+                        <div class="mb-3 mt-3">
+                            <label for="productShop" class="form-label mb-2">所屬店鋪 <span class="text-danger">*</span></label>
                             <select class="form-select" id="productShop" required>
                                 <option value="">請選擇店鋪</option>
                                 {% for shop in shops %}
@@ -34,8 +34,8 @@
                             </select>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="productCategory" class="form-label">產品分類 <span class="text-danger">*</span></label>
+                        <div class="mb-3 mt-3">
+                            <label for="productCategory" class="form-label mb-2">產品分類 <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <select class="form-select" id="productCategory" required>
                                     <option value="">請選擇分類</option>
@@ -47,33 +47,33 @@
                                     <i class="bi bi-gear"></i>
                                 </a>
                             </div>
-                            <small class="form-text text-muted">點擊齒輪圖標可在新分頁管理分類</small>
+                            <small class="form-text text-muted d-block mt-2">點擊齒輪圖標可在新分頁管理分類</small>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="productDescription" class="form-label">產品描述</label>
+                        <div class="mb-3 mt-3">
+                            <label for="productDescription" class="form-label mb-2">產品描述</label>
                             <textarea class="form-control" id="productDescription" rows="4"></textarea>
                         </div>
                         
-                        <div class="row">
+                        <div class="row mt-2">
                             <div class="col-md-6 mb-3">
-                                <label for="productPrice" class="form-label">單價 <span class="text-danger">*</span></label>
+                                <label for="productPrice" class="form-label mb-2">單價 <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="productPrice" min="0" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="productDiscountPrice" class="form-label">折扣價</label>
+                                <label for="productDiscountPrice" class="form-label mb-2">折扣價</label>
                                 <input type="number" class="form-control" id="productDiscountPrice" min="0">
-                                <small class="form-text text-muted">選填，留空表示無折扣</small>
+                                <small class="form-text text-muted d-block mt-2">選填，留空表示無折扣</small>
                             </div>
                         </div>
                         
-                        <div class="row">
+                        <div class="row mt-2">
                             <div class="col-md-6 mb-3">
-                                <label for="productStock" class="form-label">庫存數量 <span class="text-danger">*</span></label>
+                                <label for="productStock" class="form-label mb-2">庫存數量 <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="productStock" min="0" value="0" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="productStatus" class="form-label">狀態 <span class="text-danger">*</span></label>
+                                <label for="productStatus" class="form-label mb-2">狀態 <span class="text-danger">*</span></label>
                                 <select class="form-select" id="productStatus" required>
                                     <option value="true" selected>上架</option>
                                     <option value="false">下架</option>
