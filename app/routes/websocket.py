@@ -29,7 +29,7 @@ def handle_connect():
             join_room('/backend')
             emit('connected', {'message': '已連接到管理員頻道', 'user_id': user_id, 'role': user.role})
         
-        if user.role == 'shop_owner':
+        if user.role == 'store_admin':
             # 獲取使用者擁有的店鋪
             from app.models import Shop
             shops = Shop.query.filter_by(owner_id=user_id).all()
@@ -55,7 +55,7 @@ def handle_disconnect():
         if user_id:
             user = User.query.get(user_id)
             if user:
-                if user.role == 'shop_owner':
+                if user.role == 'store_admin':
                     from app.models import Shop
                     shops = Shop.query.filter_by(owner_id=user_id).all()
                     for shop in shops:

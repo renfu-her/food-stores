@@ -1,0 +1,234 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>訂單詳情</h1>
+        <a href="{{ url_for('backend.orders') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+    
+    <div class="detail-card">
+        <div class="detail-header">
+            <h2>訂單 #{{ order.id }}</h2>
+            <span class="badge 
+                {% if order.status == 'pending' %}badge-warning
+                {% elif order.status == 'process' %}badge-info
+                {% else %}badge-success{% endif %}">
+                {% if order.status == 'pending' %}待處理
+                {% elif order.status == 'process' %}處理中
+                {% else %}已完成{% endif %}
+            </span>
+        </div>
+        
+        <div class="detail-body">
+            <div class="info-section">
+                <h3>訂單資訊</h3>
+                <div class="info-item">
+                    <label>訂單ID:</label>
+                    <span>{{ order.id }}</span>
+                </div>
+                <div class="info-item">
+                    <label>使用者:</label>
+                    <span>{{ order.user.name if order.user else 'N/A' }} ({{ order.user.email if order.user else 'N/A' }})</span>
+                </div>
+                <div class="info-item">
+                    <label>店鋪:</label>
+                    <span>{{ order.shop.name if order.shop else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>總價:</label>
+                    <span class="total-price">${{ "%.2f"|format(order.total_price|float) }}</span>
+                </div>
+                <div class="info-item">
+                    <label>狀態:</label>
+                    <span>
+                        {% if order.status == 'pending' %}
+                            <span class="badge badge-warning">待處理</span>
+                        {% elif order.status == 'process' %}
+                            <span class="badge badge-info">處理中</span>
+                        {% elif order.status == 'success' %}
+                            <span class="badge badge-success">已完成</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <label>建立時間:</label>
+                    <span>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '' }}</span>
+                </div>
+            </div>
+            
+            <div class="items-section">
+                <h3>訂單項目</h3>
+                {% if order.items %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>產品名稱</th>
+                                <th>數量</th>
+                                <th>單價</th>
+                                <th>小計</th>
+                                <th>Toppings</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                            <tr>
+                                <td>{{ item.product.name if item.product else 'N/A' }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ "%.2f"|format(item.unit_price|float) }}</td>
+                                <td>${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</td>
+                                <td>
+                                    {% if item.toppings %}
+                                        {% for topping in item.toppings %}
+                                            {{ topping.name }}{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        無
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>此訂單暫無項目</p>
+                {% endif %}
+            </div>
+            
+            <div class="actions-section">
+                <h3>操作</h3>
+                <div class="action-buttons">
+                    <select id="statusSelect" onchange="updateOrderStatus({{ order.id }}, this.value)" class="status-select">
+                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>待處理</option>
+                        <option value="process" {% if order.status == 'process' %}selected{% endif %}>處理中</option>
+                        <option value="success" {% if order.status == 'success' %}selected{% endif %}>已完成</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.detail-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.detail-header h2 {
+    margin: 0;
+}
+
+.detail-body {
+    padding: 2rem;
+}
+
+.info-section,
+.items-section,
+.actions-section {
+    margin-bottom: 2rem;
+}
+
+.info-section h3,
+.items-section h3,
+.actions-section h3 {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #eee;
+}
+
+.info-item {
+    display: flex;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item label {
+    font-weight: 500;
+    width: 150px;
+    color: #666;
+}
+
+.total-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.status-select {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.status-select:focus {
+    outline: none;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+</style>
+
+<script>
+function updateOrderStatus(orderId, status) {
+    fetch('/api/orders/' + orderId + '/status', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: status })
+    }).then(response => {
+        if (response.ok) {
+            alert('訂單狀態更新成功');
+            location.reload();
+        } else {
+            alert('更新失敗');
+        }
+    });
+}
+
+// 監聽訂單更新事件
+window.addEventListener('orderUpdated', function(event) {
+    const data = event.detail;
+    if (data.order_id == {{ order.id }}) {
+        console.log('訂單更新:', data);
+        location.reload();
+    }
+});
+</script>
+{% endblock %}
+

@@ -4,7 +4,7 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Shop, User, Topping
-from app.utils.decorators import login_required, role_required, shop_owner_required, shop_access_required, get_current_user
+from app.utils.decorators import login_required, role_required, shop_access_required, get_current_user
 from app.utils.validators import validate_integer, validate_decimal
 
 shops_api_bp = Blueprint('shops_api', __name__)
@@ -62,9 +62,9 @@ def get_shop(shop_id):
         }), 404
 
 @shops_api_bp.route('/', methods=['POST'])
-@role_required('shop_owner', 'admin')
+@role_required('store_admin', 'admin')
 def create_shop():
-    """建立店鋪（需要shop_owner或admin角色）"""
+    """建立店鋪（需要store_admin或admin角色）"""
     try:
         user = get_current_user()
         data = request.get_json()
@@ -98,8 +98,8 @@ def create_shop():
                 'details': {}
             }), 400
         
-        # 如果使用者是shop_owner，檢查是否已有店鋪
-        if user.role == 'shop_owner':
+        # 如果使用者是store_admin，檢查是否已有店鋪
+        if user.role == 'store_admin':
             existing_shop = Shop.query.filter_by(owner_id=user.id).first()
             if existing_shop:
                 return jsonify({

@@ -30,8 +30,8 @@
                         <div class="info-value">
                             {% if user.role == 'customer' %}
                                 <span class="badge badge-customer">客戶</span>
-                            {% elif user.role == 'shop_owner' %}
-                                <span class="badge badge-shop">店鋪擁有者</span>
+                            {% elif user.role == 'store_admin' %}
+                                <span class="badge badge-shop">店鋪管理者</span>
                             {% else %}
                                 <span class="badge badge-admin">管理員</span>
                             {% endif %}

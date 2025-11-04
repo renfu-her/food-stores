@@ -1,0 +1,210 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>店鋪詳情</h1>
+        <a href="{{ url_for('backend.shops') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+    
+    <div class="detail-card">
+        <div class="detail-header">
+            <h2>{{ shop.name }}</h2>
+            <span class="badge {% if shop.status == 'active' %}badge-success{% else %}badge-danger{% endif %}">
+                {% if shop.status == 'active' %}啟動{% else %}禁用{% endif %}
+            </span>
+        </div>
+        
+        <div class="detail-body">
+            <div class="info-section">
+                <h3>基本資訊</h3>
+                <div class="info-item">
+                    <label>店鋪ID:</label>
+                    <span>{{ shop.id }}</span>
+                </div>
+                <div class="info-item">
+                    <label>店鋪名稱:</label>
+                    <span>{{ shop.name }}</span>
+                </div>
+                <div class="info-item">
+                    <label>擁有者:</label>
+                    <span>{{ shop.owner.name if shop.owner else 'N/A' }} ({{ shop.owner.email if shop.owner else 'N/A' }})</span>
+                </div>
+                <div class="info-item">
+                    <label>描述:</label>
+                    <span>{{ shop.description or '暫無描述' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>最大Toppings數量:</label>
+                    <span>{{ shop.max_toppings_per_order }}</span>
+                </div>
+                <div class="info-item">
+                    <label>建立時間:</label>
+                    <span>{{ shop.created_at.strftime('%Y-%m-%d %H:%M') if shop.created_at else '' }}</span>
+                </div>
+            </div>
+            
+            <div class="products-section">
+                <h3>產品列表 ({{ products|length }})</h3>
+                {% if products %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>產品名稱</th>
+                                <th>分類</th>
+                                <th>單價</th>
+                                <th>庫存</th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr>
+                                <td>{{ product.id }}</td>
+                                <td>{{ product.name }}</td>
+                                <td>{{ product.category.name if product.category else 'N/A' }}</td>
+                                <td>${{ "%.2f"|format(product.unit_price|float) }}</td>
+                                <td>{{ product.stock_quantity }}</td>
+                                <td>
+                                    {% if product.is_active %}
+                                        <span class="badge badge-success">上架</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">下架</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('backend.product_detail', product_id=product.id) }}" class="btn btn-sm btn-primary">查看</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>此店鋪暫無產品</p>
+                {% endif %}
+            </div>
+            
+            <div class="toppings-section">
+                <h3>Toppings列表 ({{ toppings|length }})</h3>
+                {% if toppings %}
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>名稱</th>
+                                <th>價格</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for topping in toppings %}
+                            <tr>
+                                <td>{{ topping.id }}</td>
+                                <td>{{ topping.name }}</td>
+                                <td>
+                                    {% if topping.price == 0 %}
+                                        <span class="free-badge">FREE</span>
+                                    {% else %}
+                                        ${{ "%.2f"|format(topping.price|float) }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if topping.is_active %}
+                                        <span class="badge badge-success">啟動</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">禁用</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>此店鋪暫無Toppings</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.detail-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.detail-header h2 {
+    margin: 0;
+}
+
+.detail-body {
+    padding: 2rem;
+}
+
+.info-section,
+.products-section,
+.toppings-section {
+    margin-bottom: 2rem;
+}
+
+.info-section h3,
+.products-section h3,
+.toppings-section h3 {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #eee;
+}
+
+.info-item {
+    display: flex;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-item label {
+    font-weight: 500;
+    width: 150px;
+    color: #666;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+</style>
+{% endblock %}
+

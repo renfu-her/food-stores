@@ -59,6 +59,13 @@ def products():
     products_list = Product.query.order_by(Product.created_at.desc()).all()
     return render_template('backend/products.html', products=products_list)
 
+@backend_bp.route('/orders')
+@role_required('admin')
+def orders():
+    """訂單管理頁面"""
+    orders_list = Order.query.order_by(Order.created_at.desc()).all()
+    return render_template('backend/orders.html', orders=orders_list)
+
 @backend_bp.route('/shop/<int:shop_id>')
 @role_required('admin')
 def shop_detail(shop_id):

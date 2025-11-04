@@ -3,28 +3,28 @@
 """
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
 from app.models import Shop, Product, Order, Category, Topping
-from app.utils.decorators import login_required, shop_owner_required, get_current_user
+from app.utils.decorators import login_required, role_required, get_current_user
 from app import db
 
-shop_owner_bp = Blueprint('shop_owner', __name__)
+store_admin_bp = Blueprint('store_admin', __name__)
 
-@shop_owner_bp.route('/')
-@shop_owner_required
+@store_admin_bp.route('/')
+@role_required('store_admin')
 def index():
-    """Shop Owner首頁 - 重定向到儀表板"""
-    return redirect(url_for('shop_owner.dashboard'))
+    """Store Admin首頁 - 重定向到儀表板"""
+    return redirect(url_for('store_admin.dashboard'))
 
-@shop_owner_bp.route('/login')
+@store_admin_bp.route('/login')
 def login():
     """商店管理者登入頁面"""
     if 'user_id' in session:
         user = get_current_user()
-        if user and user.role == 'shop_owner':
-            return redirect(url_for('shop_owner.dashboard'))
+        if user and user.role == 'store_admin':
+            return redirect(url_for('store_admin.dashboard'))
     return render_template('shop/login.html')
 
-@shop_owner_bp.route('/dashboard')
-@shop_owner_required
+@store_admin_bp.route('/dashboard')
+@role_required('store_admin')
 def dashboard():
     """商店管理者儀表板"""
     user = get_current_user()
@@ -56,16 +56,16 @@ def dashboard():
                          success_orders=success_orders,
                          recent_orders=recent_orders)
 
-@shop_owner_bp.route('/profile')
-@shop_owner_required
+@store_admin_bp.route('/profile')
+@role_required('store_admin')
 def profile():
     """店鋪資訊管理頁面"""
     user = get_current_user()
     shop = Shop.query.filter_by(owner_id=user.id).first_or_404()
     return render_template('shop/profile.html', shop=shop, user=user)
 
-@shop_owner_bp.route('/products')
-@shop_owner_required
+@store_admin_bp.route('/products')
+@role_required('store_admin')
 def products():
     """產品管理頁面"""
     user = get_current_user()
@@ -77,8 +77,8 @@ def products():
                          shop=shop,
                          categories=categories)
 
-@shop_owner_bp.route('/toppings')
-@shop_owner_required
+@store_admin_bp.route('/toppings')
+@role_required('store_admin')
 def toppings():
     """Toppings管理頁面"""
     user = get_current_user()
@@ -86,8 +86,8 @@ def toppings():
     toppings_list = Topping.query.filter_by(shop_id=shop.id).order_by(Topping.created_at.desc()).all()
     return render_template('shop/toppings.html', toppings=toppings_list, shop=shop)
 
-@shop_owner_bp.route('/orders')
-@shop_owner_required
+@store_admin_bp.route('/orders')
+@role_required('store_admin')
 def orders():
     """訂單管理頁面"""
     user = get_current_user()
@@ -95,8 +95,8 @@ def orders():
     orders_list = Order.query.filter_by(shop_id=shop.id).order_by(Order.created_at.desc()).all()
     return render_template('shop/orders.html', orders=orders_list, shop=shop)
 
-@shop_owner_bp.route('/statistics')
-@shop_owner_required
+@store_admin_bp.route('/statistics')
+@role_required('store_admin')
 def statistics():
     """商店統計頁面"""
     user = get_current_user()

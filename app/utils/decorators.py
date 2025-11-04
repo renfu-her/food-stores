@@ -46,18 +46,18 @@ def role_required(*roles):
         return decorated_function
     return decorator
 
-def shop_owner_required(f):
-    """需要是店鋪擁有者的裝飾器"""
+def store_admin_required(f):
+    """需要是店鋪管理者的裝飾器"""
     @wraps(f)
     @login_required
     def decorated_function(*args, **kwargs):
         user_id = session.get('user_id')
         user = User.query.get(user_id)
         
-        if not user or user.role != 'shop_owner':
+        if not user or user.role != 'store_admin':
             return jsonify({
                 'error': 'forbidden',
-                'message': '需要店鋪擁有者權限',
+                'message': '需要店鋪管理者權限',
                 'details': {}
             }), 403
         return f(*args, **kwargs)
@@ -94,8 +94,8 @@ def shop_access_required(shop_id_param='shop_id'):
             if user.role == 'admin':
                 return f(*args, **kwargs)
             
-            # 店鋪擁有者只能存取自己的店鋪
-            if user.role == 'shop_owner' and shop.owner_id == user.id:
+            # 店鋪管理者只能存取自己的店鋪
+            if user.role == 'store_admin' and shop.owner_id == user.id:
                 return f(*args, **kwargs)
             
             return jsonify({

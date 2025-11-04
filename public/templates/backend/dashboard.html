@@ -1,49 +1,79 @@
 {% extends "base/backend_base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1>儀表板</h1>
+<div class="container-fluid">
+    <h1 class="mb-4">儀表板</h1>
     
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>使用者总数</h3>
-            <p class="stat-number">{{ total_users }}</p>
+    <div class="row g-3 mb-4">
+        <div class="col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">使用者總數</h6>
+                    <h2 class="mb-0 text-primary">{{ total_users }}</h2>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>店鋪总数</h3>
-            <p class="stat-number">{{ total_shops }}</p>
+        <div class="col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">店鋪總數</h6>
+                    <h2 class="mb-0 text-info">{{ total_shops }}</h2>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>產品总数</h3>
-            <p class="stat-number">{{ total_products }}</p>
+        <div class="col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">產品總數</h6>
+                    <h2 class="mb-0 text-success">{{ total_products }}</h2>
+                </div>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>訂單总数</h3>
-            <p class="stat-number">{{ total_orders }}</p>
+        <div class="col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">訂單總數</h6>
+                    <h2 class="mb-0 text-warning">{{ total_orders }}</h2>
+                </div>
+            </div>
         </div>
-        <div class="stat-card alert-stat">
-            <h3>待處理訂單</h3>
-            <p class="stat-number">{{ pending_orders }}</p>
+        <div class="col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">待處理訂單</h6>
+                    <h2 class="mb-0 text-warning">{{ pending_orders }}</h2>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="quick-actions">
-        <h2>快速操作</h2>
-        <div class="action-buttons">
-            <a href="{{ url_for('backend.users') }}" class="btn btn-primary">使用者管理</a>
-            <a href="{{ url_for('backend.shops') }}" class="btn btn-primary">店鋪管理</a>
-            <a href="{{ url_for('backend.products') }}" class="btn btn-primary">產品管理</a>
-            <a href="{{ url_for('backend.orders') }}" class="btn btn-primary">訂單管理</a>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-4">快速操作</h5>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ url_for('backend.users') }}" class="btn btn-primary">
+                    <i class="bi bi-people me-2"></i>使用者管理
+                </a>
+                <a href="{{ url_for('backend.shops') }}" class="btn btn-info text-white">
+                    <i class="bi bi-shop me-2"></i>店鋪管理
+                </a>
+                <a href="{{ url_for('backend.products') }}" class="btn btn-success">
+                    <i class="bi bi-box-seam me-2"></i>產品管理
+                </a>
+                <a href="{{ url_for('backend.orders') }}" class="btn btn-warning">
+                    <i class="bi bi-receipt me-2"></i>訂單管理
+                </a>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-// 监听新訂單事件
+// 監聽新訂單事件
 window.addEventListener('newOrder', function(event) {
     const data = event.detail;
     console.log('新訂單:', data);
-    // 可以在这里显示通知或更新統計数据
+    // 可以在這裡顯示通知或更新統計資料
     if (confirm('收到新訂單，是否查看？')) {
         window.location.href = "{{ url_for('backend.orders') }}";
     }

@@ -72,8 +72,8 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         const result = await response.json();
         
         if (response.ok) {
-            if (result.user.role === 'shop_owner') {
-                window.location.href = "{{ url_for('shop_owner.dashboard') }}";
+            if (result.user.role === 'store_admin') {
+                window.location.href = "{{ url_for('store_admin.dashboard') }}";
             } else {
                 document.getElementById('errorMessage').textContent = '只有商店管理者可以存取此頁面';
                 document.getElementById('errorMessage').style.display = 'block';

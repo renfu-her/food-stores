@@ -26,7 +26,7 @@ def create_app(config_class=Config):
         try:
             from app.routes.auth import auth_bp
             from app.routes.backend import backend_bp
-            from app.routes.shop_owner import shop_owner_bp
+            from app.routes.store_admin import store_admin_bp
             from app.routes.customer import customer_bp
             from app.routes.api.shops import shops_api_bp
             from app.routes.api.products import products_api_bp
@@ -36,7 +36,7 @@ def create_app(config_class=Config):
             
             app.register_blueprint(auth_bp)
             app.register_blueprint(backend_bp, url_prefix='/backend')
-            app.register_blueprint(shop_owner_bp, url_prefix='/shop')
+            app.register_blueprint(store_admin_bp, url_prefix='/shop')
             app.register_blueprint(customer_bp, url_prefix='/store')
             app.register_blueprint(shops_api_bp, url_prefix='/api/shops')
             app.register_blueprint(products_api_bp, url_prefix='/api/products')

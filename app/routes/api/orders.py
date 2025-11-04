@@ -26,8 +26,8 @@ def get_orders():
             # 管理員可以查看所有訂單
             if shop_id:
                 query = query.filter_by(shop_id=shop_id)
-        elif user.role == 'shop_owner':
-            # 店鋪擁有者只能查看自己店鋪的訂單
+        elif user.role == 'store_admin':
+            # 店鋪管理者只能查看自己店鋪的訂單
             shops = Shop.query.filter_by(owner_id=user.id).all()
             shop_ids = [s.id for s in shops]
             query = query.filter(Order.shop_id.in_(shop_ids))
@@ -109,7 +109,7 @@ def get_order(order_id):
                 'details': {}
             }), 403
         
-        if user.role == 'shop_owner':
+        if user.role == 'store_admin':
             shop = Shop.query.get(order.shop_id)
             if not shop or shop.owner_id != user.id:
                 return jsonify({
