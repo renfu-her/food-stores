@@ -364,33 +364,6 @@
 }
 
 /* ================================ */
-/* 模态框样式 */
+/* Bootstrap 5 模态框（使用原生样式） */
 /* ================================ */
-.modal {
-    z-index: 1050 !important;
-}
-
-.modal-backdrop {
-    z-index: 1040 !important;
-}
-
-/* 确保模态框内的元素可以交互 */
-.modal-content {
-    position: relative;
-    z-index: 1051;
-}
-
-.modal-dialog {
-    pointer-events: auto;
-}
-
-/* 防止 body 滚动锁定问题 */
-body.modal-open {
-    overflow: hidden !important;
-}
-
-body:not(.modal-open) {
-    overflow: visible !important;
-    padding-right: 0 !important;
-}
 

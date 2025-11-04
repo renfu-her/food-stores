@@ -322,9 +322,3 @@
     object-fit: cover !important;
 }
 
-/* 卡片图片统一高度 */
-.card-img-top {
-    height: 200px !important;
-    object-fit: cover !important;
-}
-

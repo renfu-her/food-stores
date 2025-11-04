@@ -41,9 +41,30 @@
 - ✅ 卡片更緊湊，無多餘間距
 - ✅ 所有產品圖片高度一致，網格整齊美觀
 
+### 🛒 產品詳情模態框（新增）
+- ✅ 點擊「查看詳情」彈出模態框
+- ✅ 左圖右文佈局（modal-lg 大尺寸）
+- ✅ 顯示完整產品資訊（名稱、描述、價格、庫存）
+- ✅ 數量選擇器（含庫存驗證）
+- ✅ 兩個操作按鈕：
+  - 🛒 加入購物車（POST /api/cart/add，停留當前頁）
+  - 💳 直接結帳（加入購物車後跳轉 /store/checkout）
+- ✅ 完整錯誤處理和提示
+- ✅ 缺貨時停用數量輸入
+- ✅ 完全使用 Bootstrap 5 原生模態框樣式（無自定義 CSS）
+
+### 🧹 CSS 清理優化
+- ✅ 從 4 個 CSS 文件移除所有模態框自定義樣式（共 107 行）
+- ✅ 完全使用 Bootstrap 5 原生模態框樣式
+- ✅ 移除 z-index、pointer-events、body.modal-open 等自定義規則
+- ✅ 減少代碼量，提升可維護性
+
 ### 🔄 修改文件
-- ✅ `public/templates/store/shop.html` - 間距優化、Bootstrap 5 表單樣式、Card 結構
-- ✅ `public/static/css/store.css` - 新增 .card 樣式覆蓋規則
+- ✅ `public/templates/store/shop.html` - 間距優化、Bootstrap 5 Card 結構、產品詳情模態框
+- ✅ `public/static/css/store.css` - 卡片樣式，移除模態框 CSS
+- ✅ `public/static/css/backend.css` - 移除模態框自定義樣式
+- ✅ `public/static/css/shop_admin.css` - 移除模態框自定義樣式
+- ✅ `public/static/css/style.css` - 移除模態框自定義樣式
 
 ---
 
