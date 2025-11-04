@@ -37,7 +37,7 @@
                 </div>
                 <div class="info-item">
                     <label>總價:</label>
-                    <span class="total-price">${{ "%.2f"|format(order.total_price|float) }}</span>
+                    <span class="total-price">${{ order.total_price|int }}</span>
                 </div>
                 <div class="info-item">
                     <label>狀態:</label>
@@ -76,8 +76,8 @@
                             <tr>
                                 <td>{{ item.product.name if item.product else 'N/A' }}</td>
                                 <td>{{ item.quantity }}</td>
-                                <td>${{ "%.2f"|format(item.unit_price|float) }}</td>
-                                <td>${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</td>
+                                <td>${{ item.unit_price|int }}</td>
+                                <td>${{ (item.unit_price * item.quantity)|int }}</td>
                                 <td>
                                     {% if item.toppings %}
                                         {% for topping in item.toppings %}

@@ -94,7 +94,7 @@
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label small">價格</label>
-                                    <input type="number" class="form-control topping-price" value="{{ topping.price }}" step="0.01" min="0" data-original="{{ topping.price }}">
+                                    <input type="number" class="form-control topping-price" value="{{ topping.price|int }}" min="0" data-original="{{ topping.price }}">
                                 </div>
                                 <div class="col-md-2">
                                     <label class="form-label small">狀態</label>
@@ -211,7 +211,7 @@ function addNewTopping() {
             <input type="text" class="form-control new-topping-name" placeholder="配料名稱" required>
         </div>
         <div class="col-md-2">
-            <input type="number" class="form-control new-topping-price" placeholder="價格" step="0.01" min="0" value="0">
+            <input type="number" class="form-control new-topping-price" placeholder="價格" min="0" value="0">
         </div>
         <div class="col-md-2">
             <div class="form-check form-switch">
@@ -243,7 +243,7 @@ function removeNewToppingRow(id) {
 function saveNewTopping(id) {
     const row = document.getElementById('newTopping' + id);
     const name = row.querySelector('.new-topping-name').value.trim();
-    const price = parseFloat(row.querySelector('.new-topping-price').value) || 0;
+    const price = parseInt(row.querySelector('.new-topping-price').value) || 0;
     const isActive = row.querySelector('.new-topping-active').checked;
     
     if (!name) {
@@ -279,7 +279,7 @@ function saveNewTopping(id) {
 function updateTopping(toppingId) {
     const row = document.querySelector(`[data-topping-id="${toppingId}"]`);
     const name = row.querySelector('.topping-name').value.trim();
-    const price = parseFloat(row.querySelector('.topping-price').value) || 0;
+    const price = parseInt(row.querySelector('.topping-price').value) || 0;
     const isActive = row.querySelector('.topping-active').checked;
     
     if (!name) {

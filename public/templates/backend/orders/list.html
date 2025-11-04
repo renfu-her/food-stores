@@ -44,7 +44,7 @@ function renderOrderRow(order) {
             <td><strong>#${order.id}</strong></td>
             <td>${userName}</td>
             <td>${shopName}</td>
-            <td class="fw-bold">NT$ ${order.total_price.toFixed(2)}</td>
+            <td class="fw-bold">NT$ ${Math.round(order.total_price)}</td>
             <td>${statusBadges[order.status] || order.status}</td>
             <td><small>${createdAt}</small></td>
             <td class="text-end">

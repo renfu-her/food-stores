@@ -40,13 +40,13 @@
                 </div>
                 <div class="info-item">
                     <label>單價:</label>
-                    <span>${{ "%.2f"|format(product.unit_price|float) }}</span>
+                    <span>${{ product.unit_price|int }}</span>
                 </div>
                 <div class="info-item">
                     <label>折扣價:</label>
                     <span>
                         {% if product.discounted_price %}
-                            ${{ "%.2f"|format(product.discounted_price|float) }}
+                            ${{ product.discounted_price|int }}
                         {% else %}
                             無
                         {% endif %}
@@ -83,7 +83,7 @@
                             {% if topping.price == 0 %}
                                 <span class="free-badge">FREE</span>
                             {% else %}
-                                ${{ "%.2f"|format(topping.price|float) }}
+                                ${{ topping.price|int }}
                             {% endif %}
                         </span>
                     </div>
