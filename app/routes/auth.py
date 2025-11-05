@@ -7,6 +7,7 @@ from app.models import User
 from app.utils.password import hash_password, check_password
 from app.utils.validators import validate_email
 from app.utils.decorators import login_required, get_current_user
+from app.utils.password_strength import validate_password_strength
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -48,6 +49,15 @@ def register():
             return jsonify({
                 'error': 'validation_error',
                 'message': '密碼長度至少6位',
+                'details': {}
+            }), 400
+        
+        # 验证密码强度（要求至少为 middle）
+        is_valid, error_msg = validate_password_strength(password, min_strength='middle')
+        if not is_valid:
+            return jsonify({
+                'error': 'validation_error',
+                'message': error_msg,
                 'details': {}
             }), 400
         

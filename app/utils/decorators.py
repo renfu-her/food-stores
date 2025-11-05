@@ -25,23 +25,53 @@ def role_required(*roles):
     """需要特定角色的裝飾器"""
     def decorator(f):
         @wraps(f)
-        @login_required
         def decorated_function(*args, **kwargs):
             user_id = session.get('user_id')
+            
+            # 未登录处理
             if not user_id:
-                return jsonify({
-                    'error': 'unauthorized',
-                    'message': '未認證，请先登录',
-                    'details': {}
-                }), 401
+                # API 请求返回 JSON
+                if request.is_json or request.path.startswith('/api/'):
+                    return jsonify({
+                        'error': 'unauthorized',
+                        'message': '未認證，请先登录',
+                        'details': {}
+                    }), 401
+                
+                # 后台页面重定向到后台登录
+                from flask import redirect, url_for
+                if request.path.startswith('/backend'):
+                    return redirect(url_for('backend.login'))
+                
+                # 其他页面重定向到前台登录
+                return redirect(url_for('customer.login'))
             
             user = User.query.get(user_id)
+            
+            # 权限不足处理
             if not user or user.role not in roles:
+                # API 请求返回 JSON
+                if request.is_json or request.path.startswith('/api/'):
+                    return jsonify({
+                        'error': 'forbidden',
+                        'message': '權限不足',
+                        'details': {}
+                    }), 403
+                
+                # 后台页面：如果是非 admin 用户，重定向到后台登录
+                from flask import redirect, url_for
+                if request.path.startswith('/backend'):
+                    # 清除 session
+                    session.clear()
+                    return redirect(url_for('backend.login'))
+                
+                # 其他页面返回错误
                 return jsonify({
                     'error': 'forbidden',
                     'message': '權限不足',
                     'details': {}
                 }), 403
+            
             return f(*args, **kwargs)
         return decorated_function
     return decorator

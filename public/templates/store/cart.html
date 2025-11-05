@@ -212,7 +212,7 @@ async function checkout() {
         }
         
         // 跳轉到結帳頁面
-        window.location.href = '/store/checkout';
+        window.location.href = "{{ url_for('customer.checkout') }}";
         
     } catch (error) {
         alert('結帳失敗，請重試');

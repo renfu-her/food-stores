@@ -105,10 +105,28 @@
                                            class="form-control" 
                                            id="register_password" 
                                            name="password"
-                                           placeholder="至少6個字符"
+                                           placeholder="包含大小寫字母和數字，至少8個字符"
                                            required 
-                                           minlength="6">
-                                    <div class="form-text">密碼長度至少6個字符</div>
+                                           minlength="8">
+                                    
+                                    <!-- 密码强度指示器 -->
+                                    <div class="mt-2">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="text-muted small me-2">密碼強度:</span>
+                                            <div class="flex-grow-1">
+                                                <div class="progress" style="height: 8px;">
+                                                    <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                            <span id="passwordStrengthText" class="ms-2 small"></span>
+                                        </div>
+                                        <div class="small text-muted" id="passwordRequirements">
+                                            <div><i class="bi bi-circle text-secondary" id="req-length"></i> 至少8個字符</div>
+                                            <div><i class="bi bi-circle text-secondary" id="req-lowercase"></i> 包含小寫字母</div>
+                                            <div><i class="bi bi-circle text-secondary" id="req-uppercase"></i> 包含大寫字母</div>
+                                            <div><i class="bi bi-circle text-secondary" id="req-number"></i> 包含數字</div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="register_confirm_password" class="form-label">
@@ -138,7 +156,117 @@
 {% block extra_js %}
 {{ super() }}
 <script>
+// 密码强度检查函数
+function checkPasswordStrength(password) {
+    if (!password) {
+        return { strength: 'low', score: 0, message: '', requirements: {} };
+    }
+    
+    const length = password.length;
+    let score = 0;
+    
+    // 长度评分 (0-40分)
+    if (length >= 12) score += 40;
+    else if (length >= 10) score += 30;
+    else if (length >= 8) score += 20;
+    else if (length >= 6) score += 10;
+    
+    // 包含小写字母 (0-15分)
+    const hasLower = /[a-z]/.test(password);
+    if (hasLower) score += 15;
+    
+    // 包含大写字母 (0-15分)
+    const hasUpper = /[A-Z]/.test(password);
+    if (hasUpper) score += 15;
+    
+    // 包含数字 (0-15分)
+    const hasNumber = /\d/.test(password);
+    if (hasNumber) score += 15;
+    
+    // 包含特殊字符 (0-15分)
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]/.test(password);
+    if (hasSpecial) score += 15;
+    
+    // 判断强度级别
+    let strength, message;
+    if (score >= 70) {
+        strength = 'high';
+        message = '強密碼';
+    } else if (score >= 45) {
+        strength = 'middle';
+        message = '中等密碼';
+    } else {
+        strength = 'low';
+        message = '弱密碼';
+    }
+    
+    return {
+        strength: strength,
+        score: score,
+        message: message,
+        requirements: {
+            length: length >= 8,
+            lowercase: hasLower,
+            uppercase: hasUpper,
+            number: hasNumber,
+            special: hasSpecial
+        }
+    };
+}
+
+// 更新密码强度显示
+function updatePasswordStrength() {
+    const password = $('#register_password').val();
+    const result = checkPasswordStrength(password);
+    
+    // 更新进度条
+    const bar = $('#passwordStrengthBar');
+    bar.css('width', result.score + '%');
+    
+    // 更新颜色
+    bar.removeClass('bg-danger bg-warning bg-success');
+    if (result.strength === 'high') {
+        bar.addClass('bg-success');
+    } else if (result.strength === 'middle') {
+        bar.addClass('bg-warning');
+    } else {
+        bar.addClass('bg-danger');
+    }
+    
+    // 更新文字
+    $('#passwordStrengthText').text(result.message).removeClass('text-danger text-warning text-success');
+    if (result.strength === 'high') {
+        $('#passwordStrengthText').addClass('text-success');
+    } else if (result.strength === 'middle') {
+        $('#passwordStrengthText').addClass('text-warning');
+    } else {
+        $('#passwordStrengthText').addClass('text-danger');
+    }
+    
+    // 更新要求检查图标
+    $('#req-length').removeClass('bi-circle bi-check-circle-fill bi-x-circle-fill text-secondary text-success text-danger');
+    $('#req-lowercase').removeClass('bi-circle bi-check-circle-fill bi-x-circle-fill text-secondary text-success text-danger');
+    $('#req-uppercase').removeClass('bi-circle bi-check-circle-fill bi-x-circle-fill text-secondary text-success text-danger');
+    $('#req-number').removeClass('bi-circle bi-check-circle-fill bi-x-circle-fill text-secondary text-success text-danger');
+    
+    if (password) {
+        $('#req-length').addClass(result.requirements.length ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger');
+        $('#req-lowercase').addClass(result.requirements.lowercase ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger');
+        $('#req-uppercase').addClass(result.requirements.uppercase ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger');
+        $('#req-number').addClass(result.requirements.number ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger');
+    } else {
+        $('#req-length, #req-lowercase, #req-uppercase, #req-number').addClass('bi-circle text-secondary');
+    }
+    
+    return result;
+}
+
 $(document).ready(function() {
+    // 监听密码输入，实时更新强度显示
+    $('#register_password').on('input', function() {
+        updatePasswordStrength();
+    });
+    
     // 登入表單提交
     $('#loginForm').on('submit', function(e) {
         e.preventDefault();
@@ -168,6 +296,13 @@ $(document).ready(function() {
     $('#registerForm').on('submit', function(e) {
         e.preventDefault();
         $('#registerErrorMessage').hide();
+        
+        // 檢查密碼強度
+        const strengthResult = updatePasswordStrength();
+        if (strengthResult.strength === 'low') {
+            $('#registerErrorMessage').text('密碼強度不足，必須達到中等強度以上（包含大小寫字母和數字，至少8個字符）').show();
+            return;
+        }
         
         // 密碼確認檢查
         if ($('#register_password').val() !== $('#register_confirm_password').val()) {

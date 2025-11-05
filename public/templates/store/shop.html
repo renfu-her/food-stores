@@ -459,7 +459,7 @@ function buyNow() {
             toppings: selectedToppings
         }),
         success: function(response) {
-            window.location.href = '/store/checkout';
+            window.location.href = "{{ url_for('customer.checkout') }}";
         },
         error: function(xhr) {
             const error = xhr.responseJSON || {};

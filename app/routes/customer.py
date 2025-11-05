@@ -11,8 +11,10 @@ customer_bp = Blueprint('customer', __name__)
 @customer_bp.route('/')
 def index():
     """商城首頁"""
+    from app.models import HomeBanner
     shops = Shop.query.filter_by(status='active').all()
-    return render_template('store/index.html', shops=shops)
+    banners = HomeBanner.query.filter_by(is_active=True).order_by(HomeBanner.display_order).all()
+    return render_template('store/index.html', shops=shops, banners=banners)
 
 @customer_bp.route('/about')
 def about():

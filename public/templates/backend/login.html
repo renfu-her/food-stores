@@ -1,66 +1,209 @@
-{% extends "base/app.html" %}
-
-{% block title %}Backend登入 - Food Stores{% endblock %}
-
-{% block nav_menu %}
-{% endblock %}
-
-{% block user_info %}
-{% endblock %}
-
-{% block content %}
-<div class="container">
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
-        <div class="card shadow" style="width: 100%; max-width: 400px;">
-            <div class="card-body p-4">
-                <h2 class="card-title text-center mb-4">Backend登入</h2>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>後台管理系統登入 - Food Stores</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .login-card {
+            max-width: 420px;
+            width: 100%;
+        }
+        .card {
+            overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin: 0;
+        }
+        .login-body {
+            background: white;
+            padding: 2rem;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 0.75rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #6a4093 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-right: none;
+        }
+        .form-control {
+            border-left: none;
+        }
+        .form-control:focus + .input-group-text {
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="card shadow-lg border-0">
+            <div class="login-header">
+                <i class="bi bi-shield-lock-fill" style="font-size: 3rem;"></i>
+                <h2 class="mt-3 mb-0">後台管理系統</h2>
+                <p class="mb-0 mt-2 opacity-75">Food Stores Admin Panel</p>
+            </div>
+            <div class="login-body">
                 <form id="loginForm">
                     <div class="mb-3">
-                        <label for="email" class="form-label">郵箱</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <label for="email" class="form-label fw-bold">
+                            <i class="bi bi-envelope me-2"></i>管理員郵箱
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-person-fill text-muted"></i>
+                            </span>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email" 
+                                   placeholder="請輸入管理員郵箱"
+                                   required 
+                                   autocomplete="username">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">密碼</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-bold">
+                            <i class="bi bi-key me-2"></i>密碼
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-lock-fill text-muted"></i>
+                            </span>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="請輸入密碼"
+                                   required
+                                   autocomplete="current-password">
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">登入</button>
-                    <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+                    
+                    <div id="errorMessage" class="alert alert-danger d-none" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span id="errorText"></span>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-login w-100" id="loginBtn">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>登入後台
+                    </button>
+                    
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            僅限管理員帳號登入
+                        </small>
+                    </div>
                 </form>
             </div>
         </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-$(document).ready(function() {
-    $('#loginForm').on('submit', function(e) {
-        e.preventDefault();
-        const data = {
-            email: $('#email').val(),
-            password: $('#password').val()
-        };
         
-        $.ajax({
-            url: '/api/auth/login',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function(result) {
-                if (result.user.role === 'admin') {
-                    window.location.href = "{{ url_for('backend.index') }}";
-                } else {
-                    $('#errorMessage').text('只有管理員可以存取Backend').show();
+        <div class="text-center mt-3">
+            <a href="{{ url_for('customer.index') }}" class="text-white text-decoration-none">
+                <i class="bi bi-house-fill me-2"></i>返回網站首頁
+            </a>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        // 自动聚焦到邮箱输入框
+        $('#email').focus();
+        
+        $('#loginForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // 隐藏错误消息
+            $('#errorMessage').addClass('d-none');
+            
+            // 禁用按钮，显示加载状态
+            const $btn = $('#loginBtn');
+            const originalText = $btn.html();
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>登入中...');
+            
+            const data = {
+                email: $('#email').val(),
+                password: $('#password').val()
+            };
+            
+            $.ajax({
+                url: '/api/auth/login',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(result) {
+                    if (result.user && result.user.role === 'admin') {
+                        // 显示成功消息
+                        $btn.html('<i class="bi bi-check-circle-fill me-2"></i>登入成功！');
+                        $btn.removeClass('btn-primary').addClass('btn-success');
+                        
+                        // 延迟跳转，让用户看到成功消息
+                        setTimeout(function() {
+                            window.location.href = "{{ url_for('backend.index') }}";
+                        }, 500);
+                    } else {
+                        // 非管理员账号
+                        $btn.prop('disabled', false).html(originalText);
+                        $('#errorText').text('只有管理員帳號可以存取後台系統');
+                        $('#errorMessage').removeClass('d-none');
+                    }
+                },
+                error: function(xhr) {
+                    // 恢复按钮
+                    $btn.prop('disabled', false).html(originalText);
+                    
+                    const result = xhr.responseJSON || {};
+                    let errorMsg = '登入失敗，請檢查郵箱和密碼';
+                    
+                    if (xhr.status === 401) {
+                        errorMsg = '郵箱或密碼錯誤';
+                    } else if (xhr.status === 403) {
+                        errorMsg = '帳戶已被禁用';
+                    } else if (result.message) {
+                        errorMsg = result.message;
+                    }
+                    
+                    $('#errorText').text(errorMsg);
+                    $('#errorMessage').removeClass('d-none');
                 }
-            },
-            error: function(xhr) {
-                const result = xhr.responseJSON || {};
-                $('#errorMessage').text(result.message || '登入失敗，請重試').show();
-            }
+            });
+        });
+        
+        // 输入时隐藏错误消息
+        $('#email, #password').on('input', function() {
+            $('#errorMessage').addClass('d-none');
         });
     });
-});
-</script>
-{% endblock %}
-
+    </script>
+</body>
+</html>

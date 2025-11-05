@@ -236,7 +236,10 @@ def create_order():
                     'items': shop_items,
                     'recipient_name': data.get('recipient_name'),
                     'recipient_phone': data.get('recipient_phone'),
-                    'recipient_address': data.get('recipient_address'),
+                    'county': data.get('county'),
+                    'district': data.get('district'),
+                    'zipcode': data.get('zipcode'),
+                    'address': data.get('address'),
                     'delivery_note': data.get('delivery_note'),
                     'payment_method': data.get('payment_method', 'cod')
                 }
@@ -597,6 +600,13 @@ def _create_single_order(user, data):
         # 減少庫存
         product.stock_quantity -= qty_value
     
+    # 組合完整地址
+    county = data.get('county', '')
+    district = data.get('district', '')
+    zipcode = data.get('zipcode', '')
+    address = data.get('address', '')
+    full_address = f"{zipcode} {county}{district}{address}".strip()
+    
     # 創建訂單
     order = Order(
         user_id=user.id,
@@ -605,13 +615,27 @@ def _create_single_order(user, data):
         status='pending',
         recipient_name=data.get('recipient_name'),
         recipient_phone=data.get('recipient_phone'),
-        recipient_address=data.get('recipient_address'),
+        recipient_address=full_address,  # 完整地址
         delivery_note=data.get('delivery_note'),
         payment_method=data.get('payment_method', 'cod')
     )
     
     db.session.add(order)
     db.session.flush()
+    
+    # 更新用戶收貨信息（方便下次自動填充）
+    if data.get('recipient_name'):
+        user.name = data.get('recipient_name')
+    if data.get('recipient_phone'):
+        user.phone = data.get('recipient_phone')
+    if county:
+        user.county = county
+    if district:
+        user.district = district
+    if zipcode:
+        user.zipcode = zipcode
+    if address:
+        user.address = address
     
     # 添加訂單項
     for item_data in order_items_data:

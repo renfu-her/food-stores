@@ -278,9 +278,6 @@ async function submitOrder() {
     const delivery_note = document.getElementById('delivery_note').value.trim();
     const payment_method = document.querySelector('input[name="payment_method"]:checked').value;
     
-    // 組合完整地址
-    const full_address = zipcode + ' ' + county + district + recipient_address;
-    
     // 準備訂單項目（不需要按店鋪分組，後端會自動處理）
     const items = cartData.map(item => ({
         product_id: item.product_id,
@@ -299,7 +296,10 @@ async function submitOrder() {
                 items: items,  // 不再需要 shop_id
                 recipient_name: recipient_name,
                 recipient_phone: recipient_phone,
-                recipient_address: full_address,
+                county: county,  // 獨立發送縣市
+                district: district,  // 獨立發送區域
+                zipcode: zipcode,  // 獨立發送郵遞區號
+                address: recipient_address,  // 詳細地址
                 delivery_note: delivery_note,
                 payment_method: payment_method
             })

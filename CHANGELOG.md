@@ -4,6 +4,133 @@
 
 ---
 
+## 2025-11-05 23:30 - 後台登錄系統重構 & 密碼強度驗證
+
+### 🔐 後台獨立登錄系統
+- ✅ 創建專屬後台登錄頁面 (`/backend/login`)
+- ✅ 美化登錄界面（渐變紫色背景、盾牌圖標、卡片式設計）
+- ✅ 智能重定向系統：
+  - 未登錄訪問 `/backend` → 自動跳轉到 `/backend/login`
+  - 非 admin 用戶訪問後台 → 清除 session 並跳轉登錄頁
+  - 後台路由重定向到後台登錄，前台路由重定向到前台登錄
+- ✅ 登錄狀態反馈（加載動畫、成功提示）
+- ✅ 自動聚焦郵箱輸入框
+- ✅ 實時錯誤提示（輸入時自動隱藏）
+- ✅ 返回網站首頁鏈接
+
+### 🔑 密碼強度驗證系統
+- ✅ 創建密碼強度檢查工具 (`app/utils/password_strength.py`)
+- ✅ 三級強度評分系統（Low / Middle / High）
+- ✅ 評分規則：
+  - 長度評分（0-40分）：≥12字符 40分，≥10字符 30分，≥8字符 20分
+  - 包含小寫字母：15分
+  - 包含大寫字母：15分
+  - 包含數字：15分
+  - 包含特殊字符：15分
+- ✅ 註冊要求：密碼強度必須達到 **Middle** 以上
+- ✅ 前端實時密碼強度顯示：
+  - 動態進度條（紅色/黃色/綠色）
+  - 強度文字（弱密碼/中等密碼/強密碼）
+  - 要求檢查列表（✓/✗）
+    - ✓ 至少8個字符
+    - ✓ 包含小寫字母
+    - ✓ 包含大寫字母
+    - ✓ 包含數字
+- ✅ 前後端雙重驗證
+- ✅ 提交時檢查強度，不符合要求立即提示
+
+### 🏠 首頁 Banner 顯示修復
+- ✅ 修復首頁 Banner 不顯示問題
+- ✅ `customer.index()` 函數添加 Banner 數據查詢
+- ✅ 從數據庫讀取已啟用的 Banner 並排序
+- ✅ 傳遞給模板進行輪播顯示
+
+### 📝 收貨信息自動更新功能
+- ✅ 訂單創建時自動保存收貨信息到 User 表
+- ✅ 前端分別發送地址字段：
+  - `county` - 縣市
+  - `district` - 區域
+  - `zipcode` - 郵遞區號
+  - `address` - 詳細地址
+- ✅ 後端組合完整地址存入訂單
+- ✅ 同步更新用戶資料：
+  - `user.name` - 收貨人姓名
+  - `user.phone` - 聯絡電話
+  - `user.county` - 縣市
+  - `user.district` - 區域
+  - `user.zipcode` - 郵遞區號
+  - `user.address` - 詳細地址
+- ✅ 下次結帳自動填充上次地址
+
+### 🎨 UI/UX 優化
+- ✅ 後台登錄頁面樣式修復：
+  - 移除卡片內部圓角設置
+  - 使用 `overflow: hidden` 裁剪內容
+  - 修復左上角和右上角白色間隙問題
+- ✅ 密碼輸入框提示文字優化
+- ✅ 註冊表單布局改進
+
+### 🔧 裝飾器優化
+- ✅ `@role_required` 裝飾器智能重定向：
+  - 檢測請求路徑 (`request.path`)
+  - 後台路由 (`/backend`) → `/backend/login`
+  - 前台路由 → `/login`
+  - API 路由 → JSON 錯誤
+- ✅ 權限不足處理：
+  - 後台：清除 session 並重定向
+  - API：返回 403 JSON
+  - 前台：返回 403 JSON
+
+### 📁 新增文件
+- ✅ `app/utils/password_strength.py` - 密碼強度檢查工具
+
+### 🔄 修改文件
+- ✅ `app/routes/customer.py` - index() 添加 Banner 查詢
+- ✅ `app/routes/auth.py` - 註冊 API 添加密碼強度驗證
+- ✅ `app/routes/api/orders.py` - 訂單創建時更新用戶收貨信息
+- ✅ `app/utils/decorators.py` - role_required 裝飾器智能重定向
+- ✅ `public/templates/backend/login.html` - 完全重構，獨立頁面設計
+- ✅ `public/templates/store/login.html` - 添加密碼強度實時檢測
+- ✅ `public/templates/store/checkout.html` - 分別發送地址字段
+- ✅ `app/__init__.py` - 路由前綴調整（customer_bp 無前綴）
+
+### 🌐 路由變更
+```
+【前台路由】從 /store/* 改為 /*
+- / (首頁)
+- /about (關於我們)
+- /news (最新消息)
+- /login (登入)
+- /cart (購物車)
+- /checkout (結帳)
+- /orders (我的訂單)
+- /profile (個人資料)
+
+【後台路由】保持 /backend/*
+- /backend (Dashboard - 需要 admin)
+- /backend/login (登錄頁面 - 無需登錄)
+```
+
+### 🔒 安全改進
+- ✅ 密碼強度要求提升（至少 Middle）
+- ✅ 後台登錄與前台登錄完全分離
+- ✅ 角色驗證加強（admin only）
+- ✅ Session 管理優化（權限不足自動清除）
+- ✅ 前後端雙重密碼驗證
+
+### 📊 密碼強度標準
+| 等級 | 分數範圍 | 要求 | 示例 |
+|------|---------|------|------|
+| 🔴 Low | 0-44 | 只有數字或字母 | `123456`, `abcdef` |
+| 🟡 Middle | 45-69 | 大小寫+數字，≥8字符 | `Test1234`, `Abcdef12` |
+| 🟢 High | 70-100 | 大小寫+數字+特殊字符，≥10字符 | `MyP@ssw0rd`, `Abcdef1234!` |
+
+### 🎯 測試帳號
+- **Backend**: admin@admin.com / admin123
+- **註冊要求**: 新用戶密碼必須達到 Middle 強度
+
+---
+
 ## 2025-11-04 21:15 - 購物車空狀態布局優化 & 後台選單順序調整
 
 ### 🎨 UI 優化

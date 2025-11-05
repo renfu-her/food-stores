@@ -51,7 +51,7 @@ def create_app(config_class=Config):
         app.register_blueprint(auth_bp)
         app.register_blueprint(backend_bp, url_prefix='/backend')
         app.register_blueprint(store_admin_bp, url_prefix='/shop')
-        app.register_blueprint(customer_bp, url_prefix='/store')
+        app.register_blueprint(customer_bp)  # 首頁路由，不需要前綴
         app.register_blueprint(shops_api_bp, url_prefix='/api/shops')
         app.register_blueprint(products_api_bp, url_prefix='/api/products')
         app.register_blueprint(orders_api_bp, url_prefix='/api/orders')
