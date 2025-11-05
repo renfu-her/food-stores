@@ -4,6 +4,446 @@
 
 ---
 
+## 2025-11-06 17:15 - 支持商店管理者擁有多個店鋪
+
+### 🏪 核心業務邏輯變更
+
+**商店管理者多店鋪支持：**
+- ✅ 商店管理者（shop_admin）可以擁有**多個店鋪**
+- ✅ Backend Admin 和 Shop Admin 權限處理方式完全一致
+- ✅ 唯一差異：shop_admin 只能查看/管理 `owner_id = user.id` 的店鋪
+- ✅ 恢復配料設置到店鋪新增頁面（與 Backend 一致）
+
+### 📦 產品管理頁面升級
+
+**顯示所有自己的店鋪的產品：**
+- ✅ 查詢邏輯：`Product.query.filter(Product.shop_id.in_(shop_ids))`
+- ✅ 不再只顯示第一個店鋪的產品
+- ✅ 恢復"店鋪"列，顯示產品所屬店鋪名稱
+- ✅ 恢復"店鋪篩選器"，可按店鋪過濾產品
+- ✅ 列表佈局：ID | 產品名稱 | **店鋪** | 分類 | 價格 | 庫存 | 飲品 | 狀態 | 操作
+
+**產品新增/編輯支持選擇店鋪：**
+- ✅ 新增頁面：添加"所屬店鋪"下拉選擇框（必填）
+- ✅ 編輯頁面：添加"所屬店鋪"下拉選擇框（可更換店鋪）
+- ✅ 只顯示當前用戶擁有的店鋪
+- ✅ 提交時包含 `shop_id` 欄位
+
+### 📊 Dashboard 儀表板多店鋪支持
+
+**統計數據為所有店鋪加總：**
+- ✅ 產品總數：所有店鋪的產品總和
+- ✅ 訂單總數：所有店鋪的訂單總和
+- ✅ 待處理/處理中/已完成：所有店鋪統計
+- ✅ 最近訂單：顯示所有店鋪的最近訂單
+
+**新增店鋪卡片列表：**
+- ✅ 顯示"管理 X 個店鋪"而非單一店鋪名稱
+- ✅ 新增"我的店鋪"區塊，以卡片方式展示
+- ✅ 每個卡片顯示：店鋪名稱、描述、營業狀態、編輯按鈕
+
+### 🔧 店鋪新增頁面恢復配料設置
+
+**初始配料設置區塊：**
+- ✅ 恢復"初始配料"HTML 區塊（與 Backend 完全相同）
+- ✅ 支持動態新增/移除配料行
+- ✅ 每個配料可設置：名稱、價格、啟用狀態
+- ✅ 配料為可選（可留空，後續在編輯頁面添加）
+- ✅ 提交時收集 `toppings` 數據並發送到 API
+
+**JavaScript 函數：**
+```javascript
+addToppingRow()        // 添加配料行
+removeToppingRow(btn)  // 移除配料行（保留至少一行）
+// 表單提交時自動收集 toppings 數據
+data.toppings = toppings;
+```
+
+### 📝 代碼實現
+
+**app/routes/store_admin.py:**
+```python
+@store_admin_bp.route('/products')
+def products():
+    # 獲取用戶擁有的所有店鋪
+    shops_list = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).all()
+    shop_ids = [s.id for s in shops_list]
+    
+    # 獲取所有自己店鋪的產品
+    products_list = Product.query.filter(
+        Product.shop_id.in_(shop_ids)
+    ).filter(Product.deleted_at.is_(None)).all()
+    
+    # 序列化為字典（供 JavaScript 使用）
+    products_data = [...]
+    shops_data = [{'id': s.id, 'name': s.name} for s in shops_list]
+
+@store_admin_bp.route('/dashboard')
+def dashboard():
+    shops = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).all()
+    shop_ids = [s.id for s in shops]
+    
+    # 統計所有店鋪的數據
+    total_products = Product.query.filter(Product.shop_id.in_(shop_ids)).count()
+    total_orders = Order.query.filter(Order.shop_id.in_(shop_ids)).count()
+    
+    return render_template('shop/dashboard.html',
+                         shops=shops,
+                         total_shops=len(shops),
+                         ...)
+
+@store_admin_bp.route('/products/add')
+def product_add():
+    shops = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).all()
+    return render_template('shop/products/add.html', shops=shops, ...)
+
+@store_admin_bp.route('/products/<int:product_id>/edit')
+def product_edit(product_id):
+    shops = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).all()
+    shop_ids = [s.id for s in shops]
+    # 檢查產品是否屬於自己的店鋪
+    product = Product.query.filter(
+        Product.id == product_id,
+        Product.shop_id.in_(shop_ids)
+    ).first_or_404()
+    return render_template('shop/products/edit.html', product=product, shops=shops, ...)
+```
+
+**public/templates/shop/products/list.html:**
+```html
+<!-- 店鋪篩選器 -->
+<select id="shopFilter" onchange="performSearch()">
+    <option value="">所有店鋪</option>
+    {% for shop in shops %}
+    <option value="{{ shop.id }}">{{ shop.name }}</option>
+    {% endfor %}
+</select>
+
+<!-- 表格增加店鋪列 -->
+<thead>
+    <tr>
+        <th>ID</th>
+        <th>產品名稱</th>
+        <th>店鋪</th>  <!-- 新增 -->
+        <th>分類</th>
+        <th>價格</th>
+        <th>庫存</th>
+        <th>飲品</th>
+        <th>狀態</th>
+        <th>操作</th>
+    </tr>
+</thead>
+
+<script>
+function renderProductRow(product) {
+    const shop = allShops.find(s => s.id === product.shop_id);
+    const shopName = shop ? shop.name : '-';
+    // ... 顯示 shopName ...
+}
+
+function performSearch() {
+    const shopFilter = document.getElementById('shopFilter').value;
+    filteredItems = allProducts.filter(product => {
+        const matchShop = !shopFilter || product.shop_id == shopFilter;
+        // ... 其他過濾條件 ...
+        return matchSearch && matchShop && ...;
+    });
+}
+</script>
+```
+
+**public/templates/shop/products/add.html & edit.html:**
+```html
+<div class="mb-3">
+    <label for="productShop">所屬店鋪 <span class="text-danger">*</span></label>
+    <select id="productShop" required>
+        <option value="">請選擇店鋪</option>
+        {% for shop in shops %}
+        <option value="{{ shop.id }}" {% if shop.id == product.shop_id %}selected{% endif %}>
+            {{ shop.name }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+
+<script>
+const data = {
+    name: $('#productName').val(),
+    shop_id: parseInt($('#productShop').val()),  // 現在是動態選擇
+    category_id: parseInt($('#productCategory').val()),
+    // ...
+};
+</script>
+```
+
+**public/templates/shop/dashboard.html:**
+```html
+<div class="hero-section">
+    <h1>歡迎回來，{{ user.name }}！</h1>
+    <p>管理 {{ total_shops }} 個店鋪</p>
+</div>
+
+<!-- 我的店鋪列表 -->
+{% if shops %}
+<div class="mb-4">
+    <h2>我的店鋪</h2>
+    <div class="row">
+        {% for shop in shops %}
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5>{{ shop.name }}</h5>
+                    <p class="text-muted">{{ shop.description[:60] }}...</p>
+                    <span class="badge">{{ shop.status }}</span>
+                    <a href="{{ url_for('store_admin.shop_edit', shop_id=shop.id) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> 編輯
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+```
+
+**public/templates/shop/shops/add.html:**
+```html
+<!-- 恢復初始配料區塊 -->
+<hr class="my-4">
+<h5 class="mb-3">
+    <i class="bi bi-list-ul me-2"></i>初始配料
+    <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="addToppingRow()">
+        <i class="bi bi-plus-circle me-1"></i>添加配料
+    </button>
+</h5>
+
+<div id="toppingsContainer">
+    <div class="row mb-2 topping-row">
+        <div class="col-md-3">
+            <input type="text" class="form-control topping-name" placeholder="配料名稱（例如：珍珠）">
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control topping-price" placeholder="價格" min="0" value="0">
+        </div>
+        <div class="col-md-2">
+            <div class="form-check form-switch">
+                <input class="form-check-input topping-active" type="checkbox" checked>
+                <label>啟用</label>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <button type="button" class="btn btn-outline-danger w-100" onclick="removeToppingRow(this)">
+                <i class="bi bi-trash"></i> 移除
+            </button>
+        </div>
+    </div>
+</div>
+<small>配料可選填，也可在店鋪創建後再添加</small>
+
+<script>
+function addToppingRow() { /* ... */ }
+function removeToppingRow(btn) { /* ... */ }
+
+$('#shopForm').on('submit', function(e) {
+    // 收集 Toppings
+    const toppings = [];
+    $('.topping-row').each(function() {
+        const name = $(this).find('.topping-name').val().trim();
+        if (name) {
+            toppings.push({
+                name: name,
+                price: parseInt($(this).find('.topping-price').val()) || 0,
+                is_active: $(this).find('.topping-active').is(':checked')
+            });
+        }
+    });
+    data.toppings = toppings;
+});
+</script>
+```
+
+### 🎯 權限控制總結
+
+| 功能 | Backend Admin | Shop Admin |
+|------|---------------|------------|
+| 查看店鋪 | 所有店鋪 | `owner_id = user.id` |
+| 查看產品 | 所有產品 | `shop_id.in_(user.shop_ids)` |
+| 新增店鋪 | 可選擇店主 | 自動為當前用戶 |
+| 新增產品 | 可選擇店鋪 | 只能選擇自己的店鋪 |
+| 編輯產品 | 可更換店鋪 | 可更換為自己的其他店鋪 |
+| 店鋪數量 | 無限制 | 無限制（多店鋪） ✅ |
+
+---
+
+## 2025-11-06 16:30 - Shop Admin 頁面完全對齊 Backend 設計
+
+### 🐛 Bug 修復
+
+**JSON 序列化錯誤修復：**
+- ✅ 修復 `TypeError: Object of type Shop is not JSON serializable`
+- ✅ 修復 `TypeError: Object of type Product is not JSON serializable`
+- ✅ store_admin.py 的 shops() 函數現在序列化對象為字典
+- ✅ store_admin.py 的 products() 函數現在序列化對象為字典
+- ✅ 與 Backend 的實現方式完全一致
+
+**模板字段修復：**
+- ✅ 移除 products/edit.html 中的"所屬店鋪"下拉選單
+- ✅ 移除 products/edit.html 中的"管理分類"齒輪按鈕
+- ✅ 移除 JavaScript 中對 `$('#productShop')` 的引用
+- ✅ 編輯產品時不允許修改所屬店鋪（shop_id 固定）
+- ✅ 將 shops/edit.html 中的"店主"改為禁用的文本框（不可修改）
+- ✅ 移除 JavaScript 中對 `owner_id` 的提交
+- ✅ 店鋪擁有者不可更改（shop_admin 只能管理，不能轉讓）
+
+**路由引用修復：**
+- ✅ 修復 `BuildError: Could not build url for endpoint 'store_admin.toppings'`
+- ✅ 移除 dashboard.html 中的"配料管理"快速操作按鈕
+- ✅ 改為"店鋪管理"按鈕
+- ✅ 所有 `url_for('store_admin.toppings')` 引用已移除
+
+**產品列表頁面修復：**
+- ✅ 移除"店鋪"欄位，改為"飲品"欄位
+- ✅ 顯示飲品圖標（🧊 冷飲、☕ 熱飲）
+- ✅ 移除"所有店鋪"篩選下拉選單
+- ✅ 移除"詳情"按鈕
+- ✅ 修改所有 `/backend/` 路径為 `/shop/`
+- ✅ 編輯按鈕連結：`/shop/products/${id}/edit`
+- ✅ JavaScript 過濾移除 `matchShop` 條件
+
+**店鋪新增頁面配料設置：**
+- ✅ 恢復"初始配料"設置區塊（與 Backend 相同）
+- ✅ 支持添加多個配料（動態新增/移除行）
+- ✅ 每個配料可設置：名稱、價格、啟用狀態
+- ✅ 配料為可選（可留空，後續在編輯頁面添加）
+- ✅ 提交時收集 toppings 數據並發送到 API
+
+**序列化實現：**
+```python
+# 將 SQLAlchemy 對象轉為字典
+shops_data = []
+for s in shops_list:
+    shops_data.append({
+        'id': s.id,
+        'name': s.name,
+        'shop_order_id': s.shop_order_id,
+        # ... 其他欄位
+    })
+return render_template('...', shops=shops_data)
+```
+
+### 🔄 重大重構
+
+**完全複製 Backend 實現：**
+- ✅ `/shop` 的店鋪管理和產品管理完全複製 `/backend` 的設計
+- ✅ 採用相同的頁面結構（list.html, add.html, edit.html）
+- ✅ 採用相同的表格樣式和按鈕排列
+- ✅ 採用相同的表單佈局和驗證邏輯
+- ✅ 唯一差異：權限過濾（`owner_id` 和 `shop_id`）
+
+### ⚡ 簡化功能
+
+**移除功能：**
+- ❌ 刪除「店鋪設定」功能（合併到店鋪管理）
+- ❌ 刪除「配料管理」功能（簡化操作流程）
+
+**保留功能：**
+- ✅ 儀表板（Dashboard）
+- ✅ 店鋪管理（Shops - list/add/edit）
+- ✅ 產品管理（Products - list/add/edit）
+- ✅ 訂單管理（Orders）
+- ✅ 統計（Statistics）
+
+### 📂 最終頁面結構
+
+```
+/shop (Store Admin 店主後台)
+├── shops/
+│   ├── list.html     ← 完全複製 backend/shops/list.html
+│   ├── add.html      ← 複製並移除"選擇店主"欄位
+│   └── edit.html     ← 完全複製 backend/shops/edit.html
+│
+└── products/
+    ├── list.html     ← 完全複製 backend/products/list.html
+    ├── add.html      ← 複製並移除"選擇店鋪"欄位
+    └── edit.html     ← 完全複製 backend/products/edit.html
+
+所有頁面：
+  - extends "base/shop_base.html" (非 backend_base.html)
+  - url_for('store_admin.xxx') (非 backend.xxx)
+  - 權限過濾：owner_id = user.id, shop_id = shop.id
+```
+
+### 🎨 側邊欄導航（最終版）
+
+```
+儀表板（Dashboard）
+店鋪管理（Shops）        ← list/add/edit
+產品管理（Products）      ← list/add/edit
+訂單管理（Orders）
+統計（Statistics）
+```
+
+**移除項目：**
+- ❌ 店鋪設定（Profile）- 功能已合併到店鋪管理
+- ❌ 配料管理（Toppings）- 簡化操作流程
+
+### 🆚 與 Backend 的對比
+
+**完全相同：**
+- ✅ 頁面結構（list.html, add.html, edit.html）
+- ✅ 表格樣式和佈局
+- ✅ 表單設計和驗證
+- ✅ Banner 上傳功能
+- ✅ 圖片管理功能
+- ✅ 飲品選項設置
+- ✅ 軟刪除實現
+
+**僅修改：**
+- ✅ 模板繼承：`backend_base.html` → `shop_base.html`
+- ✅ 路由引用：`url_for('backend.xxx')` → `url_for('store_admin.xxx')`
+- ✅ 權限過濾：添加 `filter_by(owner_id=user.id)`
+- ✅ 簡化欄位：移除「選擇店主」、「選擇店鋪」
+- ✅ 調整篩選：移除「店主篩選」、「店鋪篩選」
+
+### 📊 側邊欄對比
+
+```
+Backend (9 項)               Shop Admin (5 項)
+─────────────────────────────────────────────
+儀表板                      儀表板
+用戶管理 ✘                  
+店鋪管理                    店鋪管理 ✓
+產品管理                    產品管理 ✓
+訂單管理 ✘                  訂單管理 ✓
+分類管理 ✘                  
+首頁管理 ✘                  
+內容管理 ✘                  
+系統設定 ✘                  統計 ✓
+```
+
+### 📚 新增文檔
+
+- ✅ `docs/BACKEND_VS_SHOP.md` - Backend 和 Shop Admin 詳細對比說明
+  - 設計理念對比
+  - 頁面結構對比
+  - 功能對比表格
+  - 權限實現對比
+  - 數據流對比
+  - UI/UX 差異
+  - shop_id 和 owner_id 處理說明
+- ✅ `TEST_CHECKLIST.md` - 完整測試清單（60+ 測試項目）
+  - 店鋪管理測試（列表/新增/編輯）
+  - 產品管理測試（列表/新增/編輯/飲品）
+  - 權限隔離測試
+  - 軟刪除測試
+  - UI/UX 一致性測試
+  - 完整業務流程測試
+  - 測試報告模板
+
+---
+
 ## 2025-11-06 16:00 - 店鋪列表管理 & 軟刪除功能 & 獨立頁面重構
 
 ### ✨ 新增功能

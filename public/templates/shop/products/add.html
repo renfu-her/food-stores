@@ -19,45 +19,51 @@
                 </div>
                 <div class="card-body">
                     <form id="productForm">
-                        <div class="mb-3">
-                            <label for="productName" class="form-label mb-2">產品名稱 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="productName" required placeholder="輸入產品名稱...">
-                        </div>
-                        
-                        <div class="mb-3 mt-3">
-                            <label for="productCategory" class="form-label mb-2">產品分類 <span class="text-danger">*</span></label>
-                            <select class="form-select" id="productCategory" required>
-                                <option value="">請選擇分類</option>
-                                {% for category in categories %}
-                                <option value="{{ category.id }}">{{ category.name }}</option>
-                                {% endfor %}
-                            </select>
+                            <div class="mb-3">
+                                <label for="productName" class="form-label mb-2">產品名稱 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="productName" required>
+                            </div>
+                            
+                            <div class="mb-3 mt-3">
+                                <label for="productShop" class="form-label mb-2">所屬店鋪 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="productShop" required>
+                                    <option value="">請選擇店鋪</option>
+                                    {% for shop in shops %}
+                                    <option value="{{ shop.id }}">{{ shop.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3 mt-3">
+                                <label for="productCategory" class="form-label mb-2">產品分類 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <select class="form-select" id="productCategory" required>
+                                    <option value="">請選擇分類</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
                         
                         <div class="mb-3 mt-3">
                             <label for="productDescription" class="form-label mb-2">產品描述</label>
-                            <textarea class="form-control" id="productDescription" rows="4" placeholder="輸入產品詳細描述..."></textarea>
+                            <textarea class="form-control" id="productDescription" rows="4"></textarea>
                         </div>
                         
-                        <div class="row mt-3">
+                        <div class="row mt-2">
                             <div class="col-md-6 mb-3">
                                 <label for="productPrice" class="form-label mb-2">單價 <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="productPrice" min="0" step="1" required>
-                                </div>
+                                <input type="number" class="form-control" id="productPrice" min="0" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="productDiscountPrice" class="form-label mb-2">折扣價</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="productDiscountPrice" min="0" step="1">
-                                </div>
+                                <input type="number" class="form-control" id="productDiscountPrice" min="0">
                                 <small class="form-text text-muted d-block mt-2">選填，留空表示無折扣</small>
                             </div>
                         </div>
                         
-                        <div class="row">
+                        <div class="row mt-2">
                             <div class="col-md-6 mb-3">
                                 <label for="productStock" class="form-label mb-2">庫存數量 <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="productStock" min="0" value="0" required>
@@ -71,51 +77,9 @@
                             </div>
                         </div>
                         
-                        <hr class="my-4">
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
                         
-                        <!-- 飲品選項 -->
-                        <h5 class="mb-3"><i class="bi bi-cup-straw me-2"></i>飲品選項（可選）</h5>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="hasColdDrink" onchange="toggleDrinkPrice('cold')">
-                                    <label class="form-check-label" for="hasColdDrink">
-                                        <strong>🧊 提供冷飲</strong>
-                                    </label>
-                                </div>
-                                <div id="coldDrinkPriceContainer" style="display: none; margin-left: 2rem;">
-                                    <label class="form-label small text-muted">冷飲加價</label>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="coldDrinkPrice" min="0" step="1" value="0">
-                                    </div>
-                                    <small class="form-text text-muted">可設為 0（免費）</small>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="hasHotDrink" onchange="toggleDrinkPrice('hot')">
-                                    <label class="form-check-label" for="hasHotDrink">
-                                        <strong>☕ 提供熱飲</strong>
-                                    </label>
-                                </div>
-                                <div id="hotDrinkPriceContainer" style="display: none; margin-left: 2rem;">
-                                    <label class="form-label small text-muted">熱飲加價</label>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="hotDrinkPrice" min="0" step="1" value="0">
-                                    </div>
-                                    <small class="form-text text-muted">可設為 0（免費）</small>
-                                </div>
-                            </div>
-                        </div>
-                        <small class="form-text text-muted">若商品提供冷/熱飲選項，請勾選並設定加價</small>
-                        
-                        <div id="errorMessage" class="alert alert-danger mt-4" style="display: none;"></div>
-                        
-                        <div class="d-flex gap-2 mt-4">
+                        <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-2"></i>儲存
                             </button>
@@ -131,13 +95,12 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>說明</h5>
+                    <h5 class="card-title">說明</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><i class="bi bi-asterisk text-danger me-2"></i>所有標記 * 的欄位為必填</li>
+                        <li class="mb-2"><i class="bi bi-info-circle text-info me-2"></i>所有標記 * 的欄位為必填</li>
                         <li class="mb-2"><i class="bi bi-tag text-primary me-2"></i>折扣價必須小於單價</li>
                         <li class="mb-2"><i class="bi bi-box-seam text-success me-2"></i>庫存為 0 時將顯示缺貨</li>
                         <li class="mb-2"><i class="bi bi-eye-slash text-warning me-2"></i>下架產品不會顯示在前台</li>
-                        <li class="mb-2"><i class="bi bi-cup-straw text-info me-2"></i>飲品選項為可選功能</li>
                     </ul>
                 </div>
             </div>
@@ -149,25 +112,12 @@
 {% block extra_js %}
 {{ super() }}
 <script>
-// 切換飲品價格輸入框顯示
-function toggleDrinkPrice(type) {
-    const checkbox = $(`#has${type.charAt(0).toUpperCase() + type.slice(1)}Drink`);
-    const container = $(`#${type}DrinkPriceContainer`);
-    
-    if (checkbox.is(':checked')) {
-        container.slideDown();
-    } else {
-        container.slideUp();
-        $(`#${type}DrinkPrice`).val(0);
-    }
-}
-
 $(document).ready(function() {
     $('#productForm').on('submit', function(e) {
         e.preventDefault();
         
-        const unitPrice = parseFloat($('#productPrice').val());
-        const discountPrice = $('#productDiscountPrice').val() ? parseFloat($('#productDiscountPrice').val()) : null;
+        const unitPrice = parseInt($('#productPrice').val());
+        const discountPrice = $('#productDiscountPrice').val() ? parseInt($('#productDiscountPrice').val()) : null;
         
         // 驗證折扣價
         if (discountPrice && discountPrice >= unitPrice) {
@@ -175,20 +125,15 @@ $(document).ready(function() {
             return;
         }
         
-        const data = {
-            name: $('#productName').val().trim(),
-            shop_id: {{ shop.id }},
-            category_id: parseInt($('#productCategory').val()),
-            description: $('#productDescription').val().trim(),
+                const data = {
+                    name: $('#productName').val(),
+                    shop_id: parseInt($('#productShop').val()),
+                    category_id: parseInt($('#productCategory').val()),
+            description: $('#productDescription').val(),
             unit_price: unitPrice,
             discounted_price: discountPrice,
             stock_quantity: parseInt($('#productStock').val()),
-            is_active: $('#productStatus').val() === 'true',
-            // 飲品選項
-            has_cold_drink: $('#hasColdDrink').is(':checked'),
-            cold_drink_price: $('#hasColdDrink').is(':checked') ? parseFloat($('#coldDrinkPrice').val()) : null,
-            has_hot_drink: $('#hasHotDrink').is(':checked'),
-            hot_drink_price: $('#hasHotDrink').is(':checked') ? parseFloat($('#hotDrinkPrice').val()) : null
+            is_active: $('#productStatus').val() === 'true'
         };
         
         $.ajax({
@@ -197,7 +142,7 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function() {
-                alert('產品新增成功！');
+                alert('新增成功');
                 window.location.href = "{{ url_for('store_admin.products') }}";
             },
             error: function(xhr) {

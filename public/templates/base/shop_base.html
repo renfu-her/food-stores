@@ -23,18 +23,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'store_admin.profile' %}active{% endif %}" href="{{ url_for('store_admin.profile') }}">
-                        <i class="bi bi-gear me-2"></i>店鋪設定
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'store_admin.products' %}active{% endif %}" href="{{ url_for('store_admin.products') }}">
                         <i class="bi bi-box-seam me-2"></i>產品管理
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'store_admin.toppings' %}active{% endif %}" href="{{ url_for('store_admin.toppings') }}">
-                        <i class="bi bi-list-ul me-2"></i>配料管理
                     </a>
                 </li>
                 <li class="nav-item">

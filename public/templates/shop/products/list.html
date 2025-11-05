@@ -13,11 +13,19 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-5">
-                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋產品名稱、描述...">
-                </div>
                 <div class="col-md-3">
-                    <select class="form-select" id="categoryFilter">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋產品名稱..." onkeyup="performSearch()">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="shopFilter" onchange="performSearch()">
+                        <option value="">所有店鋪</option>
+                        {% for shop in shops %}
+                        <option value="{{ shop.id }}">{{ shop.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="categoryFilter" onchange="performSearch()">
                         <option value="">所有分類</option>
                         {% for category in categories %}
                         <option value="{{ category.id }}">{{ category.name }}</option>
@@ -25,17 +33,32 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" id="statusFilter">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
                         <option value="">所有狀態</option>
-                        <option value="active">已上架</option>
-                        <option value="inactive">已下架</option>
+                        <option value="active">上架</option>
+                        <option value="inactive">下架</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="stockFilter" onchange="performSearch()">
+                        <option value="">所有庫存</option>
+                        <option value="in">有庫存</option>
+                        <option value="out">缺貨</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select class="form-select" id="itemsPerPageSelect" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="25">25 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
                     </select>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- 数据表格 -->
+    <!-- 表格 -->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -44,80 +67,27 @@
                         <tr>
                             <th>ID</th>
                             <th>產品名稱</th>
+                            <th>店鋪</th>
                             <th>分類</th>
-                            <th>單價</th>
-                            <th>折扣價</th>
+                            <th>價格</th>
                             <th>庫存</th>
                             <th>飲品</th>
                             <th>狀態</th>
                             <th class="text-end">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for product in products %}
-                        <tr data-category="{{ product.category_id }}" data-status="{{ 'active' if product.is_active else 'inactive' }}">
-                            <td>{{ product.id }}</td>
-                            <td>
-                                <strong>{{ product.name }}</strong>
-                                {% if product.description %}
-                                <br><small class="text-muted">{{ product.description[:40] }}{% if product.description|length > 40 %}...{% endif %}</small>
-                                {% endif %}
-                            </td>
-                            <td>{{ product.category.name if product.category else '-' }}</td>
-                            <td>${{ "%.0f"|format(product.unit_price|float) }}</td>
-                            <td>
-                                {% if product.discounted_price %}
-                                <span class="text-danger">${{ "%.0f"|format(product.discounted_price|float) }}</span>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if product.stock_quantity > 0 %}
-                                <span class="badge bg-success">{{ product.stock_quantity }}</span>
-                                {% else %}
-                                <span class="badge bg-danger">缺貨</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if product.has_cold_drink or product.has_hot_drink %}
-                                <small>
-                                    {% if product.has_cold_drink %}<span class="badge bg-info">🧊</span>{% endif %}
-                                    {% if product.has_hot_drink %}<span class="badge bg-warning">☕</span>{% endif %}
-                                </small>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if product.is_active %}
-                                <span class="badge bg-success">上架</span>
-                                {% else %}
-                                <span class="badge bg-secondary">下架</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <a href="{{ url_for('store_admin.product_edit', product_id=product.id) }}" class="btn btn-sm btn-outline-primary" title="編輯">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct({{ product.id }}, '{{ product.name }}')" title="刪除">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleStatus({{ product.id }}, {{ 'false' if product.is_active else 'true' }})" title="{{ '下架' if product.is_active else '上架' }}">
-                                    <i class="bi bi-{{ 'eye-slash' if product.is_active else 'eye' }}"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="9" class="text-center text-muted py-5">
-                                <i class="bi bi-box-seam display-4 d-block mb-3"></i>
-                                還沒有產品，點擊「新增產品」開始建立！
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="productsTableBody">
+                        <tr><td colspan="9" class="text-center">載入中...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div id="paginationInfo"></div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
             </div>
         </div>
     </div>
@@ -126,68 +96,118 @@
 
 {% block extra_js %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
 <script>
-// 搜尋過濾
-$('#searchInput, #categoryFilter, #statusFilter').on('input change', function() {
-    const searchValue = $('#searchInput').val().toLowerCase();
-    const categoryFilter = $('#categoryFilter').val();
-    const statusFilter = $('#statusFilter').val();
+let allProducts = {{ products|tojson }};
+let allShops = {{ shops|tojson }};
+let allCategories = {{ categories|tojson }};
+
+// 渲染产品行
+function renderProductRow(product) {
+    const shop = allShops.find(s => s.id === product.shop_id);
+    const shopName = shop ? shop.name : '-';
     
-    $('tbody tr[data-category]').each(function() {
-        const $row = $(this);
-        const text = $row.text().toLowerCase();
-        const category = $row.data('category').toString();
-        const status = $row.data('status');
+    const category = allCategories.find(c => c.id === product.category_id);
+    const categoryName = category ? category.name : '-';
+    
+    const price = product.discounted_price || product.unit_price;
+    const priceHtml = product.discounted_price 
+        ? `<span class="text-decoration-line-through text-muted">$${product.unit_price}</span> <span class="text-danger">$${product.discounted_price}</span>`
+        : `$${product.unit_price}`;
+    
+    const stockBadge = product.stock > 0 
+        ? `<span class="badge bg-success">${product.stock}</span>` 
+        : '<span class="badge bg-danger">缺貨</span>';
+    
+    // 飲品圖標
+    let drinkBadges = '';
+    if (product.has_cold_drink) drinkBadges += '<span class="badge bg-info">🧊</span> ';
+    if (product.has_hot_drink) drinkBadges += '<span class="badge bg-warning">☕</span>';
+    if (!drinkBadges) drinkBadges = '<span class="text-muted">-</span>';
+    
+    const statusBadge = product.is_active 
+        ? '<span class="badge bg-success">上架</span>' 
+        : '<span class="badge bg-secondary">下架</span>';
+    
+    return `
+        <tr>
+            <td>${product.id}</td>
+            <td>
+                <strong>${product.name}</strong>
+                ${product.description ? '<br><small class="text-muted">' + product.description.substring(0, 40) + (product.description.length > 40 ? '...' : '') + '</small>' : ''}
+            </td>
+            <td>${shopName}</td>
+            <td>${categoryName}</td>
+            <td>${priceHtml}</td>
+            <td>${stockBadge}</td>
+            <td>${drinkBadges}</td>
+            <td>${statusBadge}</td>
+            <td class="text-end">
+                <a href="/shop/products/${product.id}/edit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> 編輯
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
+                    <i class="bi bi-trash"></i> 刪除
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// 渲染表格
+function renderProductsTable() {
+    renderTable('productsTableBody', renderProductRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const shopFilter = document.getElementById('shopFilter').value;
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const stockFilter = document.getElementById('stockFilter').value;
+    
+    filteredItems = allProducts.filter(product => {
+        const matchSearch = !searchValue || 
+            product.name.toLowerCase().includes(searchValue.toLowerCase());
         
-        const matchSearch = !searchValue || text.includes(searchValue);
-        const matchCategory = !categoryFilter || category === categoryFilter;
-        const matchStatus = !statusFilter || status === statusFilter;
+        const matchShop = !shopFilter || product.shop_id == shopFilter;
+        const matchCategory = !categoryFilter || product.category_id == categoryFilter;
+        const matchStatus = !statusFilter || 
+            (statusFilter === 'active' && product.is_active) ||
+            (statusFilter === 'inactive' && !product.is_active);
+        const matchStock = !stockFilter ||
+            (stockFilter === 'in' && product.stock > 0) ||
+            (stockFilter === 'out' && product.stock === 0);
         
-        $row.toggle(matchSearch && matchCategory && matchStatus);
+        return matchSearch && matchShop && matchCategory && matchStatus && matchStock;
     });
-});
-
-// 刪除產品（軟刪除）
-async function deleteProduct(productId, productName) {
-    if (!confirm(`確定要刪除產品「${productName}」嗎？\n\n此操作為軟刪除，可在後台恢復。`)) {
-        return;
-    }
     
-    try {
-        const response = await fetch(`/api/products/${productId}`, {
-            method: 'DELETE',
-            headers: {'Content-Type': 'application/json'}
-        });
-        
-        if (response.ok) {
-            location.reload();
-        } else {
-            const error = await response.json();
-            alert(error.message || '刪除失敗');
-        }
-    } catch (error) {
-        alert('刪除失敗：' + error.message);
-    }
+    currentPage = 1;
+    renderProductsTable();
+    updatePagination();
 }
 
-// 切換上下架狀態
-async function toggleStatus(productId, newStatus) {
-    try {
-        const response = await fetch(`/api/products/${productId}/status`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ is_active: newStatus === 'true' })
+// 删除产品
+function deleteProduct(productId) {
+    confirmDelete('確定要刪除此產品嗎？', function() {
+        $.ajax({
+            url: '/api/products/' + productId,
+            method: 'DELETE',
+            success: function() {
+                showSuccess('刪除成功');
+            },
+            error: function() {
+                showError('刪除失敗');
+            }
         });
-        
-        if (response.ok) {
-            location.reload();
-        } else {
-            alert('更新失敗');
-        }
-    } catch (error) {
-        alert('更新失敗：' + error.message);
-    }
+    });
 }
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderProductsTable;
+    initializeDataTable('productsTableBody', allProducts, renderProductRow);
+});
 </script>
 {% endblock %}
-

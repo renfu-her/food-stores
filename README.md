@@ -380,6 +380,7 @@ all_orders = Order.query.all()
 |------|------|
 | **[docs/PERMISSIONS.md](docs/PERMISSIONS.md)** | 權限管理架構（1000+ 行） |
 | **[docs/SHOP_ADMIN_GUIDE.md](docs/SHOP_ADMIN_GUIDE.md)** | 店主操作指南（完整流程） |
+| **[docs/BACKEND_VS_SHOP.md](docs/BACKEND_VS_SHOP.md)** | Backend vs Shop Admin 詳細對比 |
 | **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** | 快速參考卡片（對比表格） |
 
 **權限架構文檔包括：**

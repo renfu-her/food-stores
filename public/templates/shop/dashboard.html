@@ -4,7 +4,7 @@
 <div class="container">
     <div class="hero-section">
         <h1>歡迎回來，{{ user.name }}！</h1>
-        <p>{{ shop.name }} 管理儀表板</p>
+        <p>管理 {{ total_shops }} 個店鋪</p>
     </div>
     
     <div class="stats-grid">
@@ -31,11 +31,41 @@
         </div>
     </div>
     
+    <!-- 我的店鋪列表 -->
+    {% if shops %}
+    <div class="mb-4">
+        <h2>我的店鋪</h2>
+        <div class="row">
+            {% for shop in shops %}
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ shop.name }}</h5>
+                        <p class="card-text text-muted small">
+                            {{ shop.description[:60] if shop.description else '無描述' }}
+                            {% if shop.description and shop.description|length > 60 %}...{% endif %}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge {{ 'badge-success' if shop.status == 'active' else 'badge-secondary' }}">
+                                {{ '營業中' if shop.status == 'active' else '已停用' }}
+                            </span>
+                            <a href="{{ url_for('store_admin.shop_edit', shop_id=shop.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> 編輯
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
     <div class="quick-actions">
         <h2>快速操作</h2>
         <div class="action-buttons">
+            <a href="{{ url_for('store_admin.shops') }}" class="btn btn-primary">店鋪管理</a>
             <a href="{{ url_for('store_admin.products') }}" class="btn btn-primary">產品管理</a>
-            <a href="{{ url_for('store_admin.toppings') }}" class="btn btn-primary">配料管理</a>
             <a href="{{ url_for('store_admin.orders') }}" class="btn btn-primary">訂單管理</a>
             <a href="{{ url_for('store_admin.statistics') }}" class="btn btn-primary">統計資料</a>
         </div>

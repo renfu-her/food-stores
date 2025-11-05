@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">我的店鋪</h1>
+        <h1 class="h3 mb-0">店鋪管理</h1>
         <a href="{{ url_for('store_admin.shop_add') }}" class="btn btn-primary">
             <i class="bi bi-plus-lg me-2"></i>新增店鋪
         </a>
@@ -13,14 +13,22 @@
     <div class="card mb-4">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋店鋪名稱、描述...">
+                <div class="col-md-5">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋店鋪名稱、描述..." onkeyup="performSearch()">
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select" id="statusFilter">
+                    <select class="form-select" id="statusFilter" onchange="performSearch()">
                         <option value="">所有狀態</option>
                         <option value="active">營業中</option>
                         <option value="inactive">已關閉</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                        <option value="10">10 筆/頁</option>
+                        <option value="20">20 筆/頁</option>
+                        <option value="50">50 筆/頁</option>
+                        <option value="100">100 筆/頁</option>
                     </select>
                 </div>
             </div>
@@ -43,98 +51,115 @@
                             <th class="text-end">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for shop in shops %}
-                        <tr data-status="{{ shop.status }}">
-                            <td>{{ shop.id }}</td>
-                            <td>
-                                <strong>{{ shop.name }}</strong>
-                                {% if shop.description %}
-                                <br><small class="text-muted">{{ shop.description[:50] }}{% if shop.description|length > 50 %}...{% endif %}</small>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="badge bg-info">{{ shop.shop_order_id }}</span>
-                            </td>
-                            <td>{{ shop.max_toppings_per_order }}</td>
-                            <td>
-                                {% if shop.status == 'active' %}
-                                <span class="badge bg-success">營業中</span>
-                                {% else %}
-                                <span class="badge bg-secondary">已關閉</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ shop.created_at.strftime('%Y-%m-%d') if shop.created_at else '-' }}</td>
-                            <td class="text-end">
-                                <a href="{{ url_for('store_admin.shops') }}" class="btn btn-sm btn-outline-info" title="詳情">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{{ url_for('store_admin.shop_edit', shop_id=shop.id) }}" class="btn btn-sm btn-outline-primary" title="編輯">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteShop({{ shop.id }}, '{{ shop.name }}')" title="刪除">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-5">
-                                <i class="bi bi-shop display-4 d-block mb-3"></i>
-                                您還沒有店鋪，點擊「新增店鋪」開始建立！
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="shopsTableBody">
+                        <tr><td colspan="7" class="text-center">載入中...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <span id="paginationInfo" class="text-muted"></span>
+                </div>
+                <nav>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
+                </nav>
             </div>
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/backend_common.js') }}"></script>
 <script>
-// 搜尋過濾
-$('#searchInput, #statusFilter').on('input change', function() {
-    const searchValue = $('#searchInput').val().toLowerCase();
-    const statusFilter = $('#statusFilter').val();
-    
-    $('tbody tr[data-status]').each(function() {
-        const $row = $(this);
-        const text = $row.text().toLowerCase();
-        const status = $row.data('status');
-        
-        const matchSearch = !searchValue || text.includes(searchValue);
-        const matchStatus = !statusFilter || status === statusFilter;
-        
-        $row.toggle(matchSearch && matchStatus);
-    });
-});
+let allShops = {{ shops|tojson }};
+let currentEditShopId = null;
 
-// 刪除店鋪（軟刪除）
-async function deleteShop(shopId, shopName) {
-    if (!confirm(`確定要刪除店鋪「${shopName}」嗎？\n\n此操作為軟刪除，可在後台恢復。`)) {
-        return;
-    }
+// 渲染店铺行
+function renderShopRow(shop) {
+    const statusBadge = shop.status === 'active' 
+        ? '<span class="badge bg-success">營業中</span>' 
+        : '<span class="badge bg-secondary">已關閉</span>';
     
-    try {
-        const response = await fetch(`/api/shops/${shopId}`, {
-            method: 'DELETE',
-            headers: {'Content-Type': 'application/json'}
-        });
-        
-        if (response.ok) {
-            location.reload();
-        } else {
-            const error = await response.json();
-            alert(error.message || '刪除失敗');
-        }
-    } catch (error) {
-        alert('刪除失敗：' + error.message);
-    }
+    const createdAt = shop.created_at ? new Date(shop.created_at).toLocaleDateString('zh-TW') : '-';
+    
+    return `
+        <tr>
+            <td>${shop.id}</td>
+            <td>
+                <strong>${shop.name}</strong>
+                ${shop.description ? '<br><small class="text-muted">' + shop.description.substring(0, 50) + (shop.description.length > 50 ? '...' : '') + '</small>' : ''}
+            </td>
+            <td><span class="badge bg-info">${shop.shop_order_id}</span></td>
+            <td>${shop.max_toppings_per_order}</td>
+            <td>${statusBadge}</td>
+            <td>${createdAt}</td>
+            <td class="text-end">
+                <a href="/shop/shops/${shop.id}/edit" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> 編輯
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteShop(${shop.id})">
+                    <i class="bi bi-trash"></i> 刪除
+                </button>
+            </td>
+        </tr>
+    `;
 }
+
+// 渲染表格
+function renderShopsTable() {
+    renderTable('shopsTableBody', renderShopRow);
+}
+
+// 搜索
+function performSearch() {
+    const searchValue = document.getElementById('searchInput').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredItems = allShops.filter(shop => {
+        const matchSearch = !searchValue || 
+            shop.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+            (shop.description && shop.description.toLowerCase().includes(searchValue.toLowerCase()));
+        
+        const matchStatus = !statusFilter || shop.status === statusFilter;
+        
+        return matchSearch && matchStatus;
+    });
+    
+    currentPage = 1;
+    renderShopsTable();
+    updatePagination();
+}
+
+// 编辑店铺 - 跳转到编辑页面
+function editShop(shopId) {
+    window.location.href = "{{ url_for('store_admin.shop_edit', shop_id=0) }}".replace('0', shopId);
+}
+
+// 删除店铺
+function deleteShop(shopId) {
+    confirmDelete('確定要刪除此店鋪嗎？此操作將同時刪除店鋪下的所有產品和配料！', function() {
+        $.ajax({
+            url: '/api/shops/' + shopId,
+            method: 'DELETE',
+            success: function() {
+                showSuccess('刪除成功');
+            },
+            error: function() {
+                showError('刪除失敗');
+            }
+        });
+    });
+}
+
+// 初始化
+$(document).ready(function() {
+    window.currentRenderFunction = renderShopsTable;
+    initializeDataTable('shopsTableBody', allShops, renderShopRow);
+});
 </script>
 {% endblock %}
-

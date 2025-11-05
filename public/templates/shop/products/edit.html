@@ -19,51 +19,57 @@
                 </div>
                 <div class="card-body">
                     <form id="productForm">
-                        <div class="mb-3">
-                            <label for="productName" class="form-label mb-2">產品名稱 <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="productName" value="{{ product.name }}" required>
-                        </div>
+                        <input type="hidden" id="productId" value="{{ product.id }}">
                         
-                        <div class="mb-3 mt-3">
-                            <label for="productCategory" class="form-label mb-2">產品分類 <span class="text-danger">*</span></label>
+                            <div class="mb-3">
+                                <label for="productName" class="form-label">產品名稱 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="productName" value="{{ product.name }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="productShop" class="form-label">所屬店鋪 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="productShop" required>
+                                    <option value="">請選擇店鋪</option>
+                                    {% for shop in shops %}
+                                    <option value="{{ shop.id }}" {% if shop.id == product.shop_id %}selected{% endif %}>{{ shop.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="productCategory" class="form-label">產品分類 <span class="text-danger">*</span></label>
                             <select class="form-select" id="productCategory" required>
                                 <option value="">請選擇分類</option>
                                 {% for category in categories %}
-                                <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                                <option value="{{ category.id }}" {% if category.id == product.category_id %}selected{% endif %}>{{ category.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         
-                        <div class="mb-3 mt-3">
-                            <label for="productDescription" class="form-label mb-2">產品描述</label>
+                        <div class="mb-3">
+                            <label for="productDescription" class="form-label">產品描述</label>
                             <textarea class="form-control" id="productDescription" rows="4">{{ product.description or '' }}</textarea>
                         </div>
                         
-                        <div class="row mt-3">
+                        <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="productPrice" class="form-label mb-2">單價 <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="productPrice" value="{{ product.unit_price|int }}" min="0" step="1" required>
-                                </div>
+                                <label for="productPrice" class="form-label">單價 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="productPrice" value="{{ product.unit_price|int }}" min="0" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="productDiscountPrice" class="form-label mb-2">折扣價</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="number" class="form-control" id="productDiscountPrice" value="{{ product.discounted_price|int if product.discounted_price else '' }}" min="0" step="1">
-                                </div>
-                                <small class="form-text text-muted d-block mt-2">選填，留空表示無折扣</small>
+                                <label for="productDiscountPrice" class="form-label">折扣價</label>
+                                <input type="number" class="form-control" id="productDiscountPrice" value="{% if product.discounted_price %}{{ product.discounted_price|int }}{% endif %}" min="0">
+                                <small class="form-text text-muted">選填，留空表示無折扣</small>
                             </div>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="productStock" class="form-label mb-2">庫存數量 <span class="text-danger">*</span></label>
+                                <label for="productStock" class="form-label">庫存數量 <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="productStock" value="{{ product.stock_quantity }}" min="0" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="productStatus" class="form-label mb-2">狀態 <span class="text-danger">*</span></label>
+                                <label for="productStatus" class="form-label">狀態 <span class="text-danger">*</span></label>
                                 <select class="form-select" id="productStatus" required>
                                     <option value="true" {% if product.is_active %}selected{% endif %}>上架</option>
                                     <option value="false" {% if not product.is_active %}selected{% endif %}>下架</option>
@@ -71,50 +77,9 @@
                             </div>
                         </div>
                         
-                        <hr class="my-4">
+                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
                         
-                        <!-- 飲品選項 -->
-                        <h5 class="mb-3"><i class="bi bi-cup-straw me-2"></i>飲品選項（可選）</h5>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="hasColdDrink" {% if product.has_cold_drink %}checked{% endif %} onchange="toggleDrinkPrice('cold')">
-                                    <label class="form-check-label" for="hasColdDrink">
-                                        <strong>🧊 提供冷飲</strong>
-                                    </label>
-                                </div>
-                                <div id="coldDrinkPriceContainer" style="{% if not product.has_cold_drink %}display: none;{% endif %} margin-left: 2rem;">
-                                    <label class="form-label small text-muted">冷飲加價</label>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="coldDrinkPrice" value="{{ product.cold_drink_price|int if product.cold_drink_price else 0 }}" min="0" step="1">
-                                    </div>
-                                    <small class="form-text text-muted">可設為 0（免費）</small>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="hasHotDrink" {% if product.has_hot_drink %}checked{% endif %} onchange="toggleDrinkPrice('hot')">
-                                    <label class="form-check-label" for="hasHotDrink">
-                                        <strong>☕ 提供熱飲</strong>
-                                    </label>
-                                </div>
-                                <div id="hotDrinkPriceContainer" style="{% if not product.has_hot_drink %}display: none;{% endif %} margin-left: 2rem;">
-                                    <label class="form-label small text-muted">熱飲加價</label>
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" id="hotDrinkPrice" value="{{ product.hot_drink_price|int if product.hot_drink_price else 0 }}" min="0" step="1">
-                                    </div>
-                                    <small class="form-text text-muted">可設為 0（免費）</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div id="errorMessage" class="alert alert-danger mt-4" style="display: none;"></div>
-                        
-                        <div class="d-flex gap-2 mt-4">
+                        <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-save me-2"></i>更新
                             </button>
@@ -128,27 +93,52 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- 圖片管理 -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-images me-2"></i>產品圖片</h5>
+                    <label class="btn btn-sm btn-primary" for="imageUpload">
+                        <i class="bi bi-upload me-1"></i>上傳圖片
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(event)">
+                    </label>
+                </div>
+                <div class="card-body">
+                    <div id="imagesContainer" class="row g-3">
+                        <!-- 圖片將動態載入 -->
+                        <div class="col-12 text-center text-muted py-4">
+                            <i class="bi bi-image fs-1"></i>
+                            <p>暫無圖片，請點擊上方按鈕上傳</p>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted d-block mt-3">
+                        <i class="bi bi-info-circle me-1"></i>支持 PNG, JPG, GIF, WEBP 格式，最大 16MB。第一張圖片將顯示在前台。
+                    </small>
+                </div>
+            </div>
         </div>
         
         <div class="col-md-4">
             <div class="card mb-3">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>說明</h5>
+                    <h5 class="card-title">產品資訊</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><i class="bi bi-asterisk text-danger me-2"></i>所有標記 * 的欄位為必填</li>
-                        <li class="mb-2"><i class="bi bi-tag text-primary me-2"></i>折扣價必須小於單價</li>
-                        <li class="mb-2"><i class="bi bi-cup-straw text-info me-2"></i>飲品選項：顧客可選冷/熱/不要</li>
-                        <li class="mb-2"><i class="bi bi-cash text-success me-2"></i>飲品加價可為 0（免費）</li>
+                        <li class="mb-2"><strong>ID:</strong> {{ product.id }}</li>
+                        <li class="mb-2"><strong>建立時間:</strong> {{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '-' }}</li>
+                        <li class="mb-2"><strong>更新時間:</strong> {{ product.updated_at.strftime('%Y-%m-%d %H:%M') if product.updated_at else '-' }}</li>
                     </ul>
                 </div>
             </div>
             
             <div class="card">
                 <div class="card-body">
-                    <h6 class="mb-3"><i class="bi bi-clock-history me-2"></i>記錄資訊</h6>
-                    <p class="small mb-1"><strong>產品ID：</strong>{{ product.id }}</p>
-                    <p class="small mb-1"><strong>建立時間：</strong>{{ product.created_at.strftime('%Y-%m-%d %H:%M') if product.created_at else '-' }}</p>
-                    <p class="small mb-0"><strong>更新時間：</strong>{{ product.updated_at.strftime('%Y-%m-%d %H:%M') if product.updated_at else '-' }}</p>
+                    <h5 class="card-title">說明</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-info-circle text-info me-2"></i>修改後需點擊「更新」</li>
+                        <li class="mb-2"><i class="bi bi-tag text-primary me-2"></i>折扣價必須小於單價</li>
+                        <li class="mb-2"><i class="bi bi-box-seam text-success me-2"></i>庫存為 0 時將顯示缺貨</li>
+                        <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i>刪除產品無法復原</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -158,28 +148,20 @@
 
 {% block extra_js %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 const productId = {{ product.id }};
-
-// 切換飲品價格輸入框顯示
-function toggleDrinkPrice(type) {
-    const checkbox = $(`#has${type.charAt(0).toUpperCase() + type.slice(1)}Drink`);
-    const container = $(`#${type}DrinkPriceContainer`);
-    
-    if (checkbox.is(':checked')) {
-        container.slideDown();
-    } else {
-        container.slideUp();
-        $(`#${type}DrinkPrice`).val(0);
-    }
-}
+let productImages = [];
 
 $(document).ready(function() {
+    // 載入產品圖片
+    loadImages();
+    
     $('#productForm').on('submit', function(e) {
         e.preventDefault();
         
-        const unitPrice = parseFloat($('#productPrice').val());
-        const discountPrice = $('#productDiscountPrice').val() ? parseFloat($('#productDiscountPrice').val()) : null;
+        const unitPrice = parseInt($('#productPrice').val());
+        const discountPrice = $('#productDiscountPrice').val() ? parseInt($('#productDiscountPrice').val()) : null;
         
         // 驗證折扣價
         if (discountPrice && discountPrice >= unitPrice) {
@@ -187,29 +169,25 @@ $(document).ready(function() {
             return;
         }
         
-        const data = {
-            name: $('#productName').val().trim(),
-            category_id: parseInt($('#productCategory').val()),
-            description: $('#productDescription').val().trim(),
+                const data = {
+                    name: $('#productName').val(),
+                    shop_id: parseInt($('#productShop').val()),
+                    category_id: parseInt($('#productCategory').val()),
+            description: $('#productDescription').val(),
             unit_price: unitPrice,
             discounted_price: discountPrice,
             stock_quantity: parseInt($('#productStock').val()),
-            is_active: $('#productStatus').val() === 'true',
-            // 飲品選項
-            has_cold_drink: $('#hasColdDrink').is(':checked'),
-            cold_drink_price: $('#hasColdDrink').is(':checked') ? parseFloat($('#coldDrinkPrice').val()) : null,
-            has_hot_drink: $('#hasHotDrink').is(':checked'),
-            hot_drink_price: $('#hasHotDrink').is(':checked') ? parseFloat($('#hotDrinkPrice').val()) : null
+            is_active: $('#productStatus').val() === 'true'
         };
         
         $.ajax({
-            url: `/api/products/${productId}`,
+            url: '/api/products/' + productId,
             method: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify(data),
             success: function() {
-                alert('產品更新成功！');
-                window.location.href = "{{ url_for('store_admin.products') }}";
+                alert('更新成功');
+                location.reload();
             },
             error: function(xhr) {
                 const error = xhr.responseJSON || {};
@@ -219,22 +197,158 @@ $(document).ready(function() {
     });
 });
 
-// 刪除產品（軟刪除）
 function deleteProduct() {
-    if (!confirm('確定要刪除此產品嗎？\n\n此操作為軟刪除，可在後台恢復。')) {
+    if (!confirm('確定要刪除此產品嗎？此操作無法復原！')) return;
+    
+    $.ajax({
+        url: '/api/products/' + productId,
+        method: 'DELETE',
+        success: function() {
+            alert('刪除成功');
+            window.location.href = "{{ url_for('store_admin.products') }}";
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// ==================== 產品圖片管理 ====================
+
+// 載入圖片列表
+function loadImages() {
+    $.ajax({
+        url: `/api/products/${productId}/images`,
+        method: 'GET',
+        success: function(images) {
+            productImages = images;
+            renderImages();
+            initSortable();
+        },
+        error: function() {
+            console.error('載入圖片失敗');
+        }
+    });
+}
+
+// 渲染圖片
+function renderImages() {
+    const container = $('#imagesContainer');
+    
+    if (productImages.length === 0) {
+        container.html(`
+            <div class="col-12 text-center text-muted py-4">
+                <i class="bi bi-image fs-1"></i>
+                <p>暫無圖片，請點擊上方按鈕上傳</p>
+            </div>
+        `);
         return;
     }
     
+    let html = '';
+    productImages.forEach((img, index) => {
+        html += `
+            <div class="col-md-3 image-item" data-id="${img.id}">
+                <div class="card position-relative">
+                    ${index === 0 ? '<div class="badge bg-primary position-absolute top-0 start-0 m-2" style="z-index: 10;">主圖</div>' : ''}
+                    <div class="badge bg-secondary position-absolute top-0 end-0 m-2" style="cursor: move; z-index: 10;">
+                        <i class="bi bi-grip-vertical"></i>
+                    </div>
+                    <div style="width: 100%; padding-top: 100%; position: relative; overflow: hidden; background: #f5f5f5;">
+                        <img src="${img.image_path}" class="position-absolute top-0 start-0 w-100 h-100" alt="Product Image" style="object-fit: cover;">
+                    </div>
+                    <div class="card-body p-2 text-center">
+                        <button class="btn btn-sm btn-danger w-100" onclick="deleteImage(${img.id})">
+                            <i class="bi bi-trash"></i> 刪除
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.html(html);
+}
+
+// 初始化拖拽排序
+function initSortable() {
+    const container = document.getElementById('imagesContainer');
+    if (container && productImages.length > 0) {
+        new Sortable(container, {
+            animation: 150,
+            handle: '.badge.bg-secondary',
+            onEnd: function() {
+                updateImageOrder();
+            }
+        });
+    }
+}
+
+// 上傳圖片
+function uploadImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
     $.ajax({
-        url: `/api/products/${productId}`,
-        method: 'DELETE',
-        success: function() {
-            alert('產品已刪除');
-            window.location.href = "{{ url_for('store_admin.products') }}";
+        url: `/api/products/${productId}/images`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(newImage) {
+            productImages.push(newImage);
+            renderImages();
+            initSortable();
+            alert('上傳成功');
+            $('#imageUpload').val('');
         },
         error: function(xhr) {
             const error = xhr.responseJSON || {};
-            alert(error.message || '刪除失敗');
+            alert(error.error || '上傳失敗');
+            $('#imageUpload').val('');
+        }
+    });
+}
+
+// 刪除圖片
+function deleteImage(imageId) {
+    if (!confirm('確定要刪除此圖片嗎？')) return;
+    
+    $.ajax({
+        url: `/api/product-images/${imageId}`,
+        method: 'DELETE',
+        success: function() {
+            productImages = productImages.filter(img => img.id !== imageId);
+            renderImages();
+            initSortable();
+            alert('刪除成功');
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 更新圖片順序
+function updateImageOrder() {
+    const order = [];
+    document.querySelectorAll('.image-item').forEach(item => {
+        order.push(parseInt(item.dataset.id));
+    });
+    
+    $.ajax({
+        url: `/api/products/${productId}/images/reorder`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ order: order }),
+        success: function() {
+            loadImages(); // 重新載入以更新主圖標記
+        },
+        error: function() {
+            console.error('排序失敗');
         }
     });
 }

@@ -13,47 +13,60 @@
     
     <div class="row">
         <div class="col-md-8">
-            <div class="card">
+            <!-- 店铺基本信息 -->
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-shop me-2"></i>店鋪資訊</h5>
+                    <h5 class="mb-0"><i class="bi bi-shop me-2"></i>店鋪基本資訊</h5>
                 </div>
                 <div class="card-body">
                     <form id="shopForm">
+                        <input type="hidden" id="shopId" value="{{ shop.id }}">
+                        
                         <div class="mb-3">
-                            <label for="shopName" class="form-label mb-2">店鋪名稱 <span class="text-danger">*</span></label>
+                            <label for="shopName" class="form-label">店鋪名稱 <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="shopName" value="{{ shop.name }}" required>
                         </div>
                         
-                        <div class="mb-3 mt-3">
-                            <label for="shopOrderId" class="form-label mb-2">商店訂單ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="shopOrderId" value="{{ shop.shop_order_id }}" required maxlength="20" pattern="[A-Z0-9]+">
-                            <small class="form-text text-muted d-block mt-2">只能使用大寫字母和數字，2-20 個字符，用於訂單編號</small>
+                        <div class="mb-3">
+                            <label for="shopOwner" class="form-label">店主</label>
+                            <input type="text" class="form-control" value="{{ user.name }} ({{ user.email }})" disabled>
+                            <small class="form-text text-muted d-block mt-2">店鋪擁有者不可更改</small>
                         </div>
                         
-                        <div class="mb-3 mt-3">
-                            <label for="shopDescription" class="form-label mb-2">店鋪描述</label>
+                        <div class="mb-3">
+                            <label for="shopDescription" class="form-label">店鋪描述</label>
                             <textarea class="form-control" id="shopDescription" rows="4">{{ shop.description or '' }}</textarea>
                         </div>
                         
-                        <div class="mb-3 mt-3">
-                            <label for="shopMaxToppings" class="form-label mb-2">最大配料數量 <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="shopMaxToppings" value="{{ shop.max_toppings_per_order }}" min="0" max="20" required>
-                            <small class="form-text text-muted d-block mt-2">顧客每筆訂單可選擇的最大配料數量</small>
+                        <div class="mb-3">
+                            <label for="shopOrderId" class="form-label">商店訂單ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shopOrderId" value="{{ shop.shop_order_id or '' }}" required maxlength="20" pattern="[A-Z0-9]+">
+                            <div class="form-text">
+                                用於訂單編號，只能包含大寫字母和數字（如：S01, SHOP01, BAO 等）
+                                <br>
+                                <strong>注意：</strong>商店訂單ID必須唯一，不能與其他店鋪重複
+                            </div>
                         </div>
                         
-                        <div class="mb-3 mt-3">
-                            <label for="shopStatus" class="form-label mb-2">狀態 <span class="text-danger">*</span></label>
-                            <select class="form-select" id="shopStatus" required>
-                                <option value="active" {% if shop.status == 'active' %}selected{% endif %}>營業中</option>
-                                <option value="inactive" {% if shop.status == 'inactive' %}selected{% endif %}>已關閉</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="shopMaxToppings" class="form-label">最大配料數量 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="shopMaxToppings" value="{{ shop.max_toppings_per_order }}" min="0" max="20" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="shopStatus" class="form-label">狀態 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="shopStatus" required>
+                                    <option value="active" {% if shop.status == 'active' %}selected{% endif %}>營業中</option>
+                                    <option value="inactive" {% if shop.status == 'inactive' %}selected{% endif %}>已關閉</option>
+                                </select>
+                            </div>
                         </div>
                         
-                        <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+                        <div id="shopErrorMessage" class="alert alert-danger" style="display: none;"></div>
                         
-                        <div class="d-flex gap-2 mt-4">
+                        <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-2"></i>更新
+                                <i class="bi bi-save me-2"></i>更新店鋪資訊
                             </button>
                             <a href="{{ url_for('store_admin.shops') }}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle me-2"></i>取消
@@ -65,25 +78,140 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Banner 橫幅圖片 -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-card-image me-2"></i>店鋪 Banner 橫幅</h5>
+                    <label class="btn btn-sm btn-primary" for="bannerUpload">
+                        <i class="bi bi-upload me-1"></i>上傳 Banner
+                        <input type="file" id="bannerUpload" accept="image/*" style="display: none;" onchange="uploadBanner(event)">
+                    </label>
+                </div>
+                <div class="card-body">
+                    <div id="bannerContainer">
+                        {% if shop.banner_image %}
+                        <div class="position-relative" style="width: 100%; padding-top: 25%; overflow: hidden; background: #f5f5f5; border-radius: 8px;">
+                            <img src="{{ shop.banner_image }}" class="position-absolute top-0 start-0 w-100 h-100" alt="Shop Banner" style="object-fit: cover;">
+                        </div>
+                        <div class="text-center mt-2">
+                            <button class="btn btn-sm btn-danger" onclick="deleteBanner()">
+                                <i class="bi bi-trash"></i> 刪除 Banner
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-card-image display-1"></i>
+                            <p class="mt-2">暫無 Banner，請點擊上方按鈕上傳</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <small class="form-text text-muted d-block mt-3">
+                        <i class="bi bi-info-circle me-1"></i>建議尺寸：1200x300 像素（4:1 比例），顯示於店鋪頁面頂部。
+                    </small>
+                </div>
+            </div>
+            
+            <!-- 圖片管理 -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-images me-2"></i>店鋪圖片</h5>
+                    <label class="btn btn-sm btn-primary" for="imageUpload">
+                        <i class="bi bi-upload me-1"></i>上傳圖片
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="uploadImage(event)">
+                    </label>
+                </div>
+                <div class="card-body">
+                    <div id="imagesContainer" class="row g-3">
+                        <!-- 圖片將動態載入 -->
+                        <div class="col-12 text-center text-muted py-4">
+                            <i class="bi bi-image fs-1"></i>
+                            <p>暫無圖片，請點擊上方按鈕上傳</p>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted d-block mt-3">
+                        <i class="bi bi-info-circle me-1"></i>支持 PNG, JPG, GIF, WEBP 格式，最大 16MB。第一張圖片將顯示在前台。
+                    </small>
+                </div>
+            </div>
+            
+            <!-- 配料管理 -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>配料管理</h5>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addNewTopping()">
+                        <i class="bi bi-plus-circle me-1"></i>添加配料
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="toppingsContainer">
+                        {% if shop.toppings %}
+                            {% for topping in shop.toppings %}
+                            <div class="row mb-3 topping-item border-bottom pb-3" data-topping-id="{{ topping.id }}">
+                                <div class="col-md-3">
+                                    <label class="form-label small">配料名稱</label>
+                                    <input type="text" class="form-control topping-name" value="{{ topping.name }}" data-original="{{ topping.name }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">價格</label>
+                                    <input type="number" class="form-control topping-price" value="{{ topping.price|int }}" min="0" data-original="{{ topping.price }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">狀態</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input topping-active" type="checkbox" {% if topping.is_active %}checked{% endif %} data-original="{{ topping.is_active }}">
+                                        <label class="form-check-label small">啟用</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-5 d-flex align-items-end gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary flex-fill" onclick="updateTopping({{ topping.id }})">
+                                        <i class="bi bi-save"></i> 更新
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteTopping({{ topping.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted text-center py-3">尚無配料，點擊上方按鈕添加</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 新配料表单 -->
+                    <div id="newToppingsContainer" style="display: none;">
+                        <hr class="my-3">
+                        <h6 class="text-primary">新增配料</h6>
+                        <div id="newToppingsRows"></div>
+                    </div>
+                    
+                    <div id="toppingErrorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+                </div>
+            </div>
         </div>
         
         <div class="col-md-4">
             <div class="card mb-3">
                 <div class="card-body">
-                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>說明</h5>
+                    <h5 class="card-title">店鋪資訊</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2"><i class="bi bi-asterisk text-danger me-2"></i>所有標記 * 的欄位為必填</li>
-                        <li class="mb-2"><i class="bi bi-key text-warning me-2"></i>商店訂單ID不可重複</li>
-                        <li class="mb-2"><i class="bi bi-list-ul text-success me-2"></i>配料和產品在其他頁面管理</li>
+                        <li class="mb-2"><strong>ID:</strong> {{ shop.id }}</li>
+                        <li class="mb-2"><strong>建立時間:</strong> {{ shop.created_at.strftime('%Y-%m-%d %H:%M') if shop.created_at else '-' }}</li>
+                        <li class="mb-2"><strong>更新時間:</strong> {{ shop.updated_at.strftime('%Y-%m-%d %H:%M') if shop.updated_at else '-' }}</li>
+                        <li class="mb-2"><strong>配料數量:</strong> {{ shop.toppings|length }} 個</li>
                     </ul>
                 </div>
             </div>
             
             <div class="card">
                 <div class="card-body">
-                    <h6 class="mb-3"><i class="bi bi-clock-history me-2"></i>記錄資訊</h6>
-                    <p class="small mb-1"><strong>建立時間：</strong>{{ shop.created_at.strftime('%Y-%m-%d %H:%M') if shop.created_at else '-' }}</p>
-                    <p class="small mb-0"><strong>更新時間：</strong>{{ shop.updated_at.strftime('%Y-%m-%d %H:%M') if shop.updated_at else '-' }}</p>
+                    <h5 class="card-title">說明</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-info-circle text-info me-2"></i>修改店鋪資訊後需點擊「更新」</li>
+                        <li class="mb-2"><i class="bi bi-list-ul text-primary me-2"></i>配料可以單獨更新或刪除</li>
+                        <li class="mb-2"><i class="bi bi-plus-circle text-success me-2"></i>點擊「添加配料」可新增配料</li>
+                        <li class="mb-2"><i class="bi bi-exclamation-triangle text-warning me-2"></i>刪除店鋪會同時刪除所有配料</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -93,73 +221,388 @@
 
 {% block extra_js %}
 {{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 const shopId = {{ shop.id }};
+let newToppingCounter = 0;
+let shopImages = [];
 
+// 載入圖片列表
+function loadImages() {
+    $.ajax({
+        url: `/api/shops/${shopId}/images`,
+        method: 'GET',
+        success: function(images) {
+            shopImages = images;
+            renderImages();
+            initSortable();
+        },
+        error: function() {
+            console.error('載入圖片失敗');
+        }
+    });
+}
+
+// 渲染圖片
+function renderImages() {
+    const container = $('#imagesContainer');
+    
+    if (shopImages.length === 0) {
+        container.html(`
+            <div class="col-12 text-center text-muted py-4">
+                <i class="bi bi-image fs-1"></i>
+                <p>暫無圖片，請點擊上方按鈕上傳</p>
+            </div>
+        `);
+        return;
+    }
+    
+    let html = '';
+    shopImages.forEach((img, index) => {
+        html += `
+            <div class="col-md-3 image-item" data-id="${img.id}">
+                <div class="card position-relative">
+                    ${index === 0 ? '<div class="badge bg-primary position-absolute top-0 start-0 m-2" style="z-index: 10;">主圖</div>' : ''}
+                    <div class="badge bg-secondary position-absolute top-0 end-0 m-2" style="cursor: move; z-index: 10;">
+                        <i class="bi bi-grip-vertical"></i>
+                    </div>
+                    <div style="width: 100%; padding-top: 100%; position: relative; overflow: hidden; background: #f5f5f5;">
+                        <img src="${img.image_path}" class="position-absolute top-0 start-0 w-100 h-100" alt="Shop Image" style="object-fit: cover;">
+                    </div>
+                    <div class="card-body p-2 text-center">
+                        <button class="btn btn-sm btn-danger w-100" onclick="deleteImage(${img.id})">
+                            <i class="bi bi-trash"></i> 刪除
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.html(html);
+}
+
+// 初始化拖拽排序
+function initSortable() {
+    const container = document.getElementById('imagesContainer');
+    if (container && shopImages.length > 0) {
+        new Sortable(container, {
+            animation: 150,
+            handle: '.badge.bg-secondary',
+            onEnd: function() {
+                updateImageOrder();
+            }
+        });
+    }
+}
+
+// 上傳圖片
+function uploadImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    $.ajax({
+        url: `/api/shops/${shopId}/images`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(newImage) {
+            shopImages.push(newImage);
+            renderImages();
+            initSortable();
+            alert('上傳成功');
+            $('#imageUpload').val('');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert(error.error || '上傳失敗');
+            $('#imageUpload').val('');
+        }
+    });
+}
+
+// 刪除圖片
+function deleteImage(imageId) {
+    if (!confirm('確定要刪除此圖片嗎？')) return;
+    
+    $.ajax({
+        url: `/api/shop-images/${imageId}`,
+        method: 'DELETE',
+        success: function() {
+            shopImages = shopImages.filter(img => img.id !== imageId);
+            renderImages();
+            initSortable();
+            alert('刪除成功');
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// 更新圖片順序
+function updateImageOrder() {
+    const order = [];
+    document.querySelectorAll('.image-item').forEach(item => {
+        order.push(parseInt(item.dataset.id));
+    });
+    
+    $.ajax({
+        url: `/api/shops/${shopId}/images/reorder`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ order: order }),
+        success: function() {
+            loadImages(); // 重新載入以更新主圖標記
+        },
+        error: function() {
+            console.error('排序失敗');
+        }
+    });
+}
+
+// ==================== Banner 管理 ====================
+
+// 上傳 Banner
+function uploadBanner(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('banner', file);
+    
+    $.ajax({
+        url: `/api/shops/${shopId}/banner`,
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            alert('Banner 上傳成功');
+            location.reload();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert(error.error || 'Banner 上傳失敗');
+            $('#bannerUpload').val('');
+        }
+    });
+}
+
+// 刪除 Banner
+function deleteBanner() {
+    if (!confirm('確定要刪除 Banner 嗎？')) return;
+    
+    $.ajax({
+        url: `/api/shops/${shopId}/banner`,
+        method: 'DELETE',
+        success: function() {
+            alert('Banner 刪除成功');
+            location.reload();
+        },
+        error: function() {
+            alert('刪除失敗');
+        }
+    });
+}
+
+// ==================== 店鋪基本資訊 ====================
+
+// 更新店铺基本信息
 $(document).ready(function() {
+    // 載入圖片
+    loadImages();
+    
     $('#shopForm').on('submit', function(e) {
         e.preventDefault();
         
+        const shopOrderId = $('#shopOrderId').val().trim().toUpperCase();
+        
+        // 驗證商店訂單ID格式
+        if (shopOrderId && !/^[A-Z0-9]+$/.test(shopOrderId)) {
+            $('#shopErrorMessage').text('商店訂單ID只能包含大寫字母和數字').show();
+            return;
+        }
+        
         const data = {
-            name: $('#shopName').val().trim(),
-            shop_order_id: $('#shopOrderId').val().trim().toUpperCase(),
-            description: $('#shopDescription').val().trim(),
+            name: $('#shopName').val(),
+            description: $('#shopDescription').val(),
+            shop_order_id: shopOrderId || null,
             max_toppings_per_order: parseInt($('#shopMaxToppings').val()),
             status: $('#shopStatus').val()
         };
         
-        // 驗證
-        if (!data.name) {
-            $('#errorMessage').text('請輸入店鋪名稱').show();
-            return;
-        }
-        if (!data.shop_order_id) {
-            $('#errorMessage').text('請輸入商店訂單ID').show();
-            return;
-        }
-        if (!/^[A-Z0-9]+$/.test(data.shop_order_id)) {
-            $('#errorMessage').text('商店訂單ID只能包含大寫字母和數字').show();
-            return;
-        }
-        
         $.ajax({
-            url: `/api/shops/${shopId}`,
+            url: '/api/shops/' + shopId,
             method: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: function(response) {
-                alert('店鋪更新成功！');
-                window.location.href = "{{ url_for('store_admin.shops') }}";
+            success: function() {
+                alert('店鋪資訊更新成功');
+                location.reload();
             },
             error: function(xhr) {
                 const error = xhr.responseJSON || {};
-                $('#errorMessage').text(error.message || '更新失敗，請檢查表單').show();
+                $('#shopErrorMessage').text(error.message || '更新失敗').show();
             }
         });
     });
-    
-    // 自動轉大寫
-    $('#shopOrderId').on('input', function() {
-        this.value = this.value.toUpperCase();
-    });
 });
 
-// 刪除店鋪
-function deleteShop() {
-    if (!confirm('確定要刪除此店鋪嗎？\n\n此操作為軟刪除，可在後台恢復。')) {
+// 添加新配料
+function addNewTopping() {
+    const container = document.getElementById('newToppingsContainer');
+    const rowsContainer = document.getElementById('newToppingsRows');
+    
+    container.style.display = 'block';
+    
+    newToppingCounter++;
+    const row = document.createElement('div');
+    row.className = 'row mb-2 new-topping-row border-bottom pb-2';
+    row.id = 'newTopping' + newToppingCounter;
+    row.innerHTML = `
+        <div class="col-md-3">
+            <input type="text" class="form-control new-topping-name" placeholder="配料名稱" required>
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control new-topping-price" placeholder="價格" min="0" value="0">
+        </div>
+        <div class="col-md-2">
+            <div class="form-check form-switch">
+                <input class="form-check-input new-topping-active" type="checkbox" checked>
+                <label class="form-check-label small">啟用</label>
+            </div>
+        </div>
+        <div class="col-md-5 d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-success flex-fill" onclick="saveNewTopping(${newToppingCounter})">
+                <i class="bi bi-save"></i> 保存
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="removeNewToppingRow(${newToppingCounter})">
+                <i class="bi bi-x"></i> 取消
+            </button>
+        </div>
+    `;
+    rowsContainer.appendChild(row);
+}
+
+// 移除新配料行
+function removeNewToppingRow(id) {
+    document.getElementById('newTopping' + id).remove();
+    if (document.querySelectorAll('.new-topping-row').length === 0) {
+        document.getElementById('newToppingsContainer').style.display = 'none';
+    }
+}
+
+// 保存新配料
+function saveNewTopping(id) {
+    const row = document.getElementById('newTopping' + id);
+    const name = row.querySelector('.new-topping-name').value.trim();
+    const price = parseInt(row.querySelector('.new-topping-price').value) || 0;
+    const isActive = row.querySelector('.new-topping-active').checked;
+    
+    if (!name) {
+        alert('請輸入配料名稱');
+        return;
+    }
+    
+    const data = {
+        name: name,
+        price: price,
+        is_active: isActive
+    };
+    
+    $.ajax({
+        url: '/api/shops/' + shopId + '/toppings',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            alert('配料添加成功');
+            location.reload();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('添加失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+}
+
+// 更新配料
+function updateTopping(toppingId) {
+    const row = document.querySelector(`[data-topping-id="${toppingId}"]`);
+    const name = row.querySelector('.topping-name').value.trim();
+    const price = parseInt(row.querySelector('.topping-price').value) || 0;
+    const isActive = row.querySelector('.topping-active').checked;
+    
+    if (!name) {
+        alert('配料名稱不能為空');
+        return;
+    }
+    
+    const data = {
+        name: name,
+        price: price,
+        is_active: isActive
+    };
+    
+    $.ajax({
+        url: '/api/toppings/' + toppingId,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function() {
+            alert('配料更新成功');
+            // 更新原始值
+            row.querySelector('.topping-name').dataset.original = name;
+            row.querySelector('.topping-price').dataset.original = price;
+            row.querySelector('.topping-active').dataset.original = isActive;
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('更新失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+}
+
+// 删除配料
+function deleteTopping(toppingId) {
+    if (!confirm('確定要刪除此配料嗎？')) {
         return;
     }
     
     $.ajax({
-        url: `/api/shops/${shopId}`,
+        url: '/api/toppings/' + toppingId,
         method: 'DELETE',
         success: function() {
-            alert('店鋪已刪除');
-            window.location.href = "{{ url_for('store_admin.shops') }}";
+            alert('配料刪除成功');
+            location.reload();
         },
         error: function(xhr) {
             const error = xhr.responseJSON || {};
-            alert(error.message || '刪除失敗');
+            alert('刪除失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+}
+
+// 删除店铺
+function deleteShop() {
+    if (!confirm('確定要刪除此店鋪嗎？此操作將同時刪除所有配料和產品，且無法復原！')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/shops/' + shopId,
+        method: 'DELETE',
+        success: function() {
+            alert('店鋪刪除成功');
+            window.location.href = "{{ url_for('store_admin.shops') }}";
+        },
+        error: function() {
+            alert('刪除失敗');
         }
     });
 }
