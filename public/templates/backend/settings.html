@@ -30,20 +30,36 @@
                 <div class="card-body">
                     <form id="orderSettingsForm">
                         <div class="mb-3">
-                            <label for="order_prefix" class="form-label">訂單編號前綴</label>
-                            <input type="text" class="form-control" id="order_prefix" value="ORDER" readonly>
-                            <div class="form-text">訂單編號格式：ORDER + 商店編碼 + Ymd + 流水號（0001）</div>
+                            <label for="order_prefix" class="form-label">訂單編號前綴 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="order_prefix" value="ORDER" required maxlength="20" pattern="[A-Z0-9]+">
+                            <div class="form-text">只能使用大寫字母和數字，建議 3-10 個字符（如：ORDER, ORD, FD 等）</div>
                         </div>
                         
                         <div class="alert alert-info">
-                            <strong>訂單編號示例：</strong>
+                            <strong>訂單編號格式：</strong>
+                            <div class="mt-2">
+                                <code id="orderNumberExample">ORDERSHOP0120251106 00001</code>
+                            </div>
                             <ul class="mb-0 mt-2">
-                                <li>ORDERSHOP0120251106 0001</li>
-                                <li>ORDER：固定前綴</li>
-                                <li>SHOP01：商店編碼</li>
-                                <li>20251106：日期（Ymd）</li>
-                                <li>0001：當日流水號</li>
+                                <li><strong id="prefixExample">ORDER</strong>：訂單前綴（可在此修改）</li>
+                                <li><strong>SHOP01</strong>：商店訂單ID（在店鋪編輯頁面設定，若未設定則使用店鋪ID）</li>
+                                <li><strong>20251106</strong>：日期（Ymd，自動生成）</li>
+                                <li><strong>00001</strong>：當日流水號（5位數，自動遞增）</li>
                             </ul>
+                            <div class="mt-2">
+                                <strong>商店訂單ID設定方式：</strong>
+                                <br>
+                                在「店鋪管理」→「編輯店鋪」中設置每個店鋪的商店訂單ID（如：BAO、S01、DUMPLING 等）
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>儲存訂單設定
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="loadSettings()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>重新載入
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -135,6 +151,19 @@
 {% block extra_js %}
 {{ super() }}
 <script>
+// 更新訂單編號示例
+function updateOrderNumberExample() {
+    const prefix = $('#order_prefix').val() || 'ORDER';
+    const today = new Date();
+    const dateStr = today.getFullYear() + 
+                   String(today.getMonth() + 1).padStart(2, '0') + 
+                   String(today.getDate()).padStart(2, '0');
+    const example = prefix + 'SHOP01' + dateStr + '00001';
+    
+    $('#orderNumberExample').text(example);
+    $('#prefixExample').text(prefix);
+}
+
 // 載入設定
 function loadSettings() {
     $.ajax({
@@ -148,6 +177,7 @@ function loadSettings() {
                 settings.order.forEach(function(s) {
                     if (s.key === 'order_prefix') {
                         $('#order_prefix').val(s.value);
+                        updateOrderNumberExample();
                     }
                 });
             }
@@ -197,6 +227,54 @@ $('#emailSettingsForm').on('submit', function(e) {
             alert('儲存失敗：' + (error.message || '未知錯誤'));
         }
     });
+});
+
+// 儲存訂單設定
+$('#orderSettingsForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const prefix = $('#order_prefix').val().trim().toUpperCase();
+    
+    // 驗證前綴
+    if (!prefix) {
+        alert('訂單前綴不能為空');
+        return;
+    }
+    
+    if (!/^[A-Z0-9]+$/.test(prefix)) {
+        alert('訂單前綴只能包含大寫字母和數字');
+        return;
+    }
+    
+    if (prefix.length < 2 || prefix.length > 20) {
+        alert('訂單前綴長度應在 2-20 個字符之間');
+        return;
+    }
+    
+    const settings = [
+        { key: 'order_prefix', value: prefix, type: 'text', category: 'order', description: '訂單編號前綴' }
+    ];
+    
+    $.ajax({
+        url: '/api/settings/batch',
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ settings: settings }),
+        success: function(result) {
+            alert('訂單設定儲存成功！新訂單將使用新前綴。');
+            $('#order_prefix').val(prefix);
+            updateOrderNumberExample();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('儲存失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+});
+
+// 監聽前綴輸入，實時更新示例
+$('#order_prefix').on('input', function() {
+    updateOrderNumberExample();
 });
 
 // 頁面載入時載入設定

@@ -44,6 +44,16 @@
                             <textarea class="form-control" id="shopDescription" rows="4">{{ shop.description or '' }}</textarea>
                         </div>
                         
+                        <div class="mb-3">
+                            <label for="shopOrderId" class="form-label">商店訂單ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shopOrderId" value="{{ shop.shop_order_id or '' }}" required maxlength="20" pattern="[A-Z0-9]+">
+                            <div class="form-text">
+                                用於訂單編號，只能包含大寫字母和數字（如：S01, SHOP01, BAO 等）
+                                <br>
+                                <strong>注意：</strong>商店訂單ID必須唯一，不能與其他店鋪重複
+                            </div>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="shopMaxToppings" class="form-label">最大配料數量 <span class="text-danger">*</span></label>
@@ -416,10 +426,19 @@ $(document).ready(function() {
     $('#shopForm').on('submit', function(e) {
         e.preventDefault();
         
+        const shopOrderId = $('#shopOrderId').val().trim().toUpperCase();
+        
+        // 驗證商店訂單ID格式
+        if (shopOrderId && !/^[A-Z0-9]+$/.test(shopOrderId)) {
+            $('#shopErrorMessage').text('商店訂單ID只能包含大寫字母和數字').show();
+            return;
+        }
+        
         const data = {
             name: $('#shopName').val(),
             owner_id: parseInt($('#shopOwner').val()),
             description: $('#shopDescription').val(),
+            shop_order_id: shopOrderId || null,
             max_toppings_per_order: parseInt($('#shopMaxToppings').val()),
             status: $('#shopStatus').val()
         };

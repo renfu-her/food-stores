@@ -10,8 +10,8 @@ def generate_order_number(shop_id):
     """
     生成订单编号
     
-    格式：ORDER + 商店编码 + Ymd + 流水号
-    例如：ORDERSHOP0120251106001
+    格式：前缀 + 商店编码 + Ymd + 流水号
+    例如：ORDERSHOP0120251106 0001
     
     Args:
         shop_id: 店铺 ID
@@ -24,10 +24,13 @@ def generate_order_number(shop_id):
     if not shop:
         raise ValueError(f'店铺 ID {shop_id} 不存在')
     
-    # 获取店铺编码（如果没有，使用 ID 补零）
-    shop_code = getattr(shop, 'shop_code', None)
-    if not shop_code:
-        shop_code = f"SHOP{str(shop_id).zfill(2)}"
+    # 从系统设置获取订单前缀
+    order_prefix = SystemSetting.get('order_prefix', 'ORDER')
+    
+    # 获取商店订单ID（优先使用 shop_order_id，如果没有则使用 ID 补零）
+    shop_order_code = shop.shop_order_id
+    if not shop_order_code:
+        shop_order_code = str(shop_id).zfill(2)
     
     # 获取当前日期（Ymd格式）
     today = datetime.now()
@@ -44,18 +47,18 @@ def generate_order_number(shop_id):
         Order.created_at <= today_end
     ).count()
     
-    # 流水号（从 0001 开始）
-    sequence = str(today_order_count + 1).zfill(4)
+    # 流水号（从 00001 开始，5位数）
+    sequence = str(today_order_count + 1).zfill(5)
     
     # 组合订单编号
-    order_number = f"ORDER{shop_code}{date_str}{sequence}"
+    order_number = f"{order_prefix}{shop_order_code}{date_str}{sequence}"
     
     # 检查是否已存在（理论上不应该存在）
     existing = Order.query.filter_by(order_number=order_number).first()
     if existing:
         # 如果存在，递增流水号
-        sequence = str(today_order_count + 2).zfill(4)
-        order_number = f"ORDER{shop_code}{date_str}{sequence}"
+        sequence = str(today_order_count + 2).zfill(5)
+        order_number = f"{order_prefix}{shop_order_code}{date_str}{sequence}"
     
     return order_number
 
