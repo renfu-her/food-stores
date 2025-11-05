@@ -27,10 +27,10 @@ def generate_order_number(shop_id):
     # 从系统设置获取订单前缀
     order_prefix = SystemSetting.get('order_prefix', 'ORDER')
     
-    # 获取商店订单ID（优先使用 shop_order_id，如果没有则使用 ID 补零）
+    # 获取商店订单ID（必填字段）
     shop_order_code = shop.shop_order_id
     if not shop_order_code:
-        shop_order_code = str(shop_id).zfill(2)
+        raise ValueError(f'店铺 {shop_id} 未设置商店订单ID')
     
     # 获取当前日期（Ymd格式）
     today = datetime.now()

@@ -203,44 +203,57 @@ def update_shop(shop_id):
         if 'description' in data:
             shop.description = data['description'].strip()
         
-        # 更新商店訂單ID（驗證唯一性）
+        # 更新商店訂單ID（必填，驗證唯一性）
         if 'shop_order_id' in data:
             new_shop_order_id = data['shop_order_id']
-            if new_shop_order_id:
-                new_shop_order_id = new_shop_order_id.strip().upper()
-                
-                # 驗證格式（只能包含大寫字母和數字）
-                import re
-                if not re.match(r'^[A-Z0-9]+$', new_shop_order_id):
-                    return jsonify({
-                        'error': 'validation_error',
-                        'message': '商店訂單ID只能包含大寫字母和數字',
-                        'details': {}
-                    }), 400
-                
-                # 驗證長度
-                if len(new_shop_order_id) > 20:
-                    return jsonify({
-                        'error': 'validation_error',
-                        'message': '商店訂單ID長度不能超過20個字符',
-                        'details': {}
-                    }), 400
-                
-                # 驗證唯一性（排除自己）
-                existing = Shop.query.filter(
-                    Shop.shop_order_id == new_shop_order_id,
-                    Shop.id != shop_id
-                ).first()
-                if existing:
-                    return jsonify({
-                        'error': 'validation_error',
-                        'message': f'商店訂單ID "{new_shop_order_id}" 已被店鋪 "{existing.name}" 使用',
-                        'details': {}
-                    }), 400
-                
-                shop.shop_order_id = new_shop_order_id
-            else:
-                shop.shop_order_id = None
+            
+            # 必填驗證
+            if not new_shop_order_id or not new_shop_order_id.strip():
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': '商店訂單ID不能為空',
+                    'details': {}
+                }), 400
+            
+            new_shop_order_id = new_shop_order_id.strip().upper()
+            
+            # 驗證格式（只能包含大寫字母和數字）
+            import re
+            if not re.match(r'^[A-Z0-9]+$', new_shop_order_id):
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': '商店訂單ID只能包含大寫字母和數字',
+                    'details': {}
+                }), 400
+            
+            # 驗證長度
+            if len(new_shop_order_id) < 2:
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': '商店訂單ID長度至少2個字符',
+                    'details': {}
+                }), 400
+            
+            if len(new_shop_order_id) > 20:
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': '商店訂單ID長度不能超過20個字符',
+                    'details': {}
+                }), 400
+            
+            # 驗證唯一性（排除自己）
+            existing = Shop.query.filter(
+                Shop.shop_order_id == new_shop_order_id,
+                Shop.id != shop_id
+            ).first()
+            if existing:
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': f'商店訂單ID "{new_shop_order_id}" 已被店鋪 "{existing.name}" 使用',
+                    'details': {}
+                }), 400
+            
+            shop.shop_order_id = new_shop_order_id
         
         if 'max_toppings_per_order' in data:
             is_valid, max_toppings_value, error_msg = validate_integer(
