@@ -4,6 +4,116 @@
 
 ---
 
+## 2025-11-06 18:30 - 產品管理新增冷熱飲選項UI
+
+### ✨ 功能增強
+
+**Backend 與 Shop Admin 產品新增/編輯添加飲品選項：**
+- ✅ 添加飲品類型下拉選擇器（4個選項）
+- ✅ 選項：不提供飲品、僅提供冷飲、僅提供熱飲、冷熱飲皆有
+- ✅ 動態顯示/隱藏價格輸入框
+- ✅ 冷飲加價和熱飲加價可獨立設定
+- ✅ 價格可為 0（表示不加價）
+
+**UI 設計：**
+```html
+<select id="drinkOption">
+    <option value="none">不提供飲品</option>
+    <option value="cold">僅提供冷飲</option>
+    <option value="hot">僅提供熱飲</option>
+    <option value="both">冷熱飲皆有</option>
+</select>
+
+<!-- 根據選擇動態顯示 -->
+<div id="drinkPricesContainer">
+    <div id="coldDrinkPriceGroup">  <!-- 選擇cold或both時顯示 -->
+        <label>冷飲加價</label>
+        <input type="number" id="coldDrinkPrice" value="0">
+    </div>
+    <div id="hotDrinkPriceGroup">   <!-- 選擇hot或both時顯示 -->
+        <label>熱飲加價</label>
+        <input type="number" id="hotDrinkPrice" value="0">
+    </div>
+</div>
+```
+
+**JavaScript 邏輯：**
+```javascript
+function toggleDrinkPrices() {
+    const drinkOption = $('#drinkOption').val();
+    
+    if (drinkOption === 'none') {
+        // 隱藏所有價格輸入
+        $('#drinkPricesContainer').hide();
+    } else if (drinkOption === 'cold') {
+        // 只顯示冷飲價格
+        $('#drinkPricesContainer').show();
+        $('#coldDrinkPriceGroup').show();
+        $('#hotDrinkPriceGroup').hide();
+    } else if (drinkOption === 'hot') {
+        // 只顯示熱飲價格
+        $('#drinkPricesContainer').show();
+        $('#coldDrinkPriceGroup').hide();
+        $('#hotDrinkPriceGroup').show();
+    } else if (drinkOption === 'both') {
+        // 顯示所有價格輸入
+        $('#drinkPricesContainer').show();
+        $('#coldDrinkPriceGroup').show();
+        $('#hotDrinkPriceGroup').show();
+    }
+}
+
+// 提交表單時處理
+const drinkOption = $('#drinkOption').val();
+const data = {
+    has_cold_drink: (drinkOption === 'cold' || drinkOption === 'both'),
+    cold_drink_price: (drinkOption === 'cold' || drinkOption === 'both') ? parseInt($('#coldDrinkPrice').val()) : null,
+    has_hot_drink: (drinkOption === 'hot' || drinkOption === 'both'),
+    hot_drink_price: (drinkOption === 'hot' || drinkOption === 'both') ? parseInt($('#hotDrinkPrice').val()) : null
+};
+```
+
+**編輯頁面初始化：**
+```javascript
+// 根據現有數據初始化選擇器
+{% if product.has_cold_drink and product.has_hot_drink %}
+    $('#drinkOption').val('both');
+{% elif product.has_cold_drink %}
+    $('#drinkOption').val('cold');
+{% elif product.has_hot_drink %}
+    $('#drinkOption').val('hot');
+{% else %}
+    $('#drinkOption').val('none');
+{% endif %}
+toggleDrinkPrices();
+```
+
+**更新的文件：**
+- ✅ `public/templates/backend/products/add.html`
+- ✅ `public/templates/backend/products/edit.html`
+- ✅ `public/templates/shop/products/add.html`
+- ✅ `public/templates/shop/products/edit.html`
+
+**使用場景：**
+```
+場景 1：珍珠奶茶（冷熱皆有）
+- 選擇：冷熱飲皆有
+- 冷飲加價：+5 元
+- 熱飲加價：+0 元
+→ has_cold_drink=true, cold_drink_price=5, has_hot_drink=true, hot_drink_price=0
+
+場景 2：冰淇淋（僅冷飲）
+- 選擇：僅提供冷飲
+- 冷飲加價：+0 元
+→ has_cold_drink=true, cold_drink_price=0, has_hot_drink=false, hot_drink_price=null
+
+場景 3：漢堡（不提供飲品）
+- 選擇：不提供飲品
+→ has_cold_drink=false, cold_drink_price=null, has_hot_drink=false, hot_drink_price=null
+```
+
+---
+
 ## 2025-11-06 18:15 - 移除 Shop Admin 列表的副標題描述
 
 ### 🎨 UI 優化

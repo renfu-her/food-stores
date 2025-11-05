@@ -77,7 +77,38 @@
                             </div>
                         </div>
                         
-                        <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                        <!-- 飲品選項 -->
+                        <div class="border-top pt-3 mt-3">
+                            <h5 class="mb-3"><i class="bi bi-cup-straw me-2"></i>飲品選項</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="drinkOption" class="form-label">飲品類型</label>
+                                    <select class="form-select" id="drinkOption" onchange="toggleDrinkPrices()">
+                                        <option value="none">不提供飲品</option>
+                                        <option value="cold">僅提供冷飲</option>
+                                        <option value="hot">僅提供熱飲</option>
+                                        <option value="both">冷熱飲皆有</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row" id="drinkPricesContainer" style="display: none;">
+                                <div class="col-md-6 mb-3" id="coldDrinkPriceGroup">
+                                    <label for="coldDrinkPrice" class="form-label">冷飲加價</label>
+                                    <input type="number" class="form-control" id="coldDrinkPrice" min="0" value="{{ product.cold_drink_price or 0 }}" step="1">
+                                    <small class="text-muted">NT$ (可為 0)</small>
+                                </div>
+                                <div class="col-md-6 mb-3" id="hotDrinkPriceGroup">
+                                    <label for="hotDrinkPrice" class="form-label">熱飲加價</label>
+                                    <input type="number" class="form-control" id="hotDrinkPrice" min="0" value="{{ product.hot_drink_price or 0 }}" step="1">
+                                    <small class="text-muted">NT$ (可為 0)</small>
+                                </div>
+                            </div>
+                            <small class="text-muted">選擇飲品類型後，可設定加價金額（可為 0 表示不加價）</small>
+                        </div>
+                        
+                        <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
                         
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
@@ -153,7 +184,44 @@
 const productId = {{ product.id }};
 let productImages = [];
 
+// 控制飲品價格輸入框的顯示
+function toggleDrinkPrices() {
+    const drinkOption = $('#drinkOption').val();
+    const container = $('#drinkPricesContainer');
+    const coldGroup = $('#coldDrinkPriceGroup');
+    const hotGroup = $('#hotDrinkPriceGroup');
+    
+    if (drinkOption === 'none') {
+        container.hide();
+    } else {
+        container.show();
+        
+        if (drinkOption === 'cold') {
+            coldGroup.show();
+            hotGroup.hide();
+        } else if (drinkOption === 'hot') {
+            coldGroup.hide();
+            hotGroup.show();
+        } else if (drinkOption === 'both') {
+            coldGroup.show();
+            hotGroup.show();
+        }
+    }
+}
+
 $(document).ready(function() {
+    // 初始化飲品選項
+    {% if product.has_cold_drink and product.has_hot_drink %}
+        $('#drinkOption').val('both');
+    {% elif product.has_cold_drink %}
+        $('#drinkOption').val('cold');
+    {% elif product.has_hot_drink %}
+        $('#drinkOption').val('hot');
+    {% else %}
+        $('#drinkOption').val('none');
+    {% endif %}
+    toggleDrinkPrices();
+    
     // 載入產品圖片
     loadImages();
     
@@ -169,15 +237,36 @@ $(document).ready(function() {
             return;
         }
         
-                const data = {
-                    name: $('#productName').val(),
-                    shop_id: parseInt($('#productShop').val()),
-                    category_id: parseInt($('#productCategory').val()),
+        // 處理飲品選項
+        const drinkOption = $('#drinkOption').val();
+        let hasColdDrink = false;
+        let coldDrinkPrice = null;
+        let hasHotDrink = false;
+        let hotDrinkPrice = null;
+        
+        if (drinkOption === 'cold' || drinkOption === 'both') {
+            hasColdDrink = true;
+            coldDrinkPrice = parseInt($('#coldDrinkPrice').val()) || 0;
+        }
+        
+        if (drinkOption === 'hot' || drinkOption === 'both') {
+            hasHotDrink = true;
+            hotDrinkPrice = parseInt($('#hotDrinkPrice').val()) || 0;
+        }
+        
+        const data = {
+            name: $('#productName').val(),
+            shop_id: parseInt($('#productShop').val()),
+            category_id: parseInt($('#productCategory').val()),
             description: $('#productDescription').val(),
             unit_price: unitPrice,
             discounted_price: discountPrice,
             stock_quantity: parseInt($('#productStock').val()),
-            is_active: $('#productStatus').val() === 'true'
+            is_active: $('#productStatus').val() === 'true',
+            has_cold_drink: hasColdDrink,
+            cold_drink_price: coldDrinkPrice,
+            has_hot_drink: hasHotDrink,
+            hot_drink_price: hotDrinkPrice
         };
         
         $.ajax({
