@@ -66,8 +66,7 @@
                     <!-- 訂單通知鈴鐺 -->
                     <a href="{{ url_for('store_admin.orders') }}" class="btn btn-link position-relative me-3" id="orderNotificationBell" onclick="handleBellClick(event)">
                         <i class="bi bi-bell" style="font-size: 1.5rem; color: #6c757d;"></i>
-                        <span id="orderBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
-                            0
+                        <span id="orderBadge" class="position-absolute bg-danger rounded-circle" style="display: none; width: 10px; height: 10px; top: 2px; right: 2px;">
                         </span>
                     </a>
                     
@@ -261,7 +260,8 @@ $(document).ready(function() {
     function updateOrderBadge(count) {
         const $badge = $('#orderBadge');
         if (count > 0) {
-            $badge.text(count).show();
+            // 只顯示紅點，不顯示數字
+            $badge.show();
             // 鈴鐺圖標變紅色
             $('#orderNotificationBell i').css('color', '#dc3545');
         } else {
