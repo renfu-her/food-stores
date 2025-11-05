@@ -4,6 +4,31 @@
 
 ---
 
+## 2025-11-06 19:10 - 修復導入路徑錯誤
+
+### 🐛 Bug 修復
+
+**ModuleNotFoundError 修復：**
+- ✅ 修復 `ModuleNotFoundError: No module named 'app.utils.helpers'`
+- ✅ 更正導入路徑：`app.utils.helpers` → `app.utils.decorators`
+- ✅ 所有圖片上傳功能現已正常運行
+
+**修正的文件：**
+- `app/routes/api/product_images.py`
+- `app/routes/api/shop_banner.py`
+- `app/routes/api/shop_images.py`
+
+**正確的導入：**
+```python
+# ❌ 錯誤
+from app.utils.helpers import get_current_user
+
+# ✅ 正確
+from app.utils.decorators import get_current_user
+```
+
+---
+
 ## 2025-11-06 19:00 - 修復 Shop Admin 所有圖片上傳權限
 
 ### 🐛 Bug 修復
