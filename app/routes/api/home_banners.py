@@ -8,14 +8,10 @@ from app import db
 from app.models import HomeBanner
 from app.utils.decorators import role_required
 from app.utils.update_logger import log_update
+from app.utils.image_processor import convert_to_webp, allowed_image_file
 from datetime import datetime
 
 home_banners_api_bp = Blueprint('home_banners_api', __name__)
-
-def allowed_file(filename):
-    """檢查文件擴展名是否允許"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_IMAGE_EXTENSIONS']
 
 @home_banners_api_bp.route('', methods=['GET'])
 def get_home_banners():
@@ -78,22 +74,24 @@ def create_home_banner():
     if file.filename == '':
         return jsonify({'error': '沒有選擇文件'}), 400
     
-    if not allowed_file(file.filename):
+    if not allowed_image_file(file.filename):
         return jsonify({'error': '不支持的文件格式'}), 400
     
     try:
-        # 生成安全的文件名
+        # 生成安全的文件名（不含擴展名，因為會轉換為 .webp）
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"home_banner_{timestamp}.{ext}"
+        filename_base = f"home_banner_{timestamp}"
         
         # 確保目錄存在
         upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'banners')
         os.makedirs(upload_dir, exist_ok=True)
         
-        # 保存文件
-        filepath = os.path.join(upload_dir, filename)
-        file.save(filepath)
+        # 轉換為 WebP 並保存（首頁 Banner 使用更高分辨率）
+        output_path = os.path.join(upload_dir, filename_base)
+        filepath = convert_to_webp(file, output_path, quality=90, max_width=2560, max_height=1440)
+        
+        # 獲取實際的文件名（含 .webp 擴展名）
+        filename = os.path.basename(filepath)
         
         # 獲取最大排序號
         max_order = db.session.query(db.func.max(HomeBanner.display_order)).scalar() or 0
@@ -220,7 +218,7 @@ def update_home_banner_image(banner_id):
     if file.filename == '':
         return jsonify({'error': '沒有選擇文件'}), 400
     
-    if not allowed_file(file.filename):
+    if not allowed_image_file(file.filename):
         return jsonify({'error': '不支持的文件格式'}), 400
     
     try:
@@ -229,18 +227,20 @@ def update_home_banner_image(banner_id):
         if os.path.exists(old_file_path):
             os.remove(old_file_path)
         
-        # 生成安全的文件名
+        # 生成安全的文件名（不含擴展名，因為會轉換為 .webp）
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"home_banner_{timestamp}.{ext}"
+        filename_base = f"home_banner_{timestamp}"
         
         # 確保目錄存在
         upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'banners')
         os.makedirs(upload_dir, exist_ok=True)
         
-        # 保存新文件
-        filepath = os.path.join(upload_dir, filename)
-        file.save(filepath)
+        # 轉換為 WebP 並保存（首頁 Banner 使用更高分辨率）
+        output_path = os.path.join(upload_dir, filename_base)
+        filepath = convert_to_webp(file, output_path, quality=90, max_width=2560, max_height=1440)
+        
+        # 獲取實際的文件名（含 .webp 擴展名）
+        filename = os.path.basename(filepath)
         
         old_data = {
             'name': banner.name,

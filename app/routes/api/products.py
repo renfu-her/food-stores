@@ -151,10 +151,12 @@ def get_product(product_id):
         }), 404
 
 @products_api_bp.route('', methods=['POST'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def create_product():
-    """新增產品（僅管理員）"""
+    """新增產品（管理員或店鋪管理者）"""
     try:
+        from app.utils.decorators import get_current_user
+        user = get_current_user()
         data = request.get_json()
         
         # 驗證必填欄位
@@ -170,6 +172,14 @@ def create_product():
         shop = Shop.query.get(data['shop_id'])
         if not shop:
             return jsonify({'error': '店鋪不存在'}), 400
+        
+        # 權限檢查：store_admin 只能為自己的店鋪創建產品
+        if user.role == 'store_admin':
+            if shop.owner_id != user.id:
+                return jsonify({
+                    'error': 'forbidden',
+                    'message': '無權為此店鋪創建產品'
+                }), 403
         
         # 驗證分類存在
         category = Category.query.get(data['category_id'])

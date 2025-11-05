@@ -8,14 +8,10 @@ from app import db
 from app.models import Product, ProductImage
 from app.utils.decorators import login_required, role_required
 from app.utils.update_logger import log_update
+from app.utils.image_processor import convert_to_webp, allowed_image_file
 from datetime import datetime
 
 product_images_api_bp = Blueprint('product_images_api', __name__)
-
-def allowed_file(filename):
-    """檢查文件擴展名是否允許"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_IMAGE_EXTENSIONS']
 
 @product_images_api_bp.route('/products/<int:product_id>/images', methods=['POST'])
 @role_required('admin', 'store_admin')
@@ -40,22 +36,24 @@ def upload_product_image(product_id):
     if file.filename == '':
         return jsonify({'error': '沒有選擇文件'}), 400
     
-    if not allowed_file(file.filename):
-        return jsonify({'error': '不支持的文件格式'}), 400
+    if not allowed_image_file(file.filename):
+        return jsonify({'error': '不支持的文件格式，請上傳圖片文件'}), 400
     
     try:
-        # 生成安全的文件名
+        # 生成安全的文件名（不含擴展名，因為會轉換為 .webp）
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"product_{product_id}_{timestamp}.{ext}"
+        filename_base = f"product_{product_id}_{timestamp}"
         
         # 確保目錄存在
         upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'products')
         os.makedirs(upload_dir, exist_ok=True)
         
-        # 保存文件
-        filepath = os.path.join(upload_dir, filename)
-        file.save(filepath)
+        # 轉換為 WebP 並保存
+        output_path = os.path.join(upload_dir, filename_base)
+        filepath = convert_to_webp(file, output_path, quality=85)
+        
+        # 獲取實際的文件名（含 .webp 擴展名）
+        filename = os.path.basename(filepath)
         
         # 獲取當前最大的 display_order
         max_order = db.session.query(db.func.max(ProductImage.display_order)).filter_by(product_id=product_id).scalar() or 0

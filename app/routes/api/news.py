@@ -8,14 +8,10 @@ from app import db
 from app.models import News
 from app.utils.decorators import role_required
 from app.utils.update_logger import log_update
+from app.utils.image_processor import convert_to_webp, allowed_image_file
 from datetime import datetime
 
 news_api_bp = Blueprint('news_api', __name__)
-
-def allowed_file(filename):
-    """檢查文件擴展名是否允許"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_IMAGE_EXTENSIONS']
 
 @news_api_bp.route('', methods=['GET'])
 def get_news_list():
@@ -79,20 +75,22 @@ def create_news():
     image_path = None
     if 'image' in request.files:
         file = request.files['image']
-        if file.filename != '' and allowed_file(file.filename):
+        if file.filename != '' and allowed_image_file(file.filename):
             try:
-                # 生成安全的文件名
+                # 生成安全的文件名（不含擴展名，因為會轉換為 .webp）
                 timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                filename = f"news_{timestamp}.{ext}"
+                filename_base = f"news_{timestamp}"
                 
                 # 確保目錄存在
                 upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'news')
                 os.makedirs(upload_dir, exist_ok=True)
                 
-                # 保存文件
-                filepath = os.path.join(upload_dir, filename)
-                file.save(filepath)
+                # 轉換為 WebP 並保存
+                output_path = os.path.join(upload_dir, filename_base)
+                filepath = convert_to_webp(file, output_path, quality=85)
+                
+                # 獲取實際的文件名（含 .webp 擴展名）
+                filename = os.path.basename(filepath)
                 
                 image_path = f'/uploads/news/{filename}'
             except Exception as e:
@@ -219,7 +217,7 @@ def update_news_image(news_id):
     if file.filename == '':
         return jsonify({'error': '沒有選擇文件'}), 400
     
-    if not allowed_file(file.filename):
+    if not allowed_image_file(file.filename):
         return jsonify({'error': '不支持的文件格式'}), 400
     
     try:
@@ -229,18 +227,20 @@ def update_news_image(news_id):
             if os.path.exists(old_file_path):
                 os.remove(old_file_path)
         
-        # 生成安全的文件名
+        # 生成安全的文件名（不含擴展名，因為會轉換為 .webp）
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-        ext = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"news_{timestamp}.{ext}"
+        filename_base = f"news_{timestamp}"
         
         # 確保目錄存在
         upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'news')
         os.makedirs(upload_dir, exist_ok=True)
         
-        # 保存新文件
-        filepath = os.path.join(upload_dir, filename)
-        file.save(filepath)
+        # 轉換為 WebP 並保存
+        output_path = os.path.join(upload_dir, filename_base)
+        filepath = convert_to_webp(file, output_path, quality=85)
+        
+        # 獲取實際的文件名（含 .webp 擴展名）
+        filename = os.path.basename(filepath)
         
         old_data = {
             'name': news.name,

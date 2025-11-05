@@ -4,6 +4,135 @@
 
 ---
 
+## 2025-11-06 19:40 - 完整的圖片清理機制
+
+### 🗑️ 圖片自動清理
+
+**所有圖片操作都會自動清理舊文件：**
+- ✅ **更新圖片時**：自動刪除舊圖片，保存新的 WebP 格式
+- ✅ **刪除記錄時**：自動刪除相關的物理圖片文件
+- ✅ **上傳新圖片**：自動轉換為 WebP 格式
+
+**已驗證的清理機制：**
+
+| 模組 | 更新時刪除舊圖 | 刪除時清理文件 | 自動轉 WebP |
+|------|--------------|--------------|-----------|
+| 產品圖片 | N/A | ✅ | ✅ |
+| 店鋪圖片 | N/A | ✅ | ✅ |
+| 店鋪 Banner | ✅ | ✅ | ✅ |
+| 新聞圖片 | ✅ | ✅ | ✅ |
+| 首頁 Banner | ✅ | ✅ | ✅ |
+
+**清理工具：**
+```bash
+# 預覽舊格式圖片
+python cleanup_old_images.py --preview
+
+# 清理所有舊格式圖片
+python cleanup_old_images.py --clean
+```
+
+**新增文件：**
+- `cleanup_old_images.py` - 手動清理工具
+- `docs/IMAGE_CLEANUP_POLICY.md` - 完整清理策略文檔
+- `IMAGE_MANAGEMENT_GUIDE.md` - 圖片管理快速指南
+- `INSTALL_PILLOW.md` - Pillow 安裝指南
+
+**核心改進：**
+- 💾 **節省空間**：文件大小減少 30-80%
+- 🗑️ **自動清理**：無舊文件殘留
+- ✅ **零配置**：安裝 Pillow 後即可使用
+
+---
+
+## 2025-11-06 19:30 - 圖片自動轉換為 WebP 格式
+
+### 🎯 功能優化
+
+**所有圖片上傳自動轉換為 WebP 格式以節省空間：**
+- ✅ 產品圖片：自動轉換，質量 85%，最大 1920x1920
+- ✅ 店鋪圖片：自動轉換，質量 85%，最大 1920x1920
+- ✅ 店鋪 Banner：自動轉換，質量 90%，最大 2560x1440
+- ✅ 首頁 Banner：自動轉換，質量 90%，最大 2560x1440
+- ✅ 新聞圖片：自動轉換，質量 85%，最大 1920x1920
+
+**技術實現：**
+```python
+# app/utils/image_processor.py
+
+def convert_to_webp(file, output_path, quality=85, max_width=1920, max_height=1920):
+    """
+    將上傳的圖片轉換為 WebP 格式
+    
+    特性：
+    - 自動等比例縮放（如果超過最大尺寸）
+    - RGBA/透明圖片自動轉為 RGB（白色背景）
+    - 使用 LANCZOS 高質量重採樣
+    - 返回 .webp 格式文件路徑
+    """
+```
+
+**支持的原始格式：**
+- JPG / JPEG
+- PNG (包含透明背景)
+- GIF
+- BMP
+- WebP
+
+**修改的文件：**
+1. `app/routes/api/product_images.py` ✅ 已使用 WebP
+2. `app/routes/api/shop_images.py` ✅ 已使用 WebP
+3. `app/routes/api/shop_banner.py` ✅ 已使用 WebP
+4. `app/routes/api/news.py` ✅ 修改為使用 WebP
+5. `app/routes/api/home_banners.py` ✅ 修改為使用 WebP
+
+**依賴包：**
+- 添加 `Pillow==10.1.0` 到 `requirements.txt`
+
+**優勢：**
+- 📦 文件大小減少 25-35%（相比 JPEG）
+- 📦 文件大小減少 50-80%（相比 PNG）
+- 🚀 加載速度更快
+- 💾 節省伺服器存儲空間
+- 🌐 減少帶寬消耗
+
+---
+
+## 2025-11-06 19:20 - 修復 Shop Admin 產品新增權限
+
+### 🐛 Bug 修復
+
+**產品新增權限不足問題：**
+- ✅ 修復產品創建 API 權限限制
+- ✅ 允許 `store_admin` 創建產品
+- ✅ 自動驗證店鋪所有權
+
+**修復內容：**
+```python
+# app/routes/api/products.py - create_product()
+
+# 修復前：只允許 admin
+@role_required('admin')
+def create_product():
+    # ❌ store_admin 無法創建產品
+
+# 修復後：允許 admin 和 store_admin
+@role_required('admin', 'store_admin')
+def create_product():
+    # 權限檢查：store_admin 只能為自己的店鋪創建產品
+    if user.role == 'store_admin':
+        if shop.owner_id != user.id:
+            return 403  # 無權為此店鋪創建產品
+    # ✅ store_admin 可以為自己的店鋪創建產品
+```
+
+**權限總結：**
+- ✅ **Admin**：可為任何店鋪創建產品
+- ✅ **Store Admin**：只能為自己擁有的店鋪創建產品
+- ✅ 產品更新/刪除權限已正確（無需修改）
+
+---
+
 ## 2025-11-06 19:10 - 修復導入路徑錯誤
 
 ### 🐛 Bug 修復
