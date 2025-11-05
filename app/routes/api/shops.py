@@ -10,6 +10,48 @@ from app.utils.update_logger import log_update
 
 shops_api_bp = Blueprint('shops_api', __name__)
 
+@shops_api_bp.route('/my-shops', methods=['GET'])
+@login_required
+def get_my_shops():
+    """獲取當前用戶的店鋪列表"""
+    try:
+        user = get_current_user()
+        
+        # 獲取用戶的店鋪
+        if user.role == 'admin':
+            # 管理員可以看到所有店鋪
+            shops = Shop.query.all()
+        elif user.role == 'store_admin':
+            # 店主只能看到自己的店鋪
+            shops = Shop.query.filter_by(owner_id=user.id).all()
+        else:
+            # 普通用戶沒有店鋪
+            shops = []
+        
+        shops_data = []
+        for shop in shops:
+            shops_data.append({
+                'id': shop.id,
+                'name': shop.name,
+                'description': shop.description,
+                'shop_order_id': shop.shop_order_id,
+                'owner_id': shop.owner_id,
+                'max_toppings_per_order': shop.max_toppings_per_order,
+                'status': shop.status
+            })
+        
+        return jsonify({
+            'shops': shops_data,
+            'total': len(shops_data)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'internal_error',
+            'message': '獲取店鋪列表失敗',
+            'details': {'error': str(e)}
+        }), 500
+
 @shops_api_bp.route('/', methods=['GET'])
 def get_shops():
     """獲取店鋪列表（公開）"""

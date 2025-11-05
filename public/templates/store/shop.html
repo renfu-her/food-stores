@@ -36,18 +36,27 @@
         {% for product in products %}
         <div class="col-sm-6 col-md-4 col-lg-3 product-card-item" data-category="{{ product.category_id }}">
             <div class="card h-100 shadow-sm">
-                <!-- 產品圖片 -->
-                {% if product.images and product.images|length > 0 %}
-                    <img class="card-img-top" src="{{ product.images[0].image_path }}" alt="{{ product.name }}" style="width:100%">
-                {% else %}
-                    <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="min-height: 200px;">
-                        <i class="bi bi-box-seam display-4 text-muted"></i>
+                <!-- 產品圖片（可點擊） -->
+                <div class="position-relative" style="cursor: pointer;" onclick="showProductDetail({{ product.id }})">
+                    {% if product.images and product.images|length > 0 %}
+                        <img class="card-img-top" src="{{ product.images[0].image_path }}" alt="{{ product.name }}" style="width:100%">
+                    {% else %}
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="min-height: 200px;">
+                            <i class="bi bi-box-seam display-4 text-muted"></i>
+                        </div>
+                    {% endif %}
+                    <!-- 懸停提示 -->
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                         style="background: rgba(0,0,0,0); transition: all 0.3s ease;"
+                         onmouseenter="this.style.background='rgba(0,0,0,0.5)'; this.querySelector('.hover-icon').style.opacity='1';"
+                         onmouseleave="this.style.background='rgba(0,0,0,0)'; this.querySelector('.hover-icon').style.opacity='0';">
+                        <i class="bi bi-eye-fill text-white hover-icon" style="font-size: 3rem; opacity: 0; transition: opacity 0.3s ease;"></i>
                     </div>
-                {% endif %}
+                </div>
                 
                 <div class="card-body p-2">
-                    <h4 class="card-title mb-1">
-                        <a href="{{ url_for('customer.product', product_id=product.id) }}" class="text-decoration-none">{{ product.name }}</a>
+                    <h4 class="card-title mb-1" style="cursor: pointer;" onclick="showProductDetail({{ product.id }})">
+                        <span class="text-primary text-decoration-none">{{ product.name }}</span>
                     </h4>
                     <p class="card-text text-muted small mb-1" style="min-height: 40px;">{{ product.description or '暫無描述' }}</p>
                     <div class="mb-1">

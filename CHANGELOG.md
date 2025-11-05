@@ -4,6 +4,303 @@
 
 ---
 
+## 2025-11-06 02:30 - 店鋪產品卡片交互優化 & 店主訂單通知改進
+
+### 🎨 產品卡片交互改進
+- ✅ 產品圖片可點擊（打開詳情模態框）
+- ✅ 產品名稱可點擊（打開詳情模態框）
+- ✅ 圖片懸停效果：
+  - 半透明黑色遮罩（rgba(0,0,0,0.5)）
+  - 白色眼睛圖標（👁️ 3rem）
+  - 平滑過渡動畫（0.3秒）
+- ✅ 標題懸停時鼠標變為手型（cursor: pointer）
+- ✅ 統一交互方式：圖片、標題、按鈕都可打開詳情
+
+### 🔔 店主訂單通知系統改進（頂部橫幅統一通知）
+- ✅ 移除 Toast 彈出通知
+- ✅ 移除 Alert 彈窗
+- ✅ 統一使用頂部橫幅通知（所有頁面）
+- ✅ 頂部橫幅設計：
+  - 綠色 Alert 樣式（alert-success）
+  - 左側 4px 綠色邊框
+  - 滑下動畫（slideDown，0.5秒）
+  - 淺綠色陰影效果
+  - 訂單編號（藍色徽章）
+  - 訂單金額（綠色粗體）
+  - 接收時間（剛剛收到）
+  - 訂單狀態（待處理徽章）
+  - 「查看訂單」按鈕（綠色）
+  - 「關閉」按鈕
+- ✅ 自動隱藏：10秒後自動收起
+- ✅ 鈴鐺點擊功能：
+  - 關閉頂部橫幅
+  - 重新計算訂單數量
+  - 跳轉到訂單管理頁面
+- ✅ WebSocket 通知包含 `order_number`
+- ✅ 鈴鐺震動動畫（所有頁面）
+- ✅ 提示音播放（所有頁面，音量 50%，立即播放）
+- ✅ 紅點徽章更新（所有頁面）
+- ✅ 訂單狀態更新時自動刷新頁面（訂單管理頁面）
+- ✅ 所有頁面統一顯示方式（無 Alert 干擾）
+
+### 🔧 新增 API 端點
+- ✅ `GET /api/shops/my-shops` - 獲取當前用戶的店鋪列表
+  - 管理員：返回所有店鋪
+  - 店主：返回自己的店鋪
+  - 普通用戶：返回空列表
+
+### 🎯 通知流程改進
+```
+【修改前】Toast 方式
+顧客下單 → WebSocket → Toast 彈窗右上角 → 8秒後消失
+
+【修改後】頂部橫幅通知方式
+顧客下單 → WebSocket → 所有頁面統一處理
+  ↓
+  ├─ 頂部橫幅從上滑下
+  ├─ 鈴鐺震動 0.8秒
+  ├─ 鈴鐺變紅色
+  ├─ 紅點徽章顯示數字
+  ├─ 播放提示音
+  └─ 10秒後自動隱藏
+```
+
+### 🎨 橫幅顯示效果
+```
+┌──────────────────────────────────────────────────────────┐
+│ 🔔  新訂單通知                                            │
+│     ┌────────────────────────┐                           │
+│     │ 訂單編號：ORDERBAO2025110600001                    │
+│     │ 訂單金額：$150          待處理                      │
+│     │ 🕐 剛剛收到                                         │
+│     └────────────────────────┘                           │
+│                               [查看訂單] [✕]              │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 📊 通知方式對比
+
+| 特性 | Toast（舊） | 頂部橫幅（新） |
+|------|-----------|---------------|
+| **觸發** | 所有頁面 | 所有頁面 |
+| **位置** | 右上角彈窗 | 頁面內容最頂部 |
+| **消失** | 8秒自動消失 | 10秒自動+手動關閉 |
+| **可見性** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| **訊息量** | 有限 | 豐富（編號+金額+狀態） |
+| **操作** | 按鈕查看 | 按鈕查看+手動關閉 |
+| **干擾性** | 中 | 低（嵌入頁面頂部） |
+| **遺漏風險** | 高（可能錯過） | 低（醒目位置） |
+
+### 🔄 修改文件
+- ✅ `public/templates/store/shop.html` - 產品卡片交互優化
+- ✅ `public/templates/base/shop_base.html` - 移除 Toast，智能通知邏輯，頂部橫幅+Alert
+- ✅ `app/routes/api/orders.py` - WebSocket 通知包含 order_number
+- ✅ `app/routes/api/shops.py` - 新增 `/my-shops` 端點
+
+### 🎯 用戶體驗提升
+
+**產品卡片**：
+```
+【修改前】
+- 只有底部「查看詳情」按鈕可點擊
+- 標題鏈接跳轉到產品頁面
+- 圖片不可點擊
+
+【修改後】
+- 圖片可點擊 → 打開詳情模態框
+- 標題可點擊 → 打開詳情模態框
+- 按鈕可點擊 → 打開詳情模態框
+- 圖片懸停顯示眼睛圖標提示
+```
+
+**訂單通知**：
+```
+【修改前】
+- Toast 彈窗（8秒消失）
+- 位置不明顯
+- 可能錯過通知
+
+【修改後】
+- 頂部橫幅（所有頁面統一）
+- 位置最醒目（內容區域最上方）
+- 10秒自動隱藏+手動關閉
+- 不會錯過通知
+```
+
+### ✨ 新功能
+- ✅ 頂部橫幅通知（統一方式）
+- ✅ 訂單編號顯示在橫幅中
+- ✅ 訂單狀態徽章
+- ✅ 直接查看訂單按鈕
+- ✅ 手動關閉功能
+- ✅ 10秒自動隱藏
+- ✅ 鈴鐺點擊智能處理（關閉橫幅+重算數量+跳轉）
+- ✅ 提示音無條件播放（所有頁面）
+- ✅ 訂單頁面自動刷新（狀態更新時）
+- ✅ `/api/shops/my-shops` API 端點
+
+---
+
+## 2025-11-06 02:00 - 訂單編號系統 & 系統設定管理
+
+### 📋 訂單編號系統
+- ✅ Order 模型新增 `order_number` 字段（VARCHAR(50), UNIQUE, NOT NULL）
+- ✅ 訂單編號格式：`前綴 + 商店訂單ID + Ymd + 流水號`
+- ✅ 示例：`ORDERBAO2025110600001`
+  - `ORDER` - 訂單前綴（可在系統設定修改）
+  - `BAO` - 商店訂單ID（每個店鋪必填，全局唯一）
+  - `20251106` - 日期（年月日）
+  - `00001` - 當日流水號（5位數，00001-99999）
+- ✅ 自動生成訂單編號（創建訂單時）
+- ✅ 流水號每日自動重置
+- ✅ 已有訂單自動生成歷史編號（遷移時執行）
+
+### 🏪 商店訂單ID系統
+- ✅ Shop 模型新增 `shop_order_id` 字段（VARCHAR(20), UNIQUE, NOT NULL）
+- ✅ 商店訂單ID為必填字段
+- ✅ 格式驗證：只能包含大寫字母和數字
+- ✅ 長度驗證：2-20 個字符
+- ✅ 唯一性驗證：不能與其他店鋪重複
+- ✅ 自動轉大寫
+- ✅ 後台店鋪編輯頁面新增輸入框
+- ✅ 創建和更新店鋪時驗證
+- ✅ 示例：BAO, S01, DUMPLING, NOODLE
+
+### ⚙️ 系統設定管理
+- ✅ 創建 SystemSetting 模型（設定鍵值對系統）
+- ✅ 支持多種類型：text, number, boolean, json
+- ✅ 按分類管理：order（訂單）, email（郵件）, general（通用）
+- ✅ 靜態方法：
+  - `SystemSetting.get(key, default)` - 獲取設定（自動類型轉換）
+  - `SystemSetting.set(key, value, ...)` - 設置值（自動類型檢測）
+- ✅ 後台系統設定頁面（`/backend/settings`）
+- ✅ 標籤頁設計：訂單設定、郵件設定
+- ✅ 系統設定 API（GET, POST, PUT, DELETE, BATCH）
+
+### 📧 郵件配置預設
+- ✅ 預設 Gmail SMTP 配置：
+  - `mail_host`: smtp.gmail.com
+  - `mail_port`: 587
+  - `mail_username`: renfu.her@gmail.com
+  - `mail_password`: cpvyctpwnnxfxaqb
+  - `mail_encryption`: tls
+  - `mail_from_address`: renfu.her@gmail.com
+  - `mail_from_name`: Food Stores
+- ✅ Gmail 應用專用密碼提示
+- ✅ 批量儲存功能
+
+### 🎨 系統設定頁面功能
+- ✅ **訂單設定標籤頁**：
+  - 訂單編號前綴輸入框（可修改）
+  - 實時預覽訂單編號格式
+  - 前綴驗證（大寫字母+數字，2-20字符）
+  - 格式說明和示例
+- ✅ **郵件設定標籤頁**：
+  - SMTP 完整配置表單
+  - 主機、端口、用戶名、密碼
+  - 加密方式選擇（TLS/SSL）
+  - 發件人郵箱和名稱
+  - Gmail 設定提示
+
+### 🔧 訂單編號生成邏輯
+- ✅ 創建訂單編號生成工具（`app/utils/order_number.py`）
+- ✅ `generate_order_number(shop_id)` 函數
+- ✅ 從 SystemSetting 讀取訂單前綴
+- ✅ 使用 shop.shop_order_id（必填）
+- ✅ 計算當日該店鋪訂單數量
+- ✅ 生成5位流水號（00001-99999）
+- ✅ 唯一性檢查（防止重複）
+- ✅ 訂單創建時自動調用
+
+### 🗄️ 數據庫變更
+
+**新增表**：
+- `system_setting` - 系統設定表
+  - setting_key (VARCHAR(100), UNIQUE)
+  - setting_value (TEXT)
+  - setting_type (VARCHAR(20))
+  - description (VARCHAR(500))
+  - category (VARCHAR(50))
+  - is_encrypted (BOOLEAN)
+
+**Shop 表新增字段**：
+- `shop_order_id` (VARCHAR(20), UNIQUE, NOT NULL) - 商店訂單ID
+
+**Order 表新增字段**：
+- `order_number` (VARCHAR(50), UNIQUE, NOT NULL) - 訂單編號
+
+**索引**：
+- `ix_shop_shop_order_id` - 商店訂單ID唯一索引
+- `ix_order_order_number` - 訂單編號唯一索引
+- `ix_system_setting_setting_key` - 設定鍵唯一索引
+- `idx_setting_category` - 設定分類索引
+
+### 📁 新增文件
+- ✅ `app/utils/order_number.py` - 訂單編號生成工具
+- ✅ `app/routes/api/system_settings.py` - 系統設定 API
+- ✅ `public/templates/backend/settings.html` - 系統設定頁面
+- ✅ `migrations/versions/8668db9120be_add_order_number_and_system_settings.py` - 訂單編號+系統設定遷移
+- ✅ `migrations/versions/66628b571df0_add_shop_order_id_to_shop.py` - 商店訂單ID遷移
+- ✅ `migrations/versions/53a409aac578_make_shop_order_id_required.py` - 商店訂單ID必填遷移
+
+### 🔄 修改文件
+- ✅ `app/models.py` - Order 添加 order_number，Shop 添加 shop_order_id，新增 SystemSetting 模型
+- ✅ `app/__init__.py` - 註冊 system_settings_api_bp
+- ✅ `app/routes/backend.py` - 新增 `/settings` 路由
+- ✅ `app/routes/api/orders.py` - 導入並使用 generate_order_number
+- ✅ `app/routes/api/shops.py` - 驗證 shop_order_id 必填和唯一性
+- ✅ `app/utils/order_number.py` - 使用 shop_order_id 生成編號
+- ✅ `public/templates/base/backend_base.html` - 新增系統設定菜單
+- ✅ `public/templates/backend/shops/edit.html` - 新增商店訂單ID輸入框（必填）
+- ✅ `public/templates/backend/settings.html` - 訂單編號格式說明更新
+
+### 📊 訂單編號示例對比
+
+| 店鋪 | 商店訂單ID | 訂單編號 |
+|------|-----------|---------|
+| 包子鋪 | BAO | `ORDERBAO2025110600001` |
+| 小籠包 | XLB | `ORDERXLB2025110600001` |
+| 餃子館 | DUMPLING | `ORDERDUMPLING2025110600001` |
+| 麵館 | NOODLE | `ORDERNOODLE2025110600001` |
+
+### 🎯 使用流程
+
+**設置商店訂單ID**：
+1. 後台管理 → 店鋪管理 → 編輯店鋪
+2. 填寫「商店訂單ID」（必填）
+3. 只能使用大寫字母和數字（2-20字符）
+4. 保存後該店鋪的訂單將使用此ID
+
+**修改訂單前綴**：
+1. 後台管理 → 系統設定
+2. 訂單設定標籤頁
+3. 修改「訂單編號前綴」
+4. 保存後新訂單使用新前綴
+
+**配置郵件**：
+1. 後台管理 → 系統設定
+2. 郵件設定標籤頁
+3. 填寫 SMTP 完整配置
+4. 保存後系統可發送郵件
+
+### 🔒 驗證和安全
+- ✅ 商店訂單ID全局唯一性檢查
+- ✅ 訂單編號全局唯一性保證
+- ✅ 格式驗證（正則表達式）
+- ✅ 長度限制
+- ✅ 必填驗證
+- ✅ 前後端雙重驗證
+
+### ✨ 特色功能
+- ✅ 訂單編號可讀性高（包含店鋪標識）
+- ✅ 訂單編號可追溯（包含日期信息）
+- ✅ 每日流水號自動重置
+- ✅ 系統設定靈活可配置
+- ✅ 支持批量更新設定
+- ✅ 設定值自動類型轉換
+
+---
+
 ## 2025-11-06 01:00 - 店主管理系統完善 & 實時訂單通知
 
 ### 🏪 店主管理系統獨立登錄

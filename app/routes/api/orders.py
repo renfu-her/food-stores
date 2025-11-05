@@ -414,6 +414,7 @@ def create_order():
         # 發送到店鋪頻道（店主可以收到）
         socketio.emit('new_order', {
             'order_id': new_order.id,
+            'order_number': new_order.order_number,
             'shop_id': shop_id,
             'user_id': user.id,
             'total_price': float(total_price)
@@ -422,6 +423,7 @@ def create_order():
         # 發送到後台管理頻道
         socketio.emit('new_order', {
             'order_id': new_order.id,
+            'order_number': new_order.order_number,
             'shop_id': shop_id,
             'user_id': user.id,
             'total_price': float(total_price)
@@ -686,6 +688,7 @@ def _create_single_order(user, data):
     # 發送到店鋪頻道（店主可以收到）
     socketio.emit('new_order', {
         'order_id': order.id,
+        'order_number': order.order_number,
         'shop_id': shop_id,
         'user_id': user.id,
         'total_price': float(total_price)
@@ -694,6 +697,7 @@ def _create_single_order(user, data):
     # 發送到後台管理頻道
     socketio.emit('new_order', {
         'order_id': order.id,
+        'order_number': order.order_number,
         'shop_id': shop_id,
         'user_id': user.id,
         'total_price': float(total_price)
