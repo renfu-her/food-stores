@@ -21,7 +21,7 @@ def allowed_file(filename):
 @role_required('admin', 'store_admin')
 def upload_shop_image(shop_id):
     """上傳店鋪圖片"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
     
@@ -108,7 +108,7 @@ def get_shop_images(shop_id):
 @role_required('admin', 'store_admin')
 def delete_shop_image(image_id):
     """刪除店鋪圖片"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     shop_image = ShopImage.query.get_or_404(image_id)
     shop_id = shop_image.shop_id
@@ -147,7 +147,7 @@ def delete_shop_image(image_id):
 @role_required('admin', 'store_admin')
 def reorder_shop_images(shop_id):
     """重新排序店鋪圖片"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
     

@@ -21,7 +21,7 @@ def allowed_file(filename):
 @role_required('admin', 'store_admin')
 def upload_shop_banner(shop_id):
     """上傳店鋪 Banner"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
     
@@ -91,7 +91,7 @@ def upload_shop_banner(shop_id):
 @role_required('admin', 'store_admin')
 def delete_shop_banner(shop_id):
     """刪除店鋪 Banner"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
     

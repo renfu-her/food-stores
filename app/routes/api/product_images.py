@@ -21,7 +21,7 @@ def allowed_file(filename):
 @role_required('admin', 'store_admin')
 def upload_product_image(product_id):
     """上傳產品圖片"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     product = Product.query.get_or_404(product_id)
     
@@ -110,7 +110,7 @@ def get_product_images(product_id):
 @role_required('admin', 'store_admin')
 def delete_product_image(image_id):
     """刪除產品圖片"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     product_image = ProductImage.query.get_or_404(image_id)
     product_id = product_image.product_id
@@ -151,7 +151,7 @@ def delete_product_image(image_id):
 @role_required('admin', 'store_admin')
 def reorder_product_images(product_id):
     """重新排序產品圖片"""
-    from app.utils.helpers import get_current_user
+    from app.utils.decorators import get_current_user
     user = get_current_user()
     product = Product.query.get_or_404(product_id)
     
