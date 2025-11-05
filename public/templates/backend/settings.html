@@ -1,0 +1,208 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="page-header">
+        <h1>系統設定</h1>
+    </div>
+    
+    <!-- 設定選項卡 -->
+    <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="order-tab" data-bs-toggle="tab" data-bs-target="#order-settings" type="button" role="tab">
+                <i class="bi bi-receipt me-2"></i>訂單設定
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email-settings" type="button" role="tab">
+                <i class="bi bi-envelope me-2"></i>郵件設定
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="settingsTabContent">
+        <!-- 訂單設定 -->
+        <div class="tab-pane fade show active" id="order-settings" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i>訂單編號設定</h5>
+                </div>
+                <div class="card-body">
+                    <form id="orderSettingsForm">
+                        <div class="mb-3">
+                            <label for="order_prefix" class="form-label">訂單編號前綴</label>
+                            <input type="text" class="form-control" id="order_prefix" value="ORDER" readonly>
+                            <div class="form-text">訂單編號格式：ORDER + 商店編碼 + Ymd + 流水號（0001）</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>訂單編號示例：</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>ORDERSHOP0120251106 0001</li>
+                                <li>ORDER：固定前綴</li>
+                                <li>SHOP01：商店編碼</li>
+                                <li>20251106：日期（Ymd）</li>
+                                <li>0001：當日流水號</li>
+                            </ul>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 郵件設定 -->
+        <div class="tab-pane fade" id="email-settings" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-envelope-gear me-2"></i>SMTP 郵件設定</h5>
+                </div>
+                <div class="card-body">
+                    <form id="emailSettingsForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_mailer" class="form-label">郵件驅動</label>
+                                <select class="form-select" id="mail_mailer">
+                                    <option value="smtp">SMTP</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_host" class="form-label">SMTP 主機 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="mail_host" placeholder="smtp.gmail.com" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_port" class="form-label">SMTP 端口 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="mail_port" placeholder="587" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_encryption" class="form-label">加密方式</label>
+                                <select class="form-select" id="mail_encryption">
+                                    <option value="tls">TLS</option>
+                                    <option value="ssl">SSL</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_username" class="form-label">SMTP 用戶名 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="mail_username" placeholder="your-email@gmail.com" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_password" class="form-label">SMTP 密碼 <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="mail_password" placeholder="應用專用密碼" required>
+                                <div class="form-text">Gmail 需使用應用專用密碼</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_from_address" class="form-label">發件人郵箱 <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="mail_from_address" placeholder="noreply@foodstores.com" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mail_from_name" class="form-label">發件人名稱</label>
+                                <input type="text" class="form-control" id="mail_from_name" placeholder="Food Stores">
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>重要提示：</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Gmail 需要在帳號中生成「應用專用密碼」</li>
+                                <li>不能使用一般登入密碼</li>
+                                <li>生成方法：Google 帳戶 → 安全性 → 兩步驟驗證 → 應用程式密碼</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>儲存郵件設定
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="loadSettings()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>重新載入
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+// 載入設定
+function loadSettings() {
+    $.ajax({
+        url: '/api/settings',
+        method: 'GET',
+        success: function(result) {
+            const settings = result.settings;
+            
+            // 載入訂單設定
+            if (settings.order) {
+                settings.order.forEach(function(s) {
+                    if (s.key === 'order_prefix') {
+                        $('#order_prefix').val(s.value);
+                    }
+                });
+            }
+            
+            // 載入郵件設定
+            if (settings.email) {
+                settings.email.forEach(function(s) {
+                    const key = s.key.replace('mail_', '');
+                    const $input = $('#mail_' + key);
+                    if ($input.length) {
+                        $input.val(s.value);
+                    }
+                });
+            }
+        },
+        error: function(xhr) {
+            console.error('載入設定失敗:', xhr);
+        }
+    });
+}
+
+// 儲存郵件設定
+$('#emailSettingsForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const settings = [
+        { key: 'mail_mailer', value: $('#mail_mailer').val(), type: 'text', category: 'email', description: '郵件驅動' },
+        { key: 'mail_host', value: $('#mail_host').val(), type: 'text', category: 'email', description: 'SMTP 主機' },
+        { key: 'mail_port', value: $('#mail_port').val(), type: 'number', category: 'email', description: 'SMTP 端口' },
+        { key: 'mail_username', value: $('#mail_username').val(), type: 'text', category: 'email', description: 'SMTP 用戶名' },
+        { key: 'mail_password', value: $('#mail_password').val(), type: 'text', category: 'email', description: 'SMTP 密碼' },
+        { key: 'mail_encryption', value: $('#mail_encryption').val(), type: 'text', category: 'email', description: '加密方式' },
+        { key: 'mail_from_address', value: $('#mail_from_address').val(), type: 'text', category: 'email', description: '發件人郵箱' },
+        { key: 'mail_from_name', value: $('#mail_from_name').val(), type: 'text', category: 'email', description: '發件人名稱' }
+    ];
+    
+    $.ajax({
+        url: '/api/settings/batch',
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({ settings: settings }),
+        success: function(result) {
+            alert('郵件設定儲存成功');
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert('儲存失敗：' + (error.message || '未知錯誤'));
+        }
+    });
+});
+
+// 頁面載入時載入設定
+$(document).ready(function() {
+    loadSettings();
+});
+</script>
+{% endblock %}
+

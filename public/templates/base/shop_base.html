@@ -62,7 +62,15 @@
                 <button class="btn btn-outline-secondary d-lg-none" id="sidebarToggle" type="button">
                     <i class="bi bi-list"></i>
                 </button>
-                <div class="navbar-nav ms-auto">
+                <div class="navbar-nav ms-auto d-flex align-items-center">
+                    <!-- 訂單通知鈴鐺 -->
+                    <a href="{{ url_for('store_admin.orders') }}" class="btn btn-link position-relative me-3" id="orderNotificationBell">
+                        <i class="bi bi-bell" style="font-size: 1.5rem; color: #6c757d;"></i>
+                        <span id="orderBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                            0
+                        </span>
+                    </a>
+                    
                     <span class="navbar-text me-3">
                         <i class="bi bi-person-circle me-2"></i>商店管理者
                     </span>
@@ -79,10 +87,74 @@
         </main>
     </div>
 </div>
+
+<!-- Toast 容器 -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div id="orderToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-bell-fill text-success me-2"></i>
+            <strong class="me-auto">新訂單通知</strong>
+            <small class="text-muted" id="toastTime">剛剛</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastBody">
+            您有新的訂單！
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/shop_admin.css') }}">
+<style>
+/* Toast 通知樣式 */
+#orderToast {
+    min-width: 320px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-left: 4px solid #28a745;
+}
+
+#orderToast .toast-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+}
+
+#orderToast .toast-body {
+    background: white;
+    padding: 1rem;
+}
+
+/* Toast 動畫 */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#orderToast.show {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* 鈴鐺震動動畫 */
+@keyframes ring {
+    0% { transform: rotate(0); }
+    10% { transform: rotate(15deg); }
+    20% { transform: rotate(-15deg); }
+    30% { transform: rotate(15deg); }
+    40% { transform: rotate(-15deg); }
+    50% { transform: rotate(0); }
+    100% { transform: rotate(0); }
+}
+
+.bell-ring {
+    animation: ring 0.8s ease-in-out;
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
@@ -158,6 +230,109 @@ $(document).ready(function() {
     // 额外的清理：当页面加载时清除任何残留的 backdrop
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open').css({'overflow': '', 'padding-right': ''});
+    
+    // WebSocket 訂單通知
+    {% if session.user_id and session.user_role == 'store_admin' %}
+    // 檢查待處理訂單數量
+    function checkPendingOrders() {
+        $.ajax({
+            url: '/api/shops/my-shops',
+            method: 'GET',
+            success: function(result) {
+                if (result.shops && result.shops.length > 0) {
+                    const shopId = result.shops[0].id;
+                    
+                    // 獲取待處理訂單數量
+                    $.ajax({
+                        url: '/api/orders?shop_id=' + shopId + '&status=pending',
+                        method: 'GET',
+                        success: function(ordersResult) {
+                            const pendingCount = ordersResult.orders ? ordersResult.orders.length : 0;
+                            updateOrderBadge(pendingCount);
+                        }
+                    });
+                }
+            }
+        });
+    }
+    
+    // 更新訂單徽章
+    function updateOrderBadge(count) {
+        const $badge = $('#orderBadge');
+        if (count > 0) {
+            $badge.text(count).show();
+            // 鈴鐺圖標變紅色
+            $('#orderNotificationBell i').css('color', '#dc3545');
+        } else {
+            $badge.hide();
+            // 鈴鐺圖標恢復灰色
+            $('#orderNotificationBell i').css('color', '#6c757d');
+        }
+    }
+    
+    // 頁面加載時檢查
+    checkPendingOrders();
+    
+    // 顯示 Toast 通知函數
+    function showOrderToast(orderId, totalPrice) {
+        const $toast = $('#orderToast');
+        const $toastBody = $('#toastBody');
+        const $bell = $('#orderNotificationBell i');
+        
+        // 設置 Toast 內容
+        $toastBody.html(`
+            <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-receipt text-primary me-2" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>訂單 #${orderId}</strong><br>
+                    <span class="text-muted">金額: $${totalPrice}</span>
+                </div>
+            </div>
+            <div class="mt-2">
+                <a href="{{ url_for('store_admin.orders') }}" class="btn btn-sm btn-success w-100">
+                    <i class="bi bi-eye me-1"></i>立即查看
+                </a>
+            </div>
+        `);
+        
+        // 鈴鐺震動動畫
+        $bell.addClass('bell-ring');
+        setTimeout(() => {
+            $bell.removeClass('bell-ring');
+        }, 800);
+        
+        // 顯示 Toast
+        const toast = new bootstrap.Toast($toast[0], {
+            autohide: true,
+            delay: 8000  // 8秒後自動隱藏
+        });
+        toast.show();
+        
+        // 播放提示音
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZTA0PVqzn77BeFQlDm+H0wHAhBSyBzvLZiTYIGWi77OaeTRAMUKfj8LZjGwc5k9n0zIIrBSh+zPLbizkHImO56+qnVhUKR6Hg8bx2JATVD7vt5aFODhBOquLwsWcZCT+X3PLEeCkFMYbS8M6AOgcgbsDv45lMDQ9WrOfvr14VCUSa4PG8diEF');
+        audio.volume = 0.3;
+        audio.play().catch(e => console.log('無法播放提示音'));
+    }
+    
+    // 監聽 Socket.IO 新訂單事件
+    if (typeof socket !== 'undefined' && socket) {
+        socket.on('new_order', function(data) {
+            console.log('收到新訂單通知:', data);
+            
+            // 更新徽章數量
+            checkPendingOrders();
+            
+            // 顯示 Toast 通知
+            showOrderToast(data.order_id, data.total_price);
+        });
+        
+        socket.on('order_updated', function(data) {
+            console.log('訂單狀態更新:', data);
+            // 重新檢查待處理訂單數量
+            checkPendingOrders();
+        });
+    }
+    {% endif %}
 });
 </script>
 {% endblock %}

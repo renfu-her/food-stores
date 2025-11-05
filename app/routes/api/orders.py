@@ -7,6 +7,7 @@ from app.models import Order, OrderItem, Product, Shop, Topping, order_item_topp
 from app.utils.decorators import login_required, get_current_user, role_required
 from app.utils.validators import validate_integer, validate_order_status, validate_topping_count
 from app.utils.update_logger import log_update
+from app.utils.order_number import generate_order_number
 from decimal import Decimal
 from sqlalchemy import and_
 
@@ -410,19 +411,21 @@ def create_order():
         
         # 觸發SocketIO事件 - 新訂單通知
         from app import socketio
+        # 發送到店鋪頻道（店主可以收到）
         socketio.emit('new_order', {
             'order_id': new_order.id,
             'shop_id': shop_id,
             'user_id': user.id,
             'total_price': float(total_price)
-        }, namespace=f'/shop/{shop_id}')
+        }, room=f'/shop/{shop_id}')
         
+        # 發送到後台管理頻道
         socketio.emit('new_order', {
             'order_id': new_order.id,
             'shop_id': shop_id,
             'user_id': user.id,
             'total_price': float(total_price)
-        }, namespace='/backend')
+        }, room='/backend')
         
         return jsonify({
             'message': '訂單建立成功',
@@ -480,28 +483,31 @@ def update_order_status(order_id):
         order.status = new_status
         db.session.commit()
         
-        # 觸發SocketIO事件
+        # 觸發SocketIO事件 - 訂單狀態更新
         from app import socketio
+        # 發送到店鋪頻道（店主可以收到）
         socketio.emit('order_updated', {
             'order_id': order.id,
             'status': new_status,
             'old_status': old_status,
             'updated_at': order.updated_at.isoformat() if order.updated_at else None
-        }, namespace=f'/shop/{order.shop_id}')
+        }, room=f'/shop/{order.shop_id}')
         
+        # 發送到用戶頻道（顧客可以收到）
         socketio.emit('order_updated', {
             'order_id': order.id,
             'status': new_status,
             'old_status': old_status,
             'updated_at': order.updated_at.isoformat() if order.updated_at else None
-        }, namespace=f'/user/{order.user_id}')
+        }, room=f'/user/{order.user_id}')
         
+        # 發送到後台管理頻道
         socketio.emit('order_updated', {
             'order_id': order.id,
             'status': new_status,
             'old_status': old_status,
             'updated_at': order.updated_at.isoformat() if order.updated_at else None
-        }, namespace='/backend')
+        }, room='/backend')
         
         return jsonify({
             'message': '訂單狀態更新成功',
@@ -607,8 +613,12 @@ def _create_single_order(user, data):
     address = data.get('address', '')
     full_address = f"{zipcode} {county}{district}{address}".strip()
     
+    # 生成訂單編號
+    order_number = generate_order_number(shop_id)
+    
     # 創建訂單
     order = Order(
+        order_number=order_number,
         user_id=user.id,
         shop_id=shop_id,
         total_price=total_price,
@@ -673,19 +683,21 @@ def _create_single_order(user, data):
     
     # 觸發SocketIO事件
     from app import socketio
+    # 發送到店鋪頻道（店主可以收到）
     socketio.emit('new_order', {
         'order_id': order.id,
         'shop_id': shop_id,
         'user_id': user.id,
         'total_price': float(total_price)
-    }, namespace=f'/shop/{shop_id}')
+    }, room=f'/shop/{shop_id}')
     
+    # 發送到後台管理頻道
     socketio.emit('new_order', {
         'order_id': order.id,
         'shop_id': shop_id,
         'user_id': user.id,
         'total_price': float(total_price)
-    }, namespace='/backend')
+    }, room='/backend')
     
     db.session.commit()
     return order

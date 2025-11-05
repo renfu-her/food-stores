@@ -46,6 +46,7 @@ def create_app(config_class=Config):
         from app.routes.api.cart import cart_api_bp
         from app.routes.api.about import about_api_bp
         from app.routes.api.news import news_api_bp
+        from app.routes.api.system_settings import system_settings_api_bp
         from app.routes.websocket import websocket_bp
         
         app.register_blueprint(auth_bp)
@@ -65,6 +66,7 @@ def create_app(config_class=Config):
         app.register_blueprint(cart_api_bp, url_prefix='/api/cart')
         app.register_blueprint(about_api_bp, url_prefix='/api/about')
         app.register_blueprint(news_api_bp, url_prefix='/api/news')
+        app.register_blueprint(system_settings_api_bp, url_prefix='/api/settings')
         app.register_blueprint(websocket_bp)
         
         # 靜態文件路由：提供上傳的圖片

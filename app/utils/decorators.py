@@ -38,10 +38,12 @@ def role_required(*roles):
                         'details': {}
                     }), 401
                 
-                # 后台页面重定向到后台登录
+                # 根据路径重定向到对应登录页
                 from flask import redirect, url_for
                 if request.path.startswith('/backend'):
                     return redirect(url_for('backend.login'))
+                elif request.path.startswith('/shop'):
+                    return redirect(url_for('store_admin.login'))
                 
                 # 其他页面重定向到前台登录
                 return redirect(url_for('customer.login'))
@@ -58,12 +60,14 @@ def role_required(*roles):
                         'details': {}
                     }), 403
                 
-                # 后台页面：如果是非 admin 用户，重定向到后台登录
+                # 页面请求：清除 session 并重定向到对应登录页
                 from flask import redirect, url_for
+                session.clear()
+                
                 if request.path.startswith('/backend'):
-                    # 清除 session
-                    session.clear()
                     return redirect(url_for('backend.login'))
+                elif request.path.startswith('/shop'):
+                    return redirect(url_for('store_admin.login'))
                 
                 # 其他页面返回错误
                 return jsonify({

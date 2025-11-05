@@ -385,6 +385,12 @@ def news_edit(news_id):
     news = News.query.get_or_404(news_id)
     return render_template('backend/news/edit.html', news=news)
 
+@backend_bp.route('/settings')
+@role_required('admin')
+def settings():
+    """系統設定頁面"""
+    return render_template('backend/settings.html')
+
 @backend_bp.route('/update-logs')
 @role_required('admin')
 def update_logs():

@@ -148,6 +148,7 @@ class Order(db.Model):
     __tablename__ = 'order'
     
     id = db.Column(db.Integer, primary_key=True)
+    order_number = db.Column(db.String(50), unique=True, nullable=False, index=True)  # 訂單編號
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False, index=True)
     status = db.Column(db.String(20), default='pending', nullable=False, index=True)  # pending, process, success
@@ -164,7 +165,7 @@ class Order(db.Model):
     items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
-        return f'<Order {self.id}>'
+        return f'<Order {self.order_number}>'
 
 class OrderItem(db.Model):
     """訂單項模型"""
@@ -284,6 +285,86 @@ class News(db.Model):
     
     def __repr__(self):
         return f'<News {self.name}>'
+
+class SystemSetting(db.Model):
+    """系統設定模型"""
+    __tablename__ = 'system_setting'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    setting_key = db.Column(db.String(100), unique=True, nullable=False, index=True)  # 設定鍵
+    setting_value = db.Column(db.Text, nullable=True)  # 設定值
+    setting_type = db.Column(db.String(20), default='text', nullable=False)  # 類型: text, number, boolean, json
+    description = db.Column(db.String(500), nullable=True)  # 描述
+    category = db.Column(db.String(50), default='general', nullable=False)  # 分類: general, order, email, etc
+    is_encrypted = db.Column(db.Boolean, default=False, nullable=False)  # 是否加密（如密碼）
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    __table_args__ = (
+        Index('idx_setting_category', 'category'),
+    )
+    
+    def __repr__(self):
+        return f'<SystemSetting {self.setting_key}>'
+    
+    @staticmethod
+    def get(key, default=None):
+        """獲取設定值"""
+        setting = SystemSetting.query.filter_by(setting_key=key).first()
+        if not setting:
+            return default
+        
+        # 根據類型轉換
+        if setting.setting_type == 'boolean':
+            return setting.setting_value.lower() in ['true', '1', 'yes']
+        elif setting.setting_type == 'number':
+            try:
+                return int(setting.setting_value)
+            except (ValueError, TypeError):
+                return default
+        elif setting.setting_type == 'json':
+            try:
+                import json
+                return json.loads(setting.setting_value)
+            except:
+                return default
+        else:
+            return setting.setting_value
+    
+    @staticmethod
+    def set(key, value, setting_type='text', description=None, category='general'):
+        """設置設定值"""
+        setting = SystemSetting.query.filter_by(setting_key=key).first()
+        
+        # 轉換值為字符串
+        if isinstance(value, bool):
+            str_value = 'true' if value else 'false'
+            setting_type = 'boolean'
+        elif isinstance(value, (dict, list)):
+            import json
+            str_value = json.dumps(value)
+            setting_type = 'json'
+        else:
+            str_value = str(value)
+        
+        if setting:
+            setting.setting_value = str_value
+            setting.setting_type = setting_type
+            if description:
+                setting.description = description
+            setting.category = category
+        else:
+            setting = SystemSetting(
+                setting_key=key,
+                setting_value=str_value,
+                setting_type=setting_type,
+                description=description,
+                category=category
+            )
+            db.session.add(setting)
+        
+        db.session.commit()
+        return setting
 
 class UpdateLog(db.Model):
     """系統更新日誌模型"""
