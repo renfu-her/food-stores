@@ -152,6 +152,11 @@ class Order(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False, index=True)
     status = db.Column(db.String(20), default='pending', nullable=False, index=True)  # pending, process, success
     total_price = db.Column(db.Numeric(10, 2), nullable=False)
+    recipient_name = db.Column(db.String(100), nullable=True)  # 收货人姓名
+    recipient_phone = db.Column(db.String(20), nullable=True)  # 收货人电话
+    recipient_address = db.Column(db.String(500), nullable=True)  # 收货人地址
+    delivery_note = db.Column(db.Text, nullable=True)  # 配送备注
+    payment_method = db.Column(db.String(20), default='cod', nullable=False)  # 支付方式: cod(货到付款), online(在线支付)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
