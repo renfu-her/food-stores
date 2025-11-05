@@ -553,6 +553,8 @@ def _create_single_order(user, data):
         product_id = item_data.get('product_id')
         quantity = item_data.get('quantity', 1)
         toppings = item_data.get('toppings', [])
+        drink_type = item_data.get('drink_type')  # 'cold', 'hot', or None
+        drink_price = item_data.get('drink_price', 0)
         
         # 驗證產品
         product = Product.query.get(product_id)
@@ -592,8 +594,11 @@ def _create_single_order(user, data):
                     topping_price += topping.price
                     topping_instances.append((topping, topping.price))
         
+        # 計算飲品價格
+        drink_total_price = Decimal(str(drink_price)) if drink_type and drink_price else Decimal('0')
+        
         # 項目總價
-        item_unit_price = unit_price + topping_price
+        item_unit_price = unit_price + topping_price + drink_total_price
         item_total = item_unit_price * qty_value
         total_price += item_total
         
@@ -602,7 +607,9 @@ def _create_single_order(user, data):
             'product': product,
             'quantity': qty_value,
             'unit_price': item_unit_price,
-            'toppings': topping_instances
+            'toppings': topping_instances,
+            'drink_type': drink_type,
+            'drink_price': drink_total_price
         })
         
         # 減少庫存
@@ -655,7 +662,9 @@ def _create_single_order(user, data):
             order_id=order.id,
             product_id=item_data['product'].id,
             quantity=item_data['quantity'],
-            unit_price=item_data['unit_price']
+            unit_price=item_data['unit_price'],
+            drink_type=item_data.get('drink_type'),
+            drink_price=item_data.get('drink_price')
         )
         db.session.add(order_item)
         db.session.flush()

@@ -100,6 +100,7 @@
                             <th style="width: 100px;">單價</th>
                             <th style="width: 100px;">數量</th>
                             <th style="width: 120px;">配料</th>
+                            <th style="width: 100px;">飲品</th>
                             <th style="width: 120px;" class="text-end">小計</th>
                         </tr>
                     </thead>
@@ -122,11 +123,22 @@
                                 <span class="text-muted">無</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                {% if item.drink_type %}
+                                    {% if item.drink_type == 'cold' %}
+                                    <span class="badge bg-info">🧊 冷飲</span>
+                                    {% elif item.drink_type == 'hot' %}
+                                    <span class="badge bg-warning">☕ 熱飲</span>
+                                    {% endif %}
+                                {% else %}
+                                <span class="text-muted">無</span>
+                                {% endif %}
+                            </td>
                             <td class="text-end">${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</td>
                         </tr>
                         {% endfor %}
                         <tr class="table-light">
-                            <td colspan="4" class="text-end"><strong>總計</strong></td>
+                            <td colspan="5" class="text-end"><strong>總計</strong></td>
                             <td class="text-end"><strong class="text-primary fs-5">${{ "%.2f"|format(order.total_price|float) }}</strong></td>
                         </tr>
                     </tbody>

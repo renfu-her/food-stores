@@ -69,6 +69,7 @@
                                 <th>單價</th>
                                 <th>小計</th>
                                 <th>Toppings</th>
+                                <th>飲品</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -83,6 +84,17 @@
                                         {% for topping in item.toppings %}
                                             {{ topping.name }}{% if not loop.last %}, {% endif %}
                                         {% endfor %}
+                                    {% else %}
+                                        無
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.drink_type %}
+                                        {% if item.drink_type == 'cold' %}
+                                        🧊 冷飲
+                                        {% elif item.drink_type == 'hot' %}
+                                        ☕ 熱飲
+                                        {% endif %}
                                     {% else %}
                                         無
                                     {% endif %}
