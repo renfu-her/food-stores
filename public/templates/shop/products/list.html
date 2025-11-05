@@ -1,0 +1,193 @@
+{% extends "base/shop_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">產品管理</h1>
+        <a href="{{ url_for('store_admin.product_add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>新增產品
+        </a>
+    </div>
+    
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋產品名稱、描述...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="categoryFilter">
+                        <option value="">所有分類</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">所有狀態</option>
+                        <option value="active">已上架</option>
+                        <option value="inactive">已下架</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>產品名稱</th>
+                            <th>分類</th>
+                            <th>單價</th>
+                            <th>折扣價</th>
+                            <th>庫存</th>
+                            <th>飲品</th>
+                            <th>狀態</th>
+                            <th class="text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr data-category="{{ product.category_id }}" data-status="{{ 'active' if product.is_active else 'inactive' }}">
+                            <td>{{ product.id }}</td>
+                            <td>
+                                <strong>{{ product.name }}</strong>
+                                {% if product.description %}
+                                <br><small class="text-muted">{{ product.description[:40] }}{% if product.description|length > 40 %}...{% endif %}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ product.category.name if product.category else '-' }}</td>
+                            <td>${{ "%.0f"|format(product.unit_price|float) }}</td>
+                            <td>
+                                {% if product.discounted_price %}
+                                <span class="text-danger">${{ "%.0f"|format(product.discounted_price|float) }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.stock_quantity > 0 %}
+                                <span class="badge bg-success">{{ product.stock_quantity }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">缺貨</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.has_cold_drink or product.has_hot_drink %}
+                                <small>
+                                    {% if product.has_cold_drink %}<span class="badge bg-info">🧊</span>{% endif %}
+                                    {% if product.has_hot_drink %}<span class="badge bg-warning">☕</span>{% endif %}
+                                </small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.is_active %}
+                                <span class="badge bg-success">上架</span>
+                                {% else %}
+                                <span class="badge bg-secondary">下架</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ url_for('store_admin.product_edit', product_id=product.id) }}" class="btn btn-sm btn-outline-primary" title="編輯">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct({{ product.id }}, '{{ product.name }}')" title="刪除">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="toggleStatus({{ product.id }}, {{ 'false' if product.is_active else 'true' }})" title="{{ '下架' if product.is_active else '上架' }}">
+                                    <i class="bi bi-{{ 'eye-slash' if product.is_active else 'eye' }}"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-5">
+                                <i class="bi bi-box-seam display-4 d-block mb-3"></i>
+                                還沒有產品，點擊「新增產品」開始建立！
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+// 搜尋過濾
+$('#searchInput, #categoryFilter, #statusFilter').on('input change', function() {
+    const searchValue = $('#searchInput').val().toLowerCase();
+    const categoryFilter = $('#categoryFilter').val();
+    const statusFilter = $('#statusFilter').val();
+    
+    $('tbody tr[data-category]').each(function() {
+        const $row = $(this);
+        const text = $row.text().toLowerCase();
+        const category = $row.data('category').toString();
+        const status = $row.data('status');
+        
+        const matchSearch = !searchValue || text.includes(searchValue);
+        const matchCategory = !categoryFilter || category === categoryFilter;
+        const matchStatus = !statusFilter || status === statusFilter;
+        
+        $row.toggle(matchSearch && matchCategory && matchStatus);
+    });
+});
+
+// 刪除產品（軟刪除）
+async function deleteProduct(productId, productName) {
+    if (!confirm(`確定要刪除產品「${productName}」嗎？\n\n此操作為軟刪除，可在後台恢復。`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/products/${productId}`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'}
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert(error.message || '刪除失敗');
+        }
+    } catch (error) {
+        alert('刪除失敗：' + error.message);
+    }
+}
+
+// 切換上下架狀態
+async function toggleStatus(productId, newStatus) {
+    try {
+        const response = await fetch(`/api/products/${productId}/status`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ is_active: newStatus === 'true' })
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('更新失敗');
+        }
+    } catch (error) {
+        alert('更新失敗：' + error.message);
+    }
+}
+</script>
+{% endblock %}
+

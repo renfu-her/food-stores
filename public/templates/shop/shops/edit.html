@@ -1,0 +1,168 @@
+{% extends "base/shop_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <a href="{{ url_for('store_admin.shops') }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            編輯店鋪
+        </h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-shop me-2"></i>店鋪資訊</h5>
+                </div>
+                <div class="card-body">
+                    <form id="shopForm">
+                        <div class="mb-3">
+                            <label for="shopName" class="form-label mb-2">店鋪名稱 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shopName" value="{{ shop.name }}" required>
+                        </div>
+                        
+                        <div class="mb-3 mt-3">
+                            <label for="shopOrderId" class="form-label mb-2">商店訂單ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="shopOrderId" value="{{ shop.shop_order_id }}" required maxlength="20" pattern="[A-Z0-9]+">
+                            <small class="form-text text-muted d-block mt-2">只能使用大寫字母和數字，2-20 個字符，用於訂單編號</small>
+                        </div>
+                        
+                        <div class="mb-3 mt-3">
+                            <label for="shopDescription" class="form-label mb-2">店鋪描述</label>
+                            <textarea class="form-control" id="shopDescription" rows="4">{{ shop.description or '' }}</textarea>
+                        </div>
+                        
+                        <div class="mb-3 mt-3">
+                            <label for="shopMaxToppings" class="form-label mb-2">最大配料數量 <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="shopMaxToppings" value="{{ shop.max_toppings_per_order }}" min="0" max="20" required>
+                            <small class="form-text text-muted d-block mt-2">顧客每筆訂單可選擇的最大配料數量</small>
+                        </div>
+                        
+                        <div class="mb-3 mt-3">
+                            <label for="shopStatus" class="form-label mb-2">狀態 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="shopStatus" required>
+                                <option value="active" {% if shop.status == 'active' %}selected{% endif %}>營業中</option>
+                                <option value="inactive" {% if shop.status == 'inactive' %}selected{% endif %}>已關閉</option>
+                            </select>
+                        </div>
+                        
+                        <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+                        
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>更新
+                            </button>
+                            <a href="{{ url_for('store_admin.shops') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>取消
+                            </a>
+                            <button type="button" class="btn btn-danger ms-auto" onclick="deleteShop()">
+                                <i class="bi bi-trash me-2"></i>刪除店鋪
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-info-circle me-2"></i>說明</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="bi bi-asterisk text-danger me-2"></i>所有標記 * 的欄位為必填</li>
+                        <li class="mb-2"><i class="bi bi-key text-warning me-2"></i>商店訂單ID不可重複</li>
+                        <li class="mb-2"><i class="bi bi-list-ul text-success me-2"></i>配料和產品在其他頁面管理</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="mb-3"><i class="bi bi-clock-history me-2"></i>記錄資訊</h6>
+                    <p class="small mb-1"><strong>建立時間：</strong>{{ shop.created_at.strftime('%Y-%m-%d %H:%M') if shop.created_at else '-' }}</p>
+                    <p class="small mb-0"><strong>更新時間：</strong>{{ shop.updated_at.strftime('%Y-%m-%d %H:%M') if shop.updated_at else '-' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+const shopId = {{ shop.id }};
+
+$(document).ready(function() {
+    $('#shopForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const data = {
+            name: $('#shopName').val().trim(),
+            shop_order_id: $('#shopOrderId').val().trim().toUpperCase(),
+            description: $('#shopDescription').val().trim(),
+            max_toppings_per_order: parseInt($('#shopMaxToppings').val()),
+            status: $('#shopStatus').val()
+        };
+        
+        // 驗證
+        if (!data.name) {
+            $('#errorMessage').text('請輸入店鋪名稱').show();
+            return;
+        }
+        if (!data.shop_order_id) {
+            $('#errorMessage').text('請輸入商店訂單ID').show();
+            return;
+        }
+        if (!/^[A-Z0-9]+$/.test(data.shop_order_id)) {
+            $('#errorMessage').text('商店訂單ID只能包含大寫字母和數字').show();
+            return;
+        }
+        
+        $.ajax({
+            url: `/api/shops/${shopId}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                alert('店鋪更新成功！');
+                window.location.href = "{{ url_for('store_admin.shops') }}";
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON || {};
+                $('#errorMessage').text(error.message || '更新失敗，請檢查表單').show();
+            }
+        });
+    });
+    
+    // 自動轉大寫
+    $('#shopOrderId').on('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+});
+
+// 刪除店鋪
+function deleteShop() {
+    if (!confirm('確定要刪除此店鋪嗎？\n\n此操作為軟刪除，可在後台恢復。')) {
+        return;
+    }
+    
+    $.ajax({
+        url: `/api/shops/${shopId}`,
+        method: 'DELETE',
+        success: function() {
+            alert('店鋪已刪除');
+            window.location.href = "{{ url_for('store_admin.shops') }}";
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON || {};
+            alert(error.message || '刪除失敗');
+        }
+    });
+}
+</script>
+{% endblock %}
+

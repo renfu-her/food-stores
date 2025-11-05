@@ -376,9 +376,13 @@ all_orders = Order.query.all()
 
 ### 📖 詳細文檔
 
-完整的權限管理架構說明請參閱：**[docs/PERMISSIONS.md](docs/PERMISSIONS.md)**
+| 文檔 | 說明 |
+|------|------|
+| **[docs/PERMISSIONS.md](docs/PERMISSIONS.md)** | 權限管理架構（1000+ 行） |
+| **[docs/SHOP_ADMIN_GUIDE.md](docs/SHOP_ADMIN_GUIDE.md)** | 店主操作指南（完整流程） |
+| **[docs/QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md)** | 快速參考卡片（對比表格） |
 
-內容包括：
+**權限架構文檔包括：**
 - 三種角色的詳細權限說明
 - 路由和 API 的實現範例
 - 裝飾器使用說明

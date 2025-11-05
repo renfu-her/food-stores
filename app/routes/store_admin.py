@@ -63,7 +63,22 @@ def shops():
     user = get_current_user()
     # 只查詢當前用戶擁有且未軟刪除的店鋪
     shops_list = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).order_by(Shop.created_at.desc()).all()
-    return render_template('shop/shops.html', shops=shops_list, user=user)
+    return render_template('shop/shops/list.html', shops=shops_list, user=user)
+
+@store_admin_bp.route('/shops/add')
+@role_required('store_admin')
+def shop_add():
+    """新增店鋪頁面"""
+    user = get_current_user()
+    return render_template('shop/shops/add.html', user=user)
+
+@store_admin_bp.route('/shops/<int:shop_id>/edit')
+@role_required('store_admin')
+def shop_edit(shop_id):
+    """編輯店鋪頁面"""
+    user = get_current_user()
+    shop = Shop.query.filter_by(id=shop_id, owner_id=user.id).filter(Shop.deleted_at.is_(None)).first_or_404()
+    return render_template('shop/shops/edit.html', shop=shop, user=user)
 
 @store_admin_bp.route('/profile')
 @role_required('store_admin')
@@ -82,10 +97,29 @@ def products():
     # 只顯示未軟刪除的產品
     products_list = Product.query.filter_by(shop_id=shop.id).filter(Product.deleted_at.is_(None)).order_by(Product.created_at.desc()).all()
     categories = Category.query.all()
-    return render_template('shop/products.html', 
+    return render_template('shop/products/list.html', 
                          products=products_list,
                          shop=shop,
                          categories=categories)
+
+@store_admin_bp.route('/products/add')
+@role_required('store_admin')
+def product_add():
+    """新增產品頁面"""
+    user = get_current_user()
+    shop = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).first_or_404()
+    categories = Category.query.all()
+    return render_template('shop/products/add.html', shop=shop, categories=categories, user=user)
+
+@store_admin_bp.route('/products/<int:product_id>/edit')
+@role_required('store_admin')
+def product_edit(product_id):
+    """編輯產品頁面"""
+    user = get_current_user()
+    shop = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).first_or_404()
+    product = Product.query.filter_by(id=product_id, shop_id=shop.id).filter(Product.deleted_at.is_(None)).first_or_404()
+    categories = Category.query.all()
+    return render_template('shop/products/edit.html', product=product, shop=shop, categories=categories, user=user)
 
 @store_admin_bp.route('/toppings')
 @role_required('store_admin')

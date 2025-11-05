@@ -4,7 +4,7 @@
 
 ---
 
-## 2025-11-06 16:00 - 店鋪列表管理 & 軟刪除功能
+## 2025-11-06 16:00 - 店鋪列表管理 & 軟刪除功能 & 獨立頁面重構
 
 ### ✨ 新增功能
 
@@ -13,9 +13,18 @@
 - ✅ 店主可以查看自己擁有的所有店鋪
 - ✅ 支持搜尋（名稱、描述）
 - ✅ 支持狀態篩選（營業中/已關閉）
-- ✅ 新增店鋪模態框（名稱、訂單ID、描述、配料上限、狀態）
-- ✅ 編輯店鋪模態框
+- ✅ 採用獨立頁面設計（list.html, add.html, edit.html）
+- ✅ 新增店鋪頁面（`/shop/shops/add`）
+- ✅ 編輯店鋪頁面（`/shop/shops/<id>/edit`）
 - ✅ 軟刪除店鋪功能
+
+**📦 產品管理頁面重構（Store Admin）**
+- ✅ 將模態框改為獨立頁面（參考 Backend 設計）
+- ✅ 產品列表頁面（`shop/products/list.html`）
+- ✅ 新增產品頁面（`shop/products/add.html`）
+- ✅ 編輯產品頁面（`shop/products/edit.html`）
+- ✅ 包含完整的飲品選項設置
+- ✅ 表格顯示飲品圖標（🧊 冷飲、☕ 熱飲）
 
 **🗑️ 軟刪除系統**
 - ✅ Shop 模型新增 `deleted_at` 字段（DateTime, nullable）
@@ -44,10 +53,37 @@
 儀表板
 店鋪管理    ← 新增（列表）
 店鋪設定    ← 改名（原「店鋪資訊」）
-產品管理
+產品管理    ← 改為獨立頁面
 配料管理
 訂單管理
 統計
+```
+
+**頁面結構（參考 Backend 設計）：**
+```
+shop/
+├── shops/
+│   ├── list.html    ← 店鋪列表（搜尋、篩選、操作按鈕）
+│   ├── add.html     ← 新增店鋪（獨立頁面）
+│   └── edit.html    ← 編輯店鋪（獨立頁面 + 刪除按鈕）
+│
+└── products/
+    ├── list.html    ← 產品列表（搜尋、分類、狀態篩選）
+    ├── add.html     ← 新增產品（含飲品選項設置）
+    └── edit.html    ← 編輯產品（含飲品選項設置 + 刪除按鈕）
+```
+
+**路由結構：**
+```
+店鋪管理：
+  GET  /shop/shops           → list.html
+  GET  /shop/shops/add       → add.html
+  GET  /shop/shops/<id>/edit → edit.html
+
+產品管理：
+  GET  /shop/products           → list.html
+  GET  /shop/products/add       → add.html
+  GET  /shop/products/<id>/edit → edit.html
 ```
 
 ### 🗄️ 數據庫變更
@@ -111,6 +147,31 @@ log_update(
     description=f'軟刪除店鋪: {shop.name}'
 )
 ```
+
+### 📂 檔案變更
+
+**新增檔案：**
+- `public/templates/shop/shops/list.html` - 店鋪列表頁面
+- `public/templates/shop/shops/add.html` - 新增店鋪頁面
+- `public/templates/shop/shops/edit.html` - 編輯店鋪頁面
+- `public/templates/shop/products/list.html` - 產品列表頁面
+- `public/templates/shop/products/add.html` - 新增產品頁面（含飲品選項）
+- `public/templates/shop/products/edit.html` - 編輯產品頁面（含飲品選項）
+- `docs/PERMISSIONS.md` - 權限管理架構文檔（1000+ 行）
+- `docs/SHOP_ADMIN_GUIDE.md` - 店主管理後台使用指南（完整操作流程）
+- `docs/QUICK_REFERENCE.md` - 快速參考卡片（頁面結構對比、權限對比、路由查找）
+
+**刪除檔案：**
+- `public/templates/shop/shops.html` - 舊模態框版本
+- `public/templates/shop/products.html` - 舊模態框版本
+
+**修改檔案：**
+- `app/models.py` - Shop & Product 添加 deleted_at
+- `app/routes/store_admin.py` - 新增 shop_add, shop_edit, product_add, product_edit 路由
+- `app/routes/api/shops.py` - 軟刪除實現
+- `app/routes/api/products.py` - 軟刪除實現
+- `app/routes/customer.py` - 查詢過濾
+- `public/templates/base/shop_base.html` - 側邊欄導航更新
 
 ---
 

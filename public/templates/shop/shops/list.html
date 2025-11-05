@@ -1,0 +1,140 @@
+{% extends "base/shop_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">我的店鋪</h1>
+        <a href="{{ url_for('store_admin.shop_add') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>新增店鋪
+        </a>
+    </div>
+    
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="searchInput" placeholder="搜尋店鋪名稱、描述...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">所有狀態</option>
+                        <option value="active">營業中</option>
+                        <option value="inactive">已關閉</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 数据表格 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>店鋪名稱</th>
+                            <th>訂單ID</th>
+                            <th>最大配料</th>
+                            <th>狀態</th>
+                            <th>建立時間</th>
+                            <th class="text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shop in shops %}
+                        <tr data-status="{{ shop.status }}">
+                            <td>{{ shop.id }}</td>
+                            <td>
+                                <strong>{{ shop.name }}</strong>
+                                {% if shop.description %}
+                                <br><small class="text-muted">{{ shop.description[:50] }}{% if shop.description|length > 50 %}...{% endif %}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ shop.shop_order_id }}</span>
+                            </td>
+                            <td>{{ shop.max_toppings_per_order }}</td>
+                            <td>
+                                {% if shop.status == 'active' %}
+                                <span class="badge bg-success">營業中</span>
+                                {% else %}
+                                <span class="badge bg-secondary">已關閉</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ shop.created_at.strftime('%Y-%m-%d') if shop.created_at else '-' }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('store_admin.shops') }}" class="btn btn-sm btn-outline-info" title="詳情">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('store_admin.shop_edit', shop_id=shop.id) }}" class="btn btn-sm btn-outline-primary" title="編輯">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteShop({{ shop.id }}, '{{ shop.name }}')" title="刪除">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="bi bi-shop display-4 d-block mb-3"></i>
+                                您還沒有店鋪，點擊「新增店鋪」開始建立！
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+// 搜尋過濾
+$('#searchInput, #statusFilter').on('input change', function() {
+    const searchValue = $('#searchInput').val().toLowerCase();
+    const statusFilter = $('#statusFilter').val();
+    
+    $('tbody tr[data-status]').each(function() {
+        const $row = $(this);
+        const text = $row.text().toLowerCase();
+        const status = $row.data('status');
+        
+        const matchSearch = !searchValue || text.includes(searchValue);
+        const matchStatus = !statusFilter || status === statusFilter;
+        
+        $row.toggle(matchSearch && matchStatus);
+    });
+});
+
+// 刪除店鋪（軟刪除）
+async function deleteShop(shopId, shopName) {
+    if (!confirm(`確定要刪除店鋪「${shopName}」嗎？\n\n此操作為軟刪除，可在後台恢復。`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/shops/${shopId}`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'}
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert(error.message || '刪除失敗');
+        }
+    } catch (error) {
+        alert('刪除失敗：' + error.message);
+    }
+}
+</script>
+{% endblock %}
+
