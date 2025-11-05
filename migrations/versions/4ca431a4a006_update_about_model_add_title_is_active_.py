@@ -60,9 +60,9 @@ def upgrade():
                             nullable=False)
         
         if 'idx_about_active' not in indexes:
-            batch_op.create_index('idx_about_active', ['is_active'], unique=False)
+        batch_op.create_index('idx_about_active', ['is_active'], unique=False)
         if 'idx_about_order' not in indexes:
-            batch_op.create_index('idx_about_order', ['display_order'], unique=False)
+        batch_op.create_index('idx_about_order', ['display_order'], unique=False)
 
     # ### end Alembic commands ###
 
