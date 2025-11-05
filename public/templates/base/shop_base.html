@@ -233,6 +233,9 @@ $(document).ready(function() {
     
     // WebSocket 訂單通知
     {% if session.user_id and session.user_role == 'store_admin' %}
+    // 紅點顯示標誌（點擊鈴鐺後設為 false，收到新訂單時設為 true）
+    let shouldShowRedDot = false;
+    
     // 檢查待處理訂單數量
     function checkPendingOrders() {
         $.ajax({
@@ -259,8 +262,8 @@ $(document).ready(function() {
     // 更新訂單徽章
     function updateOrderBadge(count) {
         const $badge = $('#orderBadge');
-        if (count > 0) {
-            // 只顯示紅點，不顯示數字
+        if (count > 0 && shouldShowRedDot) {
+            // 只有在 shouldShowRedDot 為 true 時才顯示紅點
             $badge.show();
             // 鈴鐺圖標變紅色
             $('#orderNotificationBell i').css('color', '#dc3545');
@@ -271,7 +274,7 @@ $(document).ready(function() {
         }
     }
     
-    // 頁面加載時檢查
+    // 頁面加載時檢查（但不顯示紅點）
     checkPendingOrders();
     
     // 顯示新訂單通知（統一使用頂部橫幅）
@@ -338,8 +341,10 @@ $(document).ready(function() {
         // 關閉橫幅
         closeOrderBanner();
         
-        // 重新計算訂單數量
-        checkPendingOrders();
+        // 隱藏紅點
+        shouldShowRedDot = false;
+        $('#orderBadge').hide();
+        $('#orderNotificationBell i').css('color', '#6c757d');
         
         // 繼續跳轉到訂單管理頁面（保持默認行為）
         // event 不阻止，讓 <a> 標籤的 href 生效
@@ -350,10 +355,13 @@ $(document).ready(function() {
         socket.on('new_order', function(data) {
             console.log('收到新訂單通知:', data);
             
+            // 設定紅點應該顯示（新訂單到達）
+            shouldShowRedDot = true;
+            
             // 更新徽章數量
             checkPendingOrders();
             
-            // 顯示通知（橫幅或 Alert）
+            // 顯示頂部橫幅通知
             showOrderNotification({
                 order_id: data.order_id,
                 order_number: data.order_number,
