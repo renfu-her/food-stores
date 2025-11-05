@@ -34,6 +34,8 @@ def add_to_cart():
         product_id = data['product_id']
         quantity = data.get('quantity', 1)
         toppings = data.get('toppings', [])
+        drink_type = data.get('drink_type')  # 'cold', 'hot', or None
+        drink_price = data.get('drink_price', 0)
         
         # 驗證產品
         product = Product.query.get(product_id)
@@ -56,18 +58,22 @@ def add_to_cart():
         # 計算配料總價
         toppings_price = sum(t.get('price', 0) for t in toppings)
         
-        # 計算單價（產品價格 + 配料價格）
-        base_price = product.discounted_price if product.discounted_price else product.unit_price
-        unit_price = float(base_price) + toppings_price
+        # 計算飲品價格
+        drink_total_price = float(drink_price) if drink_type and drink_price else 0
         
-        # 檢查購物車中是否已有相同產品和配料組合
+        # 計算單價（產品價格 + 配料價格 + 飲品價格）
+        base_price = product.discounted_price if product.discounted_price else product.unit_price
+        unit_price = float(base_price) + toppings_price + drink_total_price
+        
+        # 檢查購物車中是否已有相同產品、配料和飲品組合
         existing_item = None
         topping_ids = sorted([t['id'] for t in toppings])
         
         for item in cart:
             if item['product_id'] == product_id:
                 item_topping_ids = sorted([t['id'] for t in item.get('toppings', [])])
-                if item_topping_ids == topping_ids:
+                item_drink_type = item.get('drink_type')
+                if item_topping_ids == topping_ids and item_drink_type == drink_type:
                     existing_item = item
                     break
         
@@ -82,6 +88,8 @@ def add_to_cart():
                 'quantity': quantity,
                 'unit_price': unit_price,
                 'toppings': toppings,
+                'drink_type': drink_type,
+                'drink_price': drink_total_price,
                 'added_at': datetime.now().isoformat()
             }
             cart.append(cart_item)

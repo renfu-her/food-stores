@@ -137,6 +137,16 @@
                             </small>
                         </div>
                         
+                        <!-- 飲品選擇 -->
+                        <div id="drinksSection" class="mb-3" style="display: none;">
+                            <label class="form-label mb-2">飲品選擇</label>
+                            <div class="border rounded p-2">
+                                <div id="drinksList">
+                                    <!-- 飲品選項將動態載入 -->
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mb-3">
                             <label for="productQuantity" class="form-label mb-2">數量</label>
                             <input type="number" class="form-control" id="productQuantity" value="1" min="1" onchange="updateTotalPrice()">
@@ -269,6 +279,9 @@ function showProductDetail(productId) {
             // 載入配料選項
             loadToppings(product);
             
+            // 載入飲品選項
+            loadDrinks(product);
+            
             // 重置數量
             $('#productQuantity').val(1);
             $('#productModalError').hide();
@@ -363,6 +376,85 @@ function handleToppingChange(maxToppings) {
     updateTotalPrice();
 }
 
+// 載入飲品選項
+function loadDrinks(product) {
+    const drinksList = $('#drinksList');
+    const drinksSection = $('#drinksSection');
+    drinksList.empty();
+    
+    // 檢查產品是否有飲品選項
+    const hasDrinks = product.has_cold_drink || product.has_hot_drink;
+    
+    if (hasDrinks) {
+        drinksSection.show();
+        
+        let drinksHtml = '';
+        
+        // 添加冷飲選項
+        if (product.has_cold_drink) {
+            const coldPrice = product.cold_drink_price || 0;
+            const priceDisplay = coldPrice === 0 ? '' : ` (+$${coldPrice})`;
+            drinksHtml += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input drink-radio" 
+                           type="radio" 
+                           name="drinkType" 
+                           id="drink_cold" 
+                           value="cold"
+                           data-price="${coldPrice}"
+                           onchange="updateTotalPrice()">
+                    <label class="form-check-label d-flex justify-content-between w-100" for="drink_cold">
+                        <span>🧊 冷飲</span>
+                        <span class="text-muted">${priceDisplay}</span>
+                    </label>
+                </div>
+            `;
+        }
+        
+        // 添加熱飲選項
+        if (product.has_hot_drink) {
+            const hotPrice = product.hot_drink_price || 0;
+            const priceDisplay = hotPrice === 0 ? '' : ` (+$${hotPrice})`;
+            drinksHtml += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input drink-radio" 
+                           type="radio" 
+                           name="drinkType" 
+                           id="drink_hot" 
+                           value="hot"
+                           data-price="${hotPrice}"
+                           onchange="updateTotalPrice()">
+                    <label class="form-check-label d-flex justify-content-between w-100" for="drink_hot">
+                        <span>☕ 熱飲</span>
+                        <span class="text-muted">${priceDisplay}</span>
+                    </label>
+                </div>
+            `;
+        }
+        
+        // 添加「不需要」選項（預設選中）
+        drinksHtml += `
+            <div class="form-check mb-2">
+                <input class="form-check-input drink-radio" 
+                       type="radio" 
+                       name="drinkType" 
+                       id="drink_none" 
+                       value="none"
+                       data-price="0"
+                       checked
+                       onchange="updateTotalPrice()">
+                <label class="form-check-label" for="drink_none">
+                    <span>不需要</span>
+                </label>
+            </div>
+        `;
+        
+        drinksList.html(drinksHtml);
+    } else {
+        drinksSection.hide();
+    }
+}
+
 // 更新總價
 function updateTotalPrice() {
     if (!currentProduct) return;
@@ -376,8 +468,15 @@ function updateTotalPrice() {
         toppingsPrice += parseFloat($(this).data('price')) || 0;
     });
     
-    // 總價 = (產品價格 + 配料總價) × 數量
-    const totalPrice = (basePrice + toppingsPrice) * quantity;
+    // 計算飲品價格
+    let drinkPrice = 0;
+    const selectedDrink = $('input[name="drinkType"]:checked');
+    if (selectedDrink.length > 0 && selectedDrink.val() !== 'none') {
+        drinkPrice = parseFloat(selectedDrink.data('price')) || 0;
+    }
+    
+    // 總價 = (產品價格 + 配料總價 + 飲品價格) × 數量
+    const totalPrice = (basePrice + toppingsPrice + drinkPrice) * quantity;
     $('#totalPrice').text(`$${totalPrice}`);
 }
 
@@ -407,6 +506,15 @@ function addToCart() {
         });
     });
     
+    // 收集飲品選擇
+    let drinkType = null;
+    let drinkPrice = null;
+    const selectedDrink = $('input[name="drinkType"]:checked');
+    if (selectedDrink.length > 0 && selectedDrink.val() !== 'none') {
+        drinkType = selectedDrink.val();
+        drinkPrice = parseFloat(selectedDrink.data('price'));
+    }
+    
     $.ajax({
         url: '/api/cart/add',
         method: 'POST',
@@ -414,7 +522,9 @@ function addToCart() {
         data: JSON.stringify({
             product_id: currentProduct.id,
             quantity: quantity,
-            toppings: selectedToppings
+            toppings: selectedToppings,
+            drink_type: drinkType,
+            drink_price: drinkPrice
         }),
         success: function(response) {
             productModal.hide();
@@ -457,6 +567,15 @@ function buyNow() {
         });
     });
     
+    // 收集飲品選擇
+    let drinkType = null;
+    let drinkPrice = null;
+    const selectedDrink = $('input[name="drinkType"]:checked');
+    if (selectedDrink.length > 0 && selectedDrink.val() !== 'none') {
+        drinkType = selectedDrink.val();
+        drinkPrice = parseFloat(selectedDrink.data('price'));
+    }
+    
     // 加入購物車並跳轉到結帳頁面
     $.ajax({
         url: '/api/cart/add',
@@ -465,7 +584,9 @@ function buyNow() {
         data: JSON.stringify({
             product_id: currentProduct.id,
             quantity: quantity,
-            toppings: selectedToppings
+            toppings: selectedToppings,
+            drink_type: drinkType,
+            drink_price: drinkPrice
         }),
         success: function(response) {
             window.location.href = "{{ url_for('customer.checkout') }}";

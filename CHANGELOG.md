@@ -4,6 +4,69 @@
 
 ---
 
+## 2025-11-06 15:20 - 商品冷飲/熱飲選項功能
+
+### ✨ 新增功能
+
+**🥤 商品飲品選項系統**
+- ✅ Product 模型新增冷飲/熱飲字段：
+  - `has_cold_drink`: 是否提供冷飲（Boolean）
+  - `cold_drink_price`: 冷飲加價（Decimal）
+  - `has_hot_drink`: 是否提供熱飲（Boolean）
+  - `hot_drink_price`: 熱飲加價（Decimal）
+- ✅ OrderItem 模型新增飲品記錄字段：
+  - `drink_type`: 飲品類型（'cold'/'hot'/null）
+  - `drink_price`: 飲品價格（Decimal）
+
+**🛠️ 後台商品管理**
+- ✅ 商品添加/編輯表單新增飲品選項區塊
+- ✅ 勾選「提供冷飲」/「提供熱飲」可設定加價（預設 0）
+- ✅ 飲品選項為可選功能，非必填
+- ✅ 價格輸入框動態顯示/隱藏
+- ✅ 編輯時自動載入現有飲品設定
+
+**🛍️ 前台購物體驗**
+- ✅ 商品詳情模態框新增「飲品選擇」區塊
+- ✅ 顯示冷飲（🧊）和熱飲（☕）選項
+- ✅ 顯示飲品加價（+$XX）或免費
+- ✅ 包含「不需要」選項（預設選中）
+- ✅ 總價計算自動包含飲品價格
+- ✅ 購物車顯示選擇的飲品類型和價格
+- ✅ 結帳頁面保留飲品選擇信息
+
+**📦 訂單系統整合**
+- ✅ 訂單 API 接收並保存飲品選擇
+- ✅ 飲品價格計入訂單總價
+- ✅ 訂單詳情頁顯示飲品信息（前台 & 後台）
+- ✅ 飲品數據正確傳遞給店主
+
+### 🗄️ 數據庫變更
+- ✅ 創建遷移：`add_drink_options_to_product_and_order_item`
+- ✅ 為現有產品設置預設值（has_cold_drink=0, has_hot_drink=0）
+- ✅ 新增字段均可為 NULL（兼容舊數據）
+
+### 🔄 API 更新
+- ✅ GET `/api/products/`: 返回飲品字段
+- ✅ GET `/api/products/<id>`: 返回完整飲品信息
+- ✅ POST `/api/products`: 支持創建時設置飲品
+- ✅ PUT `/api/products/<id>`: 支持更新飲品設置
+- ✅ POST `/api/cart/add`: 接收 drink_type 和 drink_price
+- ✅ POST `/api/orders`: 保存飲品數據到 OrderItem
+
+### 💰 價格計算邏輯
+```
+總價 = (商品基礎價 + 配料總價 + 飲品價格) × 數量
+```
+
+### 📱 UI/UX 改進
+- ✅ 飲品選項使用 Radio 按鈕（單選）
+- ✅ 配料選項使用 Checkbox（多選，有上限）
+- ✅ 清晰的圖標：🧊 冷飲、☕ 熱飲
+- ✅ 訂單詳情使用彩色徽章顯示飲品
+- ✅ 購物車完整顯示飲品和配料信息
+
+---
+
 ## 2025-11-06 02:30 - 店鋪產品卡片交互優化 & 店主訂單通知改進
 
 ### 🎨 產品卡片交互改進
@@ -99,9 +162,15 @@
 | **干擾性** | 中 | 低（嵌入頁面頂部） |
 | **遺漏風險** | 高（可能錯過） | 低（醒目位置） |
 
+### 🐛 Bug 修復
+- ✅ 移除 `shop/dashboard.html` 中舊的 Alert 彈窗代碼
+- ✅ 避免重複通知（舊 window.addEventListener 與新 socket.on 衝突）
+- ✅ 新增調試日誌（console.log）幫助診斷紅點顯示問題
+
 ### 🔄 修改文件
 - ✅ `public/templates/store/shop.html` - 產品卡片交互優化
-- ✅ `public/templates/base/shop_base.html` - 移除 Toast，智能通知邏輯，頂部橫幅+Alert
+- ✅ `public/templates/base/shop_base.html` - 移除 Toast，頂部橫幅通知，紅點邏輯，調試日誌
+- ✅ `public/templates/shop/dashboard.html` - 移除舊 Alert 代碼
 - ✅ `app/routes/api/orders.py` - WebSocket 通知包含 order_number
 - ✅ `app/routes/api/shops.py` - 新增 `/my-shops` 端點
 

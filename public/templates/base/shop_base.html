@@ -262,12 +262,16 @@ $(document).ready(function() {
     // 更新訂單徽章
     function updateOrderBadge(count) {
         const $badge = $('#orderBadge');
+        console.log('更新紅點:', { count: count, shouldShowRedDot: shouldShowRedDot });
+        
         if (count > 0 && shouldShowRedDot) {
             // 只有在 shouldShowRedDot 為 true 時才顯示紅點
+            console.log('✓ 顯示紅點');
             $badge.show();
             // 鈴鐺圖標變紅色
             $('#orderNotificationBell i').css('color', '#dc3545');
         } else {
+            console.log('✗ 隱藏紅點');
             $badge.hide();
             // 鈴鐺圖標恢復灰色
             $('#orderNotificationBell i').css('color', '#6c757d');

@@ -72,23 +72,10 @@
 {% block extra_js %}
 {{ super() }}
 <script>
-// 監聽新訂單事件
-window.addEventListener('newOrder', function(event) {
-    const data = event.detail;
-    if (data.shop_id == {{ shop.id }}) {
-        console.log('新訂單:', data);
-        if (confirm('收到新訂單，是否查看？')) {
-            window.location.href = "{{ url_for('store_admin.orders') }}";
-        }
-    }
-});
+// 新訂單通知已統一由 shop_base.html 處理
+// 使用 WebSocket socket.on('new_order') 接收並顯示頂部橫幅通知
 
-// 監聽訂單更新事件
-window.addEventListener('orderUpdated', function(event) {
-    const data = event.detail;
-    console.log('訂單更新:', data);
-    location.reload();
-});
+// 移除舊的 newOrder 事件監聽，避免重複 Alert
 </script>
 {% endblock %}
 

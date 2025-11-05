@@ -106,6 +106,13 @@ class Product(db.Model):
     discounted_price = db.Column(db.Numeric(10, 2), nullable=True)
     stock_quantity = db.Column(db.Integer, default=0, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    
+    # 飲品選項（可選）
+    has_cold_drink = db.Column(db.Boolean, default=False, nullable=False)  # 是否提供冷飲
+    cold_drink_price = db.Column(db.Numeric(10, 2), nullable=True)  # 冷飲加價
+    has_hot_drink = db.Column(db.Boolean, default=False, nullable=False)  # 是否提供熱飲
+    hot_drink_price = db.Column(db.Numeric(10, 2), nullable=True)  # 熱飲加價
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
@@ -177,6 +184,11 @@ class OrderItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
+    
+    # 飲品選項（如果有選擇）
+    drink_type = db.Column(db.String(20), nullable=True)  # 'cold' or 'hot'
+    drink_price = db.Column(db.Numeric(10, 2), nullable=True)  # 飲品加價
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
     # 關係

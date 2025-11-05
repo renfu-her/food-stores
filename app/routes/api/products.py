@@ -68,6 +68,11 @@ def get_products():
                 'stock_quantity': product.stock_quantity,
                 'is_active': product.is_active,
                 'toppings': toppings_data,
+                # 飲品選項
+                'has_cold_drink': product.has_cold_drink,
+                'cold_drink_price': float(product.cold_drink_price) if product.cold_drink_price else None,
+                'has_hot_drink': product.has_hot_drink,
+                'hot_drink_price': float(product.hot_drink_price) if product.hot_drink_price else None,
                 'created_at': product.created_at.isoformat() if product.created_at else None
             })
         
@@ -129,6 +134,11 @@ def get_product(product_id):
             'is_active': product.is_active,
             'images': images_data,
             'toppings': toppings_data,
+            # 飲品選項
+            'has_cold_drink': product.has_cold_drink,
+            'cold_drink_price': float(product.cold_drink_price) if product.cold_drink_price else None,
+            'has_hot_drink': product.has_hot_drink,
+            'hot_drink_price': float(product.hot_drink_price) if product.hot_drink_price else None,
             'created_at': product.created_at.isoformat() if product.created_at else None,
             'updated_at': product.updated_at.isoformat() if product.updated_at else None
         }), 200
@@ -176,6 +186,17 @@ def create_product():
             if discounted_price >= unit_price:
                 return jsonify({'error': '折扣價必須小於單價'}), 400
         
+        # 處理飲品選項
+        has_cold_drink = bool(data.get('has_cold_drink', False))
+        cold_drink_price = None
+        if has_cold_drink and 'cold_drink_price' in data:
+            cold_drink_price = float(data['cold_drink_price']) if data['cold_drink_price'] is not None else 0
+        
+        has_hot_drink = bool(data.get('has_hot_drink', False))
+        hot_drink_price = None
+        if has_hot_drink and 'hot_drink_price' in data:
+            hot_drink_price = float(data['hot_drink_price']) if data['hot_drink_price'] is not None else 0
+        
         # 創建產品
         product = Product(
             name=data['name'].strip(),
@@ -185,7 +206,12 @@ def create_product():
             unit_price=unit_price,
             discounted_price=discounted_price,
             stock_quantity=int(data.get('stock_quantity', 0)),
-            is_active=bool(data.get('is_active', True))
+            is_active=bool(data.get('is_active', True)),
+            # 飲品選項
+            has_cold_drink=has_cold_drink,
+            cold_drink_price=cold_drink_price,
+            has_hot_drink=has_hot_drink,
+            hot_drink_price=hot_drink_price
         )
         
         db.session.add(product)
@@ -295,6 +321,22 @@ def update_product(product_id):
             product.stock_quantity = stock_value
         if 'is_active' in data:
             product.is_active = bool(data['is_active'])
+        
+        # 更新飲品選項
+        if 'has_cold_drink' in data:
+            product.has_cold_drink = bool(data['has_cold_drink'])
+            if product.has_cold_drink and 'cold_drink_price' in data:
+                product.cold_drink_price = float(data['cold_drink_price']) if data['cold_drink_price'] is not None else 0
+            elif not product.has_cold_drink:
+                product.cold_drink_price = None
+        
+        if 'has_hot_drink' in data:
+            product.has_hot_drink = bool(data['has_hot_drink'])
+            if product.has_hot_drink and 'hot_drink_price' in data:
+                product.hot_drink_price = float(data['hot_drink_price']) if data['hot_drink_price'] is not None else 0
+            elif not product.has_hot_drink:
+                product.hot_drink_price = None
+        
         if 'shop_id' in data:
             shop = Shop.query.get(data['shop_id'])
             if not shop:

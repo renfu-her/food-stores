@@ -103,6 +103,36 @@
                 <input type="number" name="stock_quantity" value="0" min="0" required>
             </div>
             
+            <!-- 飲品選項 -->
+            <div class="form-group" style="border-top: 1px solid #dee2e6; padding-top: 1rem; margin-top: 1rem;">
+                <h4 style="margin-bottom: 1rem; color: #495057;">飲品選項（可選）</h4>
+                
+                <div style="display: flex; gap: 2rem;">
+                    <div style="flex: 1;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="has_cold_drink" name="has_cold_drink" onchange="toggleDrinkPrice('cold')"> 
+                            提供冷飲
+                        </label>
+                        <div id="cold_drink_price_container" style="margin-top: 0.5rem; display: none;">
+                            <label style="font-size: 0.9rem; color: #6c757d;">冷飲加價</label>
+                            <input type="number" name="cold_drink_price" step="0.01" min="0" value="0" placeholder="0.00" style="width: 100%;">
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="has_hot_drink" name="has_hot_drink" onchange="toggleDrinkPrice('hot')"> 
+                            提供熱飲
+                        </label>
+                        <div id="hot_drink_price_container" style="margin-top: 0.5rem; display: none;">
+                            <label style="font-size: 0.9rem; color: #6c757d;">熱飲加價</label>
+                            <input type="number" name="hot_drink_price" step="0.01" min="0" value="0" placeholder="0.00" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                <small class="form-text text-muted">如果商品提供冷飲或熱飲選項，請勾選並設定加價（可為 0）</small>
+            </div>
+            
             <div class="form-group">
                 <label>
                     <input type="checkbox" name="is_active" checked> 立即上架
@@ -131,10 +161,30 @@ function filterProducts() {
     });
 }
 
+function toggleDrinkPrice(type) {
+    const checkbox = document.getElementById(`has_${type}_drink`);
+    const container = document.getElementById(`${type}_drink_price_container`);
+    const input = document.querySelector(`input[name="${type}_drink_price"]`);
+    
+    if (checkbox.checked) {
+        container.style.display = 'block';
+        input.required = true;
+    } else {
+        container.style.display = 'none';
+        input.required = false;
+        input.value = '0';
+    }
+}
+
 function showAddProductModal() {
     document.getElementById('productForm').reset();
     document.getElementById('productId').value = '';
     document.getElementById('modalTitle').textContent = '新增產品';
+    
+    // 重置饮品选项
+    document.getElementById('cold_drink_price_container').style.display = 'none';
+    document.getElementById('hot_drink_price_container').style.display = 'none';
+    
     document.getElementById('productModal').style.display = 'flex';
 }
 
@@ -155,6 +205,21 @@ async function editProduct(productId) {
         document.querySelector('input[name="discounted_price"]').value = product.discounted_price || '';
         document.querySelector('input[name="stock_quantity"]').value = product.stock_quantity;
         document.querySelector('input[name="is_active"]').checked = product.is_active;
+        
+        // 加載飲品選項
+        const hasColdDrink = document.getElementById('has_cold_drink');
+        const hasHotDrink = document.getElementById('has_hot_drink');
+        const coldDrinkPrice = document.querySelector('input[name="cold_drink_price"]');
+        const hotDrinkPrice = document.querySelector('input[name="hot_drink_price"]');
+        
+        hasColdDrink.checked = product.has_cold_drink || false;
+        hasHotDrink.checked = product.has_hot_drink || false;
+        coldDrinkPrice.value = product.cold_drink_price || 0;
+        hotDrinkPrice.value = product.hot_drink_price || 0;
+        
+        // 顯示/隱藏價格輸入框
+        toggleDrinkPrice('cold');
+        toggleDrinkPrice('hot');
         
         document.getElementById('modalTitle').textContent = '編輯產品';
         document.getElementById('productModal').style.display = 'flex';
@@ -209,7 +274,12 @@ document.getElementById('productForm').addEventListener('submit', async function
         unit_price: parseFloat(formData.get('unit_price')),
         discounted_price: formData.get('discounted_price') ? parseFloat(formData.get('discounted_price')) : null,
         stock_quantity: parseInt(formData.get('stock_quantity')),
-        is_active: formData.get('is_active') === 'on'
+        is_active: formData.get('is_active') === 'on',
+        // 飲品選項
+        has_cold_drink: formData.get('has_cold_drink') === 'on',
+        cold_drink_price: formData.get('has_cold_drink') === 'on' ? parseFloat(formData.get('cold_drink_price')) : null,
+        has_hot_drink: formData.get('has_hot_drink') === 'on',
+        hot_drink_price: formData.get('has_hot_drink') === 'on' ? parseFloat(formData.get('hot_drink_price')) : null
     };
     
     try {
