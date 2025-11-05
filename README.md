@@ -16,6 +16,7 @@
 - [技術棧](#技術棧)
 - [安裝說明](#安裝說明)
 - [使用指南](#使用指南)
+- [權限管理](#權限管理)
 - [操作手冊](#操作手冊)
 - [API 文檔](#api-文檔)
 - [常見問題](#常見問題)
@@ -273,6 +274,117 @@ uwsgi --ini uwsgi.ini
 店鋪管理：   http://localhost:5000/shop
 商城前台：   http://localhost:5000/
 ```
+
+---
+
+## 🔐 權限管理
+
+### 核心原則
+
+本系統採用**基於角色的存取控制（RBAC）**，確保不同角色只能存取和修改自己權限範圍內的資源。
+
+### 三種角色的權限範圍
+
+| 角色 | 權限範圍 | 關鍵過濾條件 |
+|------|---------|-------------|
+| **Admin<br/>（超級管理員）** | • 所有店鋪<br/>• 所有產品<br/>• 所有訂單<br/>• 系統設定<br/>• 內容管理 | `Shop.query.all()` |
+| **Store Admin<br/>（店主）** | • 自己的店鋪<br/>• 自己店鋪的產品<br/>• 自己店鋪的訂單<br/>• 自己店鋪的配料 | `Shop.query.filter_by(owner_id=user.id)`<br/>`Product.query.filter_by(shop_id=shop.id)` |
+| **Customer<br/>（顧客）** | • 瀏覽所有公開店鋪和產品<br/>• 自己的訂單<br/>• 個人資料 | `Order.query.filter_by(user_id=user.id)` |
+
+### 權限實現方式
+
+#### 1️⃣ **路由層級控制**
+
+使用 `@role_required()` 裝飾器：
+
+```python
+@app.route('/shop/products')
+@role_required('store_admin')
+def products():
+    user = get_current_user()
+    # ✅ 只查詢當前用戶擁有的店鋪
+    shop = Shop.query.filter_by(owner_id=user.id).first_or_404()
+    # ✅ 只查詢該店鋪的產品
+    products = Product.query.filter_by(shop_id=shop.id).all()
+    return render_template('shop/products.html', products=products)
+```
+
+#### 2️⃣ **API 層級控制**
+
+在修改操作前檢查 `owner_id`：
+
+```python
+@app.route('/api/shops/<int:shop_id>', methods=['PUT'])
+@login_required
+def update_shop(shop_id):
+    user = get_current_user()
+    shop = Shop.query.get_or_404(shop_id)
+    
+    # ✅ 權限檢查
+    if user.role != 'admin' and shop.owner_id != user.id:
+        return jsonify({'error': 'forbidden'}), 403
+    
+    # 執行更新...
+```
+
+#### 3️⃣ **查詢過濾**
+
+**店主（Store Admin）** 只能看到自己的資源：
+
+```python
+# 查詢店鋪
+my_shops = Shop.query.filter_by(owner_id=user.id).all()
+
+# 查詢產品
+my_products = Product.query.filter_by(shop_id=shop.id).all()
+
+# 查詢訂單
+my_orders = Order.query.filter_by(shop_id=shop.id).all()
+```
+
+**管理員（Admin）** 可以查詢所有資源：
+
+```python
+all_shops = Shop.query.all()
+all_products = Product.query.all()
+all_orders = Order.query.all()
+```
+
+### 權限檢查流程圖
+
+```
+用戶請求
+  ↓
+檢查登入狀態 (@login_required)
+  ↓
+檢查角色權限 (@role_required)
+  ↓
+根據角色過濾資源
+  ├─ Admin → 查詢所有資源
+  ├─ Store Admin → filter_by(owner_id=user.id)
+  └─ Customer → filter_by(user_id=user.id)
+  ↓
+返回結果
+```
+
+### 安全特性
+
+✅ **資料隔離** - 店主之間無法互相訪問資料  
+✅ **權限驗證** - 所有修改操作都需要驗證 `owner_id`  
+✅ **智能重定向** - 未登入時根據路由自動重定向到對應登入頁  
+✅ **錯誤處理** - 返回清晰的 403 Forbidden 或 404 Not Found  
+
+### 📖 詳細文檔
+
+完整的權限管理架構說明請參閱：**[docs/PERMISSIONS.md](docs/PERMISSIONS.md)**
+
+內容包括：
+- 三種角色的詳細權限說明
+- 路由和 API 的實現範例
+- 裝飾器使用說明
+- 權限檢查檢查清單
+- 測試場景和測試方法
+- 安全建議和最佳實踐
 
 ---
 

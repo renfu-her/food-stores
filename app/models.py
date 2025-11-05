@@ -59,6 +59,7 @@ class Shop(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     max_toppings_per_order = db.Column(db.Integer, default=5, nullable=False)
     status = db.Column(db.String(20), default='active', nullable=False)  # active, inactive
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)  # 軟刪除時間戳
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
@@ -113,6 +114,7 @@ class Product(db.Model):
     has_hot_drink = db.Column(db.Boolean, default=False, nullable=False)  # 是否提供熱飲
     hot_drink_price = db.Column(db.Numeric(10, 2), nullable=True)  # 熱飲加價
     
+    deleted_at = db.Column(db.DateTime, nullable=True, index=True)  # 軟刪除時間戳
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     

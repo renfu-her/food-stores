@@ -13,13 +13,14 @@ products_api_bp = Blueprint('products_api', __name__)
 
 @products_api_bp.route('/', methods=['GET'])
 def get_products():
-    """獲取產品列表（公開，可篩選，預設只顯示is_active=true的產品）"""
+    """獲取產品列表（公開，可篩選，預設只顯示is_active=true且未刪除的產品）"""
     try:
         shop_id = request.args.get('shop_id', type=int)
         category_id = request.args.get('category_id', type=int)
         is_active = request.args.get('is_active', type=str)
         
-        query = Product.query
+        # 排除已軟刪除的產品
+        query = Product.query.filter(Product.deleted_at.is_(None))
         
         # 篩選條件
         if shop_id:
@@ -391,7 +392,7 @@ def update_product(product_id):
 @products_api_bp.route('/<int:product_id>', methods=['DELETE'])
 @login_required
 def delete_product(product_id):
-    """刪除產品（僅店鋪擁有者或管理員）"""
+    """刪除產品（軟刪除 - 僅店鋪擁有者或管理員）"""
     try:
         user = get_current_user()
         product = Product.query.get_or_404(product_id)
@@ -405,8 +406,21 @@ def delete_product(product_id):
                 'details': {}
             }), 403
         
+        # 檢查是否已刪除
+        if product.deleted_at:
+            return jsonify({
+                'error': 'bad_request',
+                'message': '產品已被刪除',
+                'details': {}
+            }), 400
+        
+        # 軟刪除：設置 deleted_at 時間戳並設為不啟用
+        from datetime import datetime
+        product.deleted_at = datetime.utcnow()
+        product.is_active = False
+        
         log_update(
-            action='delete',
+            action='soft_delete',
             table_name='product',
             record_id=product.id,
             old_data={
@@ -414,14 +428,13 @@ def delete_product(product_id):
                 'shop_id': product.shop_id,
                 'category_id': product.category_id
             },
-            description=f'刪除產品: {product.name}'
+            description=f'軟刪除產品: {product.name}'
         )
         
-        db.session.delete(product)
         db.session.commit()
         
         return jsonify({
-            'message': '產品刪除成功'
+            'message': '產品刪除成功（可在後台恢復）'
         }), 200
         
     except Exception as e:

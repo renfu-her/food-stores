@@ -4,6 +4,161 @@
 
 ---
 
+## 2025-11-06 16:00 - 店鋪列表管理 & 軟刪除功能
+
+### ✨ 新增功能
+
+**🏪 店鋪列表管理（Store Admin）**
+- ✅ 新增 `/shop/shops` 路由 - 店主的店鋪列表頁面
+- ✅ 店主可以查看自己擁有的所有店鋪
+- ✅ 支持搜尋（名稱、描述）
+- ✅ 支持狀態篩選（營業中/已關閉）
+- ✅ 新增店鋪模態框（名稱、訂單ID、描述、配料上限、狀態）
+- ✅ 編輯店鋪模態框
+- ✅ 軟刪除店鋪功能
+
+**🗑️ 軟刪除系統**
+- ✅ Shop 模型新增 `deleted_at` 字段（DateTime, nullable）
+- ✅ Product 模型新增 `deleted_at` 字段（DateTime, nullable）
+- ✅ 刪除操作改為設置 `deleted_at` 時間戳，而非真實刪除
+- ✅ 產品軟刪除同時設置 `is_active = False`
+- ✅ 軟刪除後可在後台恢復
+
+**🔍 查詢過濾更新**
+- ✅ 所有店鋪查詢添加 `.filter(Shop.deleted_at.is_(None))`
+- ✅ 所有產品查詢添加 `.filter(Product.deleted_at.is_(None))`
+- ✅ 前台（Customer）無法看到已刪除的店鋪和產品
+- ✅ 店主（Store Admin）無法看到已刪除的店鋪和產品
+- ✅ 管理員（Admin）可以查看所有記錄（包含已刪除）
+
+### 🎨 UI/UX 改進
+
+**店鋪列表頁面：**
+- ✅ 仿照 Backend 的設計風格
+- ✅ 表格顯示：ID、店鋪名稱、訂單ID、最大配料、狀態、建立時間
+- ✅ 操作按鈕：詳情、編輯、刪除（一排顯示）
+- ✅ 空狀態提示：「您還沒有店鋪，點擊『新增店鋪』開始建立！」
+
+**側邊欄更新：**
+```
+儀表板
+店鋪管理    ← 新增（列表）
+店鋪設定    ← 改名（原「店鋪資訊」）
+產品管理
+配料管理
+訂單管理
+統計
+```
+
+### 🗄️ 數據庫變更
+- ✅ 創建遷移：`add_soft_delete_fields_to_shop_and_product`
+- ✅ Shop 表新增：`deleted_at` (DATETIME, NULL)
+- ✅ Product 表新增：`deleted_at` (DATETIME, NULL)
+- ✅ 為 `deleted_at` 添加索引（提升查詢效率）
+
+### 🔄 API 更新
+
+**軟刪除實現：**
+```python
+# DELETE /api/shops/<id>
+shop.deleted_at = datetime.utcnow()
+
+# DELETE /api/products/<id>
+product.deleted_at = datetime.utcnow()
+product.is_active = False
+```
+
+**查詢過濾：**
+```python
+# 所有店鋪查詢
+Shop.query.filter(Shop.deleted_at.is_(None))
+
+# 所有產品查詢
+Product.query.filter(Product.deleted_at.is_(None))
+```
+
+### 📊 權限控制確認
+
+**店主（Store Admin）**
+- ✅ 只能查看 `owner_id = user.id` 的店鋪
+- ✅ 只能編輯自己擁有的店鋪
+- ✅ 只能刪除自己擁有的店鋪
+- ✅ 只能管理自己店鋪的產品（`shop_id` 過濾）
+
+**管理員（Admin）**
+- ✅ 可以查看所有店鋪（包含已刪除）
+- ✅ 可以編輯任何店鋪
+- ✅ 可以刪除任何店鋪
+- ✅ 可以恢復已刪除的店鋪
+
+### 🔒 安全性提升
+
+- ✅ 軟刪除避免誤刪重要數據
+- ✅ 刪除操作記錄在 `update_log` 表
+- ✅ 刪除確認提示：「此操作可以在後台恢復」
+- ✅ 防止重複刪除（檢查 `deleted_at` 是否已存在）
+- ✅ 所有公開查詢自動排除已刪除記錄
+
+### 📝 日誌記錄
+
+軟刪除操作記錄為：
+```python
+log_update(
+    action='soft_delete',  # 區分硬刪除
+    table_name='shop',
+    record_id=shop.id,
+    old_data={...},
+    description=f'軟刪除店鋪: {shop.name}'
+)
+```
+
+---
+
+## 2025-11-06 15:45 - 權限管理架構文檔
+
+### 📚 新增文檔
+- ✅ 創建 `docs/PERMISSIONS.md` - 完整的權限管理架構說明（1000+ 行）
+- ✅ 詳細說明三種角色的權限範圍
+- ✅ 說明權限實現方式（路由層級 + API 層級）
+- ✅ 提供權限檢查檢查清單
+- ✅ 包含測試場景和測試方法
+- ✅ 提供安全建議和最佳實踐
+- ✅ 創建 `test_permissions.py` - 權限測試腳本
+- ✅ 更新 `README.md` - 添加權限管理章節和流程圖
+
+### 🔐 權限架構說明
+
+**核心原則：**
+```
+Admin (超級管理員)
+  └─ 可以訪問所有資源
+
+Store Admin (店主)
+  └─ 只能訪問 owner_id = user.id 的店鋪
+  └─ 只能訪問 shop_id 屬於自己店鋪的產品/訂單/配料
+
+Customer (顧客)
+  └─ 只能訪問 user_id = user.id 的訂單
+  └─ 可以瀏覽所有公開的店鋪和產品
+```
+
+**實現方式：**
+- 🛡️ 路由層級：`@role_required('store_admin')` 裝飾器
+- 🛡️ API 層級：檢查 `owner_id` 和 `shop_id`
+- 🛡️ 查詢過濾：`Shop.query.filter_by(owner_id=user.id)`
+- 🛡️ 智能重定向：根據路由重定向到對應登入頁
+
+**文檔內容：**
+- 三種角色的詳細權限說明
+- 路由和 API 的權限實現範例
+- 裝飾器使用說明
+- 關鍵過濾模式表格
+- 權限檢查檢查清單
+- 測試場景和測試代碼
+- 安全建議（5 條最佳實踐）
+
+---
+
 ## 2025-11-06 15:30 - README.md 完整更新
 
 ### 📚 文檔更新

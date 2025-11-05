@@ -18,8 +18,13 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'store_admin.shops' %}active{% endif %}" href="{{ url_for('store_admin.shops') }}">
+                        <i class="bi bi-shop me-2"></i>店鋪管理
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'store_admin.profile' %}active{% endif %}" href="{{ url_for('store_admin.profile') }}">
-                        <i class="bi bi-shop me-2"></i>店鋪資訊
+                        <i class="bi bi-gear me-2"></i>店鋪設定
                     </a>
                 </li>
                 <li class="nav-item">

@@ -10,9 +10,9 @@ customer_bp = Blueprint('customer', __name__)
 
 @customer_bp.route('/')
 def index():
-    """商城首頁"""
+    """商城首頁（排除已刪除的店鋪）"""
     from app.models import HomeBanner
-    shops = Shop.query.filter_by(status='active').all()
+    shops = Shop.query.filter_by(status='active').filter(Shop.deleted_at.is_(None)).all()
     banners = HomeBanner.query.filter_by(is_active=True).order_by(HomeBanner.display_order).all()
     return render_template('store/index.html', shops=shops, banners=banners)
 
@@ -65,9 +65,10 @@ def order_detail(order_id):
 
 @customer_bp.route('/shop/<int:shop_id>')
 def shop(shop_id):
-    """店鋪詳情頁"""
-    shop = Shop.query.get_or_404(shop_id)
-    products = Product.query.filter_by(shop_id=shop_id, is_active=True).all()
+    """店鋪詳情頁（排除已刪除）"""
+    shop = Shop.query.filter_by(id=shop_id).filter(Shop.deleted_at.is_(None)).first_or_404()
+    # 只顯示啟用且未軟刪除的產品
+    products = Product.query.filter_by(shop_id=shop_id, is_active=True).filter(Product.deleted_at.is_(None)).all()
     categories = Category.query.all()
     
     return render_template('store/shop.html', 

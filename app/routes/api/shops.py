@@ -13,17 +13,17 @@ shops_api_bp = Blueprint('shops_api', __name__)
 @shops_api_bp.route('/my-shops', methods=['GET'])
 @login_required
 def get_my_shops():
-    """獲取當前用戶的店鋪列表"""
+    """獲取當前用戶的店鋪列表（排除已軟刪除）"""
     try:
         user = get_current_user()
         
-        # 獲取用戶的店鋪
+        # 獲取用戶的店鋪（排除已刪除）
         if user.role == 'admin':
-            # 管理員可以看到所有店鋪
-            shops = Shop.query.all()
+            # 管理員可以看到所有未刪除的店鋪
+            shops = Shop.query.filter(Shop.deleted_at.is_(None)).all()
         elif user.role == 'store_admin':
-            # 店主只能看到自己的店鋪
-            shops = Shop.query.filter_by(owner_id=user.id).all()
+            # 店主只能看到自己未刪除的店鋪
+            shops = Shop.query.filter_by(owner_id=user.id).filter(Shop.deleted_at.is_(None)).all()
         else:
             # 普通用戶沒有店鋪
             shops = []
@@ -54,9 +54,9 @@ def get_my_shops():
 
 @shops_api_bp.route('/', methods=['GET'])
 def get_shops():
-    """獲取店鋪列表（公開）"""
+    """獲取店鋪列表（公開，排除已刪除）"""
     try:
-        shops = Shop.query.filter_by(status='active').all()
+        shops = Shop.query.filter_by(status='active').filter(Shop.deleted_at.is_(None)).all()
         
         shops_data = []
         for shop in shops:
@@ -350,7 +350,7 @@ def update_shop(shop_id):
 @shops_api_bp.route('/<int:shop_id>', methods=['DELETE'])
 @login_required
 def delete_shop(shop_id):
-    """刪除店鋪（僅店鋪擁有者或管理員）"""
+    """刪除店鋪（軟刪除 - 僅店鋪擁有者或管理員）"""
     try:
         user = get_current_user()
         shop = Shop.query.get_or_404(shop_id)
@@ -363,6 +363,14 @@ def delete_shop(shop_id):
                 'details': {}
             }), 403
         
+        # 檢查是否已刪除
+        if shop.deleted_at:
+            return jsonify({
+                'error': 'bad_request',
+                'message': '店鋪已被刪除',
+                'details': {}
+            }), 400
+        
         # 保存店鋪信息用於日誌
         shop_data = {
             'name': shop.name,
@@ -370,20 +378,23 @@ def delete_shop(shop_id):
             'owner_id': shop.owner_id
         }
         
+        # 軟刪除：設置 deleted_at 時間戳
+        from datetime import datetime
+        shop.deleted_at = datetime.utcnow()
+        
         # 記錄日誌
         log_update(
-            action='delete',
+            action='soft_delete',
             table_name='shop',
             record_id=shop.id,
             old_data=shop_data,
-            description=f'刪除店鋪: {shop.name}'
+            description=f'軟刪除店鋪: {shop.name}'
         )
         
-        db.session.delete(shop)
         db.session.commit()
         
         return jsonify({
-            'message': '店鋪刪除成功'
+            'message': '店鋪刪除成功（可在後台恢復）'
         }), 200
         
     except Exception as e:
