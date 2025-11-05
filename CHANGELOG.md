@@ -4,6 +4,69 @@
 
 ---
 
+## 2025-11-06 19:00 - 修復 Shop Admin 所有圖片上傳權限
+
+### 🐛 Bug 修復
+
+**店鋪與產品圖片上傳權限問題：**
+- ✅ 修復 `forbidden` 錯誤
+- ✅ 允許 `store_admin` 上傳自己店鋪的 Banner
+- ✅ 允許 `store_admin` 上傳自己店鋪的圖片
+- ✅ 允許 `store_admin` 上傳自己店鋪產品的圖片
+- ✅ 所有刪除、排序操作也已開放權限
+
+**修復內容：**
+```python
+# app/routes/api/product_images.py
+
+# 修復前：只允許 admin
+@role_required('admin')
+def upload_product_image(product_id):
+    # ❌ store_admin 無法上傳
+
+# 修復後：允許 admin 和 store_admin
+@role_required('admin', 'store_admin')
+def upload_product_image(product_id):
+    # 權限檢查：store_admin 只能上傳自己店鋪的產品圖片
+    if user.role == 'store_admin':
+        shop = Shop.query.get(product.shop_id)
+        if not shop or shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden'}), 403
+    # ✅ store_admin 可以上傳自己店鋪的產品圖片
+```
+
+**權限邏輯：**
+- ✅ **Admin**：可以上傳/刪除/排序所有產品的圖片
+- ✅ **Store Admin**：只能上傳/刪除/排序自己店鋪產品的圖片
+- ✅ 自動驗證產品是否屬於該 store_admin 的店鋪
+
+**修復的 API 端點：**
+
+**產品圖片 (app/routes/api/product_images.py)：**
+1. `POST /api/products/<product_id>/images` - 上傳產品圖片
+2. `DELETE /api/product-images/<image_id>` - 刪除產品圖片
+3. `PUT /api/products/<product_id>/images/reorder` - 排序產品圖片
+
+**店鋪 Banner (app/routes/api/shop_banner.py)：**
+4. `POST /api/shops/<shop_id>/banner` - 上傳店鋪 Banner
+5. `DELETE /api/shops/<shop_id>/banner` - 刪除店鋪 Banner
+
+**店鋪圖片 (app/routes/api/shop_images.py)：**
+6. `POST /api/shops/<shop_id>/images` - 上傳店鋪圖片
+7. `DELETE /api/shop-images/<image_id>` - 刪除店鋪圖片
+8. `PUT /api/shops/<shop_id>/images/reorder` - 排序店鋪圖片
+
+**驗證邏輯：**
+```python
+# 檢查產品是否屬於 store_admin 的店鋪
+if user.role == 'store_admin':
+    shop = Shop.query.get(product.shop_id)
+    if not shop or shop.owner_id != user.id:
+        return 403 Forbidden
+```
+
+---
+
 ## 2025-11-06 18:30 - 產品管理新增冷熱飲選項UI
 
 ### ✨ 功能增強

@@ -18,10 +18,17 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_IMAGE_EXTENSIONS']
 
 @shop_images_api_bp.route('/shops/<int:shop_id>/images', methods=['POST'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def upload_shop_image(shop_id):
     """上傳店鋪圖片"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
+    
+    # 權限檢查：store_admin 只能上傳自己的店鋪圖片
+    if user.role == 'store_admin':
+        if shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權上傳此店鋪的圖片'}), 403
     
     if 'image' not in request.files:
         return jsonify({'error': '沒有上傳文件'}), 400
@@ -98,11 +105,19 @@ def get_shop_images(shop_id):
     } for img in images])
 
 @shop_images_api_bp.route('/shop-images/<int:image_id>', methods=['DELETE'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def delete_shop_image(image_id):
     """刪除店鋪圖片"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     shop_image = ShopImage.query.get_or_404(image_id)
     shop_id = shop_image.shop_id
+    
+    # 權限檢查：store_admin 只能刪除自己店鋪的圖片
+    if user.role == 'store_admin':
+        shop = Shop.query.get(shop_id)
+        if not shop or shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權刪除此圖片'}), 403
     
     try:
         # 刪除文件
@@ -129,10 +144,18 @@ def delete_shop_image(image_id):
         return jsonify({'error': '刪除失敗'}), 500
 
 @shop_images_api_bp.route('/shops/<int:shop_id>/images/reorder', methods=['PUT'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def reorder_shop_images(shop_id):
     """重新排序店鋪圖片"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
+    
+    # 權限檢查：store_admin 只能排序自己店鋪的圖片
+    if user.role == 'store_admin':
+        if shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權排序此店鋪的圖片'}), 403
+    
     data = request.get_json()
     
     if not data or 'order' not in data:

@@ -18,10 +18,17 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_IMAGE_EXTENSIONS']
 
 @shop_banner_api_bp.route('/shops/<int:shop_id>/banner', methods=['POST'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def upload_shop_banner(shop_id):
     """上傳店鋪 Banner"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
+    
+    # 權限檢查：store_admin 只能上傳自己的店鋪 Banner
+    if user.role == 'store_admin':
+        if shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權上傳此店鋪的 Banner'}), 403
     
     if 'banner' not in request.files:
         return jsonify({'error': '沒有上傳文件'}), 400
@@ -81,10 +88,17 @@ def upload_shop_banner(shop_id):
         return jsonify({'error': '上傳失敗'}), 500
 
 @shop_banner_api_bp.route('/shops/<int:shop_id>/banner', methods=['DELETE'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def delete_shop_banner(shop_id):
     """刪除店鋪 Banner"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     shop = Shop.query.get_or_404(shop_id)
+    
+    # 權限檢查：store_admin 只能刪除自己的店鋪 Banner
+    if user.role == 'store_admin':
+        if shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權刪除此店鋪的 Banner'}), 403
     
     if not shop.banner_image:
         return jsonify({'error': 'Banner 不存在'}), 404

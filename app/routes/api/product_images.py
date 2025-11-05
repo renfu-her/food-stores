@@ -18,10 +18,19 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_IMAGE_EXTENSIONS']
 
 @product_images_api_bp.route('/products/<int:product_id>/images', methods=['POST'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def upload_product_image(product_id):
     """上傳產品圖片"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     product = Product.query.get_or_404(product_id)
+    
+    # 權限檢查：store_admin 只能上傳自己店鋪的產品圖片
+    if user.role == 'store_admin':
+        from app.models import Shop
+        shop = Shop.query.get(product.shop_id)
+        if not shop or shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權上傳此產品的圖片'}), 403
     
     if 'image' not in request.files:
         return jsonify({'error': '沒有上傳文件'}), 400
@@ -98,11 +107,21 @@ def get_product_images(product_id):
     } for img in images])
 
 @product_images_api_bp.route('/product-images/<int:image_id>', methods=['DELETE'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def delete_product_image(image_id):
     """刪除產品圖片"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     product_image = ProductImage.query.get_or_404(image_id)
     product_id = product_image.product_id
+    
+    # 權限檢查：store_admin 只能刪除自己店鋪產品的圖片
+    if user.role == 'store_admin':
+        product = Product.query.get(product_id)
+        from app.models import Shop
+        shop = Shop.query.get(product.shop_id)
+        if not shop or shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權刪除此圖片'}), 403
     
     try:
         # 刪除文件
@@ -129,10 +148,20 @@ def delete_product_image(image_id):
         return jsonify({'error': '刪除失敗'}), 500
 
 @product_images_api_bp.route('/products/<int:product_id>/images/reorder', methods=['PUT'])
-@role_required('admin')
+@role_required('admin', 'store_admin')
 def reorder_product_images(product_id):
     """重新排序產品圖片"""
+    from app.utils.helpers import get_current_user
+    user = get_current_user()
     product = Product.query.get_or_404(product_id)
+    
+    # 權限檢查：store_admin 只能排序自己店鋪產品的圖片
+    if user.role == 'store_admin':
+        from app.models import Shop
+        shop = Shop.query.get(product.shop_id)
+        if not shop or shop.owner_id != user.id:
+            return jsonify({'error': 'forbidden', 'message': '無權排序此產品的圖片'}), 403
+    
     data = request.get_json()
     
     if not data or 'order' not in data:
