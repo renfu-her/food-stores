@@ -82,6 +82,7 @@ def shops():
             'id': s.id,
             'name': s.name,
             'description': s.description,
+            'shop_order_id': s.shop_order_id,
             'owner_id': s.owner_id,
             'max_toppings_per_order': s.max_toppings_per_order,
             'status': s.status,

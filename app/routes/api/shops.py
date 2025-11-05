@@ -141,22 +141,40 @@ def create_shop():
                 'details': {}
             }), 400
         
-        # 如果使用者是store_admin，檢查是否已有店鋪
-        if user.role == 'store_admin':
-            existing_shop = Shop.query.filter_by(owner_id=user.id).first()
-            if existing_shop:
-                return jsonify({
-                    'error': 'validation_error',
-                    'message': '您已經擁有一個店鋪',
-                    'details': {}
-                }), 400
+        # 获取并验证 shop_order_id（必填）
+        shop_order_id = data.get('shop_order_id', '').strip().upper()
+        if not shop_order_id:
+            return jsonify({
+                'error': 'validation_error',
+                'message': '商店訂單ID不能為空',
+                'details': {}
+            }), 400
         
-        # 建立店鋪
+        # 验证 shop_order_id 格式（2-20位大写字母和数字）
+        import re
+        if not re.match(r'^[A-Z0-9]{2,20}$', shop_order_id):
+            return jsonify({
+                'error': 'validation_error',
+                'message': '商店訂單ID格式錯誤（只能使用大寫字母和數字，2-20個字符）',
+                'details': {}
+            }), 400
+        
+        # 检查 shop_order_id 是否重复
+        existing_shop_with_order_id = Shop.query.filter_by(shop_order_id=shop_order_id).filter(Shop.deleted_at.is_(None)).first()
+        if existing_shop_with_order_id:
+            return jsonify({
+                'error': 'validation_error',
+                'message': f'商店訂單ID "{shop_order_id}" 已被使用，請使用其他ID',
+                'details': {}
+            }), 400
+        
+        # 建立店鋪（支持多店鋪，移除单店铺限制）
         owner_id = data.get('owner_id', user.id) if user.role == 'admin' else user.id
         
         new_shop = Shop(
             name=name,
             description=description,
+            shop_order_id=shop_order_id,
             owner_id=owner_id,
             max_toppings_per_order=max_toppings_value,
             status='active'
