@@ -56,11 +56,11 @@
             <!-- 支付方式 -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>支付方式（可組合）</h5>
+                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>選擇支付方式</h5>
                 </div>
                 <div class="card-body">
                     <p class="text-muted small mb-3">
-                        <i class="bi bi-info-circle me-1"></i>您可以使用多種支付方式組合支付此訂單
+                        <i class="bi bi-info-circle me-1"></i>請選擇一種支付方式
                     </p>
                     
                     <div id="paymentMethodsList">
@@ -76,13 +76,11 @@
                                 <td>訂單總額：</td>
                                 <td class="text-end fw-bold">$<span id="orderTotalCalc">0</span></td>
                             </tr>
-                            <tr>
-                                <td>已分配支付：</td>
-                                <td class="text-end">$<span id="paymentAllocated">0</span></td>
+                            <tr class="table-primary">
+                                <td><strong>應付金額：</strong></td>
+                                <td class="text-end"><strong class="text-primary fs-5">$<span id="orderTotalCalc2">0</span></strong></td>
                             </tr>
                         </table>
-                        
-                        <div id="paymentError" class="alert alert-danger mt-2" style="display:none;"></div>
                     </div>
                 </div>
             </div>
@@ -159,7 +157,7 @@ function loadPaymentMethods() {
     });
 }
 
-// 渲染支付方式
+// 渲染支付方式（單選）
 function renderPaymentMethods() {
     const container = $('#paymentMethodsList');
     container.empty();
@@ -171,93 +169,41 @@ function renderPaymentMethods() {
     
     paymentMethods.forEach(method => {
         const html = `
-            <div class="payment-method-item mb-3 p-3 border rounded">
-                <div class="form-check">
-                    <input class="form-check-input payment-checkbox" 
-                           type="checkbox" 
+            <div class="payment-method-item mb-2">
+                <div class="form-check p-3 border rounded">
+                    <input class="form-check-input payment-radio" 
+                           type="radio" 
+                           name="paymentMethod"
                            id="pm_${method.id}"
                            value="${method.id}"
-                           data-code="${method.code}"
-                           onchange="togglePaymentAmount(${method.id})">
-                    <label class="form-check-label w-100" for="pm_${method.id}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>
-                                <i class="${method.icon} me-2 fs-5"></i>
-                                <strong>${method.name}</strong>
-                            </span>
-                            <input type="number" 
-                                   class="form-control form-control-sm payment-amount" 
-                                   id="amount_${method.id}"
-                                   data-method-id="${method.id}"
-                                   min="0" 
-                                   step="1"
-                                   placeholder="輸入金額"
-                                   style="width: 140px; display: none;"
-                                   onchange="calculatePaymentTotal()">
-                        </div>
+                           data-code="${method.code}">
+                    <label class="form-check-label w-100" for="pm_${method.id}" style="cursor: pointer;">
+                        <i class="${method.icon} me-2 fs-5"></i>
+                        <strong>${method.name}</strong>
                     </label>
                 </div>
             </div>
         `;
         container.append(html);
     });
-}
-
-// 切換支付方式金額輸入框
-function togglePaymentAmount(methodId) {
-    const checkbox = $(`#pm_${methodId}`);
-    const amountInput = $(`#amount_${methodId}`);
     
-    if (checkbox.is(':checked')) {
-        amountInput.show().focus();
-    } else {
-        amountInput.hide().val('');
-        calculatePaymentTotal();
-    }
-}
-
-// 計算支付總額
-function calculatePaymentTotal() {
-    let allocated = 0;
-    $('.payment-amount:visible').each(function() {
-        allocated += parseFloat($(this).val()) || 0;
-    });
-    
-    $('#paymentAllocated').text(allocated.toFixed(2));
-    
-    // 驗證
-    const total = parseFloat($('#orderTotalCalc').text());
-    const error = $('#paymentError');
-    
-    if (allocated > 0 && Math.abs(allocated - total) > 0.01) {
-        error.html(`
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            <strong>支付金額不正確！</strong><br>
-            應付：$${total.toFixed(2)}，已分配：$${allocated.toFixed(2)}，
-            差額：$${(total - allocated).toFixed(2)}
-        `).show();
-        return false;
-    } else {
-        error.hide();
-        return true;
-    }
-}
-
-// 獲取支付分配
-function getPaymentSplits() {
-    const splits = [];
-    $('.payment-checkbox:checked').each(function() {
-        const methodId = parseInt($(this).val());
-        const amount = parseFloat($(`#amount_${methodId}`).val()) || 0;
+    // 自動選擇預設支付方式（現金優先）
+    setTimeout(() => {
+        let defaultMethod = null;
         
-        if (amount > 0) {
-            splits.push({
-                payment_method_id: methodId,
-                amount: amount
-            });
+        if (paymentMethods.length === 1) {
+            defaultMethod = paymentMethods[0];
+        } else {
+            defaultMethod = paymentMethods.find(m => m.code === 'cash');
+            if (!defaultMethod && paymentMethods.length > 0) {
+                defaultMethod = paymentMethods[0];
+            }
         }
-    });
-    return splits;
+        
+        if (defaultMethod) {
+            $(`#pm_${defaultMethod.id}`).prop('checked', true);
+        }
+    }, 100);
 }
 
 // 顯示訂單商品
@@ -315,21 +261,20 @@ function updateOrderSummary() {
     document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
     document.getElementById('orderTotal').textContent = '$' + total.toFixed(2);
     document.getElementById('orderTotalCalc').textContent = total.toFixed(2);
+    document.getElementById('orderTotalCalc2').textContent = total.toFixed(2);
 }
 
 // 提交訂單
 async function submitOrder() {
-    // 驗證組合支付
-    if (!calculatePaymentTotal()) {
-        alert('請正確分配支付金額');
+    // 驗證支付方式（單選）
+    const selectedPayment = $('input[name="paymentMethod"]:checked');
+    if (selectedPayment.length === 0) {
+        alert('請選擇支付方式');
         return;
     }
     
-    const paymentSplits = getPaymentSplits();
-    if (paymentSplits.length === 0) {
-        alert('請選擇至少一種支付方式');
-        return;
-    }
+    const paymentMethodId = parseInt(selectedPayment.val());
+    const total = parseFloat($('#orderTotalCalc').text()) || 0;
     
     const customer_name = document.getElementById('customer_name').value.trim();
     const customer_phone = document.getElementById('customer_phone').value.trim();
@@ -342,6 +287,12 @@ async function submitOrder() {
         drink_type: item.drink_type,
         toppings: item.toppings ? item.toppings.map(t => t.id) : []
     }));
+    
+    // 單一支付方式
+    const paymentSplits = [{
+        payment_method_id: paymentMethodId,
+        amount: total
+    }];
     
     // 使用訪客結帳 API
     try {

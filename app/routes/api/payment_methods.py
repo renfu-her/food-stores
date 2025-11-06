@@ -83,6 +83,10 @@ def update_payment_method(method_id):
     payment_method = PaymentMethod.query.get_or_404(method_id)
     data = request.get_json()
     
+    # 现金支付不能被禁用
+    if payment_method.code == 'cash' and 'is_active' in data and not data['is_active']:
+        return jsonify({'error': '现金支付是系统必需的支付方式，不能禁用'}), 400
+    
     if 'name' in data:
         payment_method.name = data['name'].strip()
     
