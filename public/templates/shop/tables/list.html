@@ -44,15 +44,11 @@
                         </tr>
                     </thead>
                     <tbody id="tablesTableBody">
-                        {% if tables %}
-                        <!-- Loaded by JavaScript -->
-                        {% else %}
                         <tr>
                             <td colspan="6" class="text-center text-muted">
-                                暫無桌號，點擊上方「批量創建桌號」開始設置
+                                <i class="bi bi-hourglass-split"></i> 載入中...
                             </td>
                         </tr>
-                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -94,7 +90,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 const shopId = {{ shop.id }};
 const tables = {{ tables | tojson }};
@@ -105,9 +103,11 @@ $(document).ready(function() {
 
 function loadTables() {
     const tbody = $('#tablesTableBody');
+    if (!tbody.length) return;
+    
     tbody.empty();
     
-    if (tables.length === 0) {
+    if (!tables || tables.length === 0) {
         tbody.html('<tr><td colspan="6" class="text-center text-muted">暫無桌號</td></tr>');
         return;
     }
@@ -127,11 +127,17 @@ function renderTableRow(table) {
     
     const statusBadge = statusMap[table.status] || '<span class="badge bg-secondary">未知</span>';
     
-    const qrcodePreview = table.qrcode_path 
-        ? `<a href="/uploads/${table.qrcode_path}" target="_blank" class="btn btn-sm btn-outline-primary">
+    // 處理 QR Code 路徑
+    let qrcodePreview = '-';
+    if (table.qrcode_path) {
+        // 如果路徑已經是完整路徑，直接使用；否則添加 /uploads/ 前綴
+        const qrcodeUrl = table.qrcode_path.startsWith('http') 
+            ? table.qrcode_path 
+            : `/uploads/${table.qrcode_path}`;
+        qrcodePreview = `<a href="${qrcodeUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
              <i class="bi bi-qr-code"></i> 查看
-           </a>`
-        : '-';
+           </a>`;
+    }
     
     return `
         <tr>

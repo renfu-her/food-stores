@@ -258,9 +258,9 @@ def generate_table_qrcode(shop_id, table_number):
     Returns:
         QRCode文件相对路径
     """
-    # 生成URL
+    # 生成訪客點餐 URL
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    qr_url = f"{base_url}/store/{shop_id}/table/{table_number}"
+    qr_url = f"{base_url}/guest/shop/{shop_id}/table/{table_number}"
     
     # 创建 QRCode
     qr = qrcode.QRCode(
