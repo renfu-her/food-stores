@@ -252,6 +252,139 @@ uwsgi --ini uwsgi.ini
 
 應用將運行在 `http://localhost:5000`
 
+### 8️⃣ 診斷和故障排除
+
+#### 快速診斷工具
+
+Quick Foods 提供多種診斷工具來幫助您快速定位問題：
+
+```bash
+# 快速診斷（推薦）
+python quick_diagnose.py
+
+# 完整部署檢查
+python check_deployment.py
+
+# 應用測試
+python test_app.py
+
+# Linux/Mac 一鍵診斷
+./diagnose.sh
+```
+
+#### 遇到 500 錯誤？
+
+1. 執行快速診斷找出問題：
+```bash
+python quick_diagnose.py
+```
+
+2. 查看錯誤日誌：
+```bash
+tail -f logs/gunicorn_error.log
+```
+
+3. 參考詳細文檔：
+- 📘 [快速部署指南](docs/QUICK_START_PRODUCTION.md)
+- 📕 [完整部署指南](docs/DEPLOYMENT_GUIDE.md)
+- 📗 [500 錯誤排查](docs/TROUBLESHOOTING_500.md)
+- 📙 [支付設置指南](docs/PAYMENT_METHODS_SETUP.md)
+
+#### 常見問題快速修復
+
+```bash
+# .env 文件不存在
+cp env.example .env
+
+# 資料表不存在
+flask db upgrade
+
+# Python 依賴缺失
+pip install -r requirements.txt
+
+# 權限問題
+sudo chmod -R 775 public/uploads logs
+```
+
+---
+
+## 🚀 正式環境部署
+
+### Gunicorn 部署（推薦）
+
+```bash
+# 安裝 Gunicorn
+pip install gunicorn eventlet
+
+# 使用配置文件啟動
+gunicorn -c gunicorn_config.py wsgi:application
+
+# 或指定參數啟動
+gunicorn -w 4 -k eventlet -b 127.0.0.1:8000 wsgi:application
+```
+
+### Systemd 服務
+
+創建 `/etc/systemd/system/quick-foods.service`：
+
+```ini
+[Unit]
+Description=Quick Foods Web Application
+After=network.target
+
+[Service]
+Type=notify
+User=www-data
+WorkingDirectory=/var/www/quick-foods
+Environment="PATH=/var/www/quick-foods/venv/bin"
+ExecStart=/var/www/quick-foods/venv/bin/gunicorn -c gunicorn_config.py wsgi:application
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+啟動服務：
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start quick-foods
+sudo systemctl enable quick-foods
+```
+
+### Nginx 反向代理
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    client_max_body_size 16M;
+
+    location /static {
+        alias /var/www/quick-foods/public/static;
+    }
+
+    location /uploads {
+        alias /var/www/quick-foods/public/uploads;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /socket.io {
+        proxy_pass http://127.0.0.1:8000/socket.io;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+詳細部署指南請參考：[docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
+
 ---
 
 ## 📖 使用指南

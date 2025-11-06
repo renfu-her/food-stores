@@ -4,6 +4,100 @@
 
 ---
 
+## 2025-11-07 00:40 - 新增部署工具和文檔
+
+### 📦 部署支援
+
+**新增部署檢查和配置文件：**
+
+**新增文件：**
+1. `check_deployment.py` - 部署檢查工具
+   - 檢查環境變數配置
+   - 檢查資料庫連接
+   - 檢查 Python 依賴
+   - 檢查目錄和權限
+   - 檢查應用初始化
+
+2. `docs/DEPLOYMENT_GUIDE.md` - 完整部署指南
+   - 正式環境部署步驟
+   - Gunicorn 配置說明
+   - Nginx 反向代理設置
+   - Systemd 服務配置
+   - 常見 500 錯誤排查
+   - 安全建議
+   - 監控與日誌管理
+
+3. `gunicorn_config.py` - Gunicorn 配置
+   - Worker 配置（支援 SocketIO）
+   - 日誌設置
+   - 效能優化參數
+
+4. `env.example` - 環境變數範例
+   - 完整的環境變數配置範例
+   - 包含所有必要參數說明
+
+5. `test_app.py` - 應用測試工具
+   - 測試應用初始化
+   - 測試資料庫連接
+   - 測試模型和路由
+
+6. `diagnose.sh` - Bash 診斷腳本
+   - 一鍵診斷（Linux/Mac）
+   - 彩色輸出，直觀易讀
+   - 包含系統信息和服務狀態
+
+7. `QUICK_REFERENCE.md` - 快速參考指令卡
+   - 常用命令速查
+   - 故障排除快速指南
+   - 文檔索引
+
+**檢查項目：**
+- ✅ 環境變數設定
+- ✅ 資料庫連接測試
+- ✅ Python 依賴驗證
+- ✅ 目錄結構檢查
+- ✅ 檔案權限驗證
+- ✅ 應用初始化測試
+
+**診斷工具：**
+1. **快速診斷（推薦）：**
+   ```bash
+   # Linux/Mac
+   ./diagnose.sh
+   
+   # Windows/所有平台
+   python quick_diagnose.py
+   ```
+
+2. **完整檢查：**
+   ```bash
+   python check_deployment.py
+   ```
+
+3. **應用測試：**
+   ```bash
+   python test_app.py
+   ```
+
+**使用方式：**
+```bash
+# 執行部署檢查
+python check_deployment.py
+
+# 使用 Gunicorn 啟動（生產環境）
+gunicorn -c gunicorn_config.py wsgi:application
+
+# 或使用 eventlet（支援 SocketIO）
+pip install eventlet
+gunicorn -c gunicorn_config.py wsgi:application
+```
+
+**故障排除文檔：**
+- `docs/DEPLOYMENT_GUIDE.md` - 完整部署指南
+- `docs/TROUBLESHOOTING_500.md` - 500 錯誤排查指南
+
+---
+
 ## 2025-11-07 00:35 - 品牌名稱更新為 Quick Foods
 
 ### 🔄 系統更新
