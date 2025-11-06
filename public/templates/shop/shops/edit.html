@@ -79,58 +79,58 @@
                 </div>
             </div>
             
-            <!-- 回馈金设置 -->
+            <!-- 回饋金設置 -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-gift me-2"></i>回馈金设置</h5>
+                    <h5 class="mb-0"><i class="bi bi-gift me-2"></i>回饋金設置</h5>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="pointsRate" class="form-label">回馈比例 <span class="text-danger">*</span></label>
+                        <label for="pointsRate" class="form-label">回饋比例 <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <span class="input-group-text">每消费</span>
+                            <span class="input-group-text">每消費</span>
                             <input type="number" class="form-control" id="pointsRate" value="{{ shop.points_rate or 30 }}" min="1" max="1000" required>
-                            <span class="input-group-text">元 = 1 点回馈金</span>
+                            <span class="input-group-text">元 = 1 點回饋金</span>
                         </div>
                         <small class="text-muted">
-                            例如：设置为30，表示顾客每消费30元可获得1点回馈金（1点=1元）
+                            例如：設置為30，表示顧客每消費30元可獲得1點回饋金（1點=1元）
                         </small>
                     </div>
                     
                     <button type="button" class="btn btn-primary" onclick="updatePointsSettings()">
-                        <i class="bi bi-save me-2"></i>更新回馈金设置
+                        <i class="bi bi-save me-2"></i>更新回饋金設置
                     </button>
                 </div>
             </div>
             
-            <!-- 桌号设置 -->
+            <!-- 桌號設置 -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-qr-code me-2"></i>桌号扫码点餐</h5>
+                    <h5 class="mb-0"><i class="bi bi-qr-code me-2"></i>桌號掃碼點餐</h5>
                 </div>
                 <div class="card-body">
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="qrcodeEnabled" {% if shop.qrcode_enabled %}checked{% endif %}>
                         <label class="form-check-label" for="qrcodeEnabled">
-                            启用桌号扫码点餐
+                            啟用桌號掃碼點餐
                         </label>
                         <small class="form-text text-muted d-block mt-1">
-                            启用后，顾客可以扫描桌上的QRCode直接点餐，无需登入
+                            啟用後，顧客可以掃描桌上的QRCode直接點餐，無需登入
                         </small>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="maxTables" class="form-label">最大桌号数量</label>
+                        <label for="maxTables" class="form-label">最大桌號數量</label>
                         <input type="number" class="form-control" id="maxTables" value="{{ shop.max_tables or 0 }}" min="0" max="200">
-                        <small class="text-muted">设置您店铺的桌号数量（0表示不限制）</small>
+                        <small class="text-muted">設置您店鋪的桌號數量（0表示不限制）</small>
                     </div>
                     
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-primary" onclick="updateTableSettings()">
-                            <i class="bi bi-save me-2"></i>更新桌号设置
+                            <i class="bi bi-save me-2"></i>更新桌號設置
                         </button>
                         <a href="/store_admin/shops/{{ shop.id }}/tables" class="btn btn-outline-success">
-                            <i class="bi bi-table me-2"></i>管理桌号
+                            <i class="bi bi-table me-2"></i>管理桌號
                         </a>
                     </div>
                 </div>
@@ -664,12 +664,12 @@ function deleteShop() {
     });
 }
 
-// 更新回馈金设置
+// 更新回饋金設置
 function updatePointsSettings() {
     const pointsRate = parseInt($('#pointsRate').val());
     
     if (!pointsRate || pointsRate < 1) {
-        alert('回馈比例必须大于0');
+        alert('回饋比例必須大於0');
         return;
     }
     
@@ -683,17 +683,17 @@ function updatePointsSettings() {
         contentType: 'application/json',
         data: JSON.stringify(data),
         success: function() {
-            alert('回馈金设置更新成功');
+            alert('回饋金設置更新成功');
             location.reload();
         },
         error: function(xhr) {
-            const error = xhr.responseJSON?.message || '更新失败';
+            const error = xhr.responseJSON?.message || '更新失敗';
             alert(error);
         }
     });
 }
 
-// 更新桌号设置
+// 更新桌號設置
 function updateTableSettings() {
     const qrcodeEnabled = $('#qrcodeEnabled').is(':checked');
     const maxTables = parseInt($('#maxTables').val()) || 0;
@@ -709,11 +709,11 @@ function updateTableSettings() {
         contentType: 'application/json',
         data: JSON.stringify(data),
         success: function() {
-            alert('桌号设置更新成功');
+            alert('桌號設置更新成功');
             location.reload();
         },
         error: function(xhr) {
-            const error = xhr.responseJSON?.message || '更新失败';
+            const error = xhr.responseJSON?.message || '更新失敗';
             alert(error);
         }
     });

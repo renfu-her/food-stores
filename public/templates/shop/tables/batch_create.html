@@ -1,0 +1,209 @@
+{% extends "base/shop_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <a href="{{ url_for('store_admin.shop_tables', shop_id=shop.id) }}" class="btn btn-outline-secondary me-3">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            批量創建桌號
+        </h1>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-plus-circle-dotted me-2"></i>桌號設置</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="tablePrefix" class="form-label">桌號前綴（可選）</label>
+                        <input type="text" class="form-control" id="tablePrefix" placeholder="例如：A, B, VIP">
+                        <small class="text-muted">留空則使用純數字編號（如：01, 02, 03...）</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="startNumber" class="form-label">起始編號 <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="startNumber" value="1" min="1" required>
+                        <small class="text-muted">第一個桌號的編號</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tableCount" class="form-label">創建數量 <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="tableCount" min="1" max="100" required>
+                        <small class="text-muted">最多一次創建 100 個桌號</small>
+                    </div>
+                    
+                    <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+                    <div id="successMessage" class="alert alert-success" style="display: none;"></div>
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{{ url_for('store_admin.shop_tables', shop_id=shop.id) }}" class="btn btn-secondary me-2">
+                        <i class="bi bi-x-circle me-2"></i>取消
+                    </a>
+                    <button type="button" class="btn btn-primary" onclick="batchCreateTables()">
+                        <i class="bi bi-plus-circle me-2"></i>創建桌號
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">說明</div>
+                <div class="card-body">
+                    <h6>批量創建規則：</h6>
+                    <ul class="small">
+                        <li><strong>前綴</strong>：可選，用字母區分區域</li>
+                        <li><strong>起始編號</strong>：從哪個數字開始</li>
+                        <li><strong>數量</strong>：要創建多少個桌號</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">示例：</h6>
+                    <div class="alert alert-light small">
+                        <strong>示例 1：</strong><br>
+                        前綴: A，起始: 1，數量: 5<br>
+                        <span class="text-success">→ 創建：A1, A2, A3, A4, A5</span>
+                    </div>
+                    
+                    <div class="alert alert-light small">
+                        <strong>示例 2：</strong><br>
+                        前綴: (留空)，起始: 1，數量: 10<br>
+                        <span class="text-success">→ 創建：01, 02, 03, ..., 10</span>
+                    </div>
+                    
+                    <div class="alert alert-light small">
+                        <strong>示例 3：</strong><br>
+                        前綴: VIP，起始: 1，數量: 3<br>
+                        <span class="text-success">→ 創建：VIP1, VIP2, VIP3</span>
+                    </div>
+                    
+                    <h6 class="mt-3">注意事項：</h6>
+                    <ul class="small text-danger">
+                        <li>如果桌號已存在，將自動跳過</li>
+                        <li>創建後會自動生成 QRCode 圖片</li>
+                        <li>建議先少量測試，確認格式正確</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">預覽</div>
+                <div class="card-body">
+                    <div id="previewArea" class="small text-muted">
+                        請輸入參數查看預覽
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const shopId = {{ shop.id }};
+
+// 实时预览
+$('#tablePrefix, #startNumber, #tableCount').on('input', function() {
+    updatePreview();
+});
+
+function updatePreview() {
+    const prefix = $('#tablePrefix').val().trim();
+    const startNumber = parseInt($('#startNumber').val()) || 1;
+    const count = parseInt($('#tableCount').val()) || 0;
+    
+    if (count <= 0 || count > 100) {
+        $('#previewArea').html('<span class="text-muted">請輸入有效數量（1-100）</span>');
+        return;
+    }
+    
+    let preview = '<strong>將創建以下桌號：</strong><br><br>';
+    const samples = [];
+    const maxShow = Math.min(count, 10);
+    
+    for (let i = 0; i < maxShow; i++) {
+        const number = startNumber + i;
+        const tableNumber = prefix ? `${prefix}${number}` : `${number.toString().padStart(2, '0')}`;
+        samples.push(tableNumber);
+    }
+    
+    preview += '<div class="d-flex flex-wrap gap-2">';
+    samples.forEach(tn => {
+        preview += `<span class="badge bg-primary">${tn}</span>`;
+    });
+    
+    if (count > 10) {
+        preview += `<span class="badge bg-secondary">... 等共 ${count} 個</span>`;
+    }
+    preview += '</div>';
+    
+    $('#previewArea').html(preview);
+}
+
+function batchCreateTables() {
+    const prefix = $('#tablePrefix').val().trim();
+    const startNumber = parseInt($('#startNumber').val());
+    const count = parseInt($('#tableCount').val());
+    
+    if (!startNumber || startNumber < 1) {
+        showError('請輸入有效的起始編號');
+        return;
+    }
+    
+    if (!count || count < 1 || count > 100) {
+        showError('請輸入有效的數量（1-100）');
+        return;
+    }
+    
+    const data = {
+        prefix: prefix,
+        start_number: startNumber,
+        count: count
+    };
+    
+    // 禁用按鈕
+    $('button').prop('disabled', true);
+    
+    $.ajax({
+        url: `/api/shops/${shopId}/tables/batch`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            showSuccess(`成功創建 ${response.total_created} 個桌號！`);
+            if (response.skipped.length > 0) {
+                showSuccess(`跳過已存在的桌號：${response.skipped.join(', ')}`);
+            }
+            
+            // 3秒後跳轉回列表
+            setTimeout(function() {
+                window.location.href = '{{ url_for('store_admin.shop_tables', shop_id=shop.id) }}';
+            }, 3000);
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || '創建失敗';
+            showError(error);
+            $('button').prop('disabled', false);
+        }
+    });
+}
+
+function showError(message) {
+    $('#successMessage').hide();
+    $('#errorMessage').html(`<i class="bi bi-exclamation-triangle me-2"></i>${message}`).show();
+}
+
+function showSuccess(message) {
+    $('#errorMessage').hide();
+    $('#successMessage').html(`<i class="bi bi-check-circle me-2"></i>${message}`).show();
+}
+
+// 页面加载时更新预览
+$(document).ready(function() {
+    updatePreview();
+});
+</script>
+{% endblock %}
+

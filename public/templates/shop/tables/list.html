@@ -7,15 +7,15 @@
             <a href="{{ url_for('store_admin.shop_edit', shop_id=shop.id) }}" class="btn btn-outline-secondary me-3">
                 <i class="bi bi-arrow-left"></i>
             </a>
-            {{ shop.name }} - 桌号管理
+            {{ shop.name }} - 桌號管理
         </h1>
         <div>
-            <button class="btn btn-success me-2" onclick="showBatchCreateModal()">
-                <i class="bi bi-plus-circle-dotted me-2"></i>批量创建桌号
-            </button>
+            <a href="{{ url_for('store_admin.tables_batch_create', shop_id=shop.id) }}" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle-dotted me-2"></i>批量創建桌號
+            </a>
             {% if tables %}
             <button class="btn btn-primary" onclick="printAllQRCodes()">
-                <i class="bi bi-printer me-2"></i>打印所有 QRCode
+                <i class="bi bi-printer me-2"></i>列印所有 QRCode
             </button>
             {% endif %}
         </div>
@@ -24,8 +24,8 @@
     {% if not shop.qrcode_enabled %}
     <div class="alert alert-warning">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        桌号扫码点餐未启用。
-        <a href="{{ url_for('store_admin.shop_edit', shop_id=shop.id) }}" class="alert-link">点击这里</a> 在店铺设置中启用。
+        桌號掃碼點餐未啟用。
+        <a href="{{ url_for('store_admin.shop_edit', shop_id=shop.id) }}" class="alert-link">點擊這裡</a> 在店鋪設置中啟用。
     </div>
     {% endif %}
     
@@ -36,10 +36,10 @@
                     <thead>
                         <tr>
                             <th style="width: 60px;">ID</th>
-                            <th>桌号</th>
-                            <th>状态</th>
+                            <th>桌號</th>
+                            <th>狀態</th>
                             <th>QRCode</th>
-                            <th>创建时间</th>
+                            <th>創建時間</th>
                             <th style="width: 200px;">操作</th>
                         </tr>
                     </thead>
@@ -49,7 +49,7 @@
                         {% else %}
                         <tr>
                             <td colspan="6" class="text-center text-muted">
-                                暂无桌号，点击上方"批量创建桌号"开始设置
+                                暫無桌號，點擊上方「批量創建桌號」開始設置
                             </td>
                         </tr>
                         {% endif %}
@@ -60,77 +60,35 @@
     </div>
 </div>
 
-<!-- 批量创建桌号模态框 -->
-<div class="modal fade" id="batchCreateModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">批量创建桌号</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="tablePrefix" class="form-label">桌号前缀（可选）</label>
-                    <input type="text" class="form-control" id="tablePrefix" placeholder="例如：A, B, VIP">
-                    <small class="text-muted">留空则使用纯数字编号</small>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="startNumber" class="form-label">起始编号</label>
-                    <input type="number" class="form-control" id="startNumber" value="1" min="1">
-                </div>
-                
-                <div class="mb-3">
-                    <label for="tableCount" class="form-label">创建数量 <span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" id="tableCount" min="1" max="100" required>
-                    <small class="text-muted">最多一次创建100个桌号</small>
-                </div>
-                
-                <div class="alert alert-info">
-                    <strong>示例：</strong><br>
-                    前缀: A，起始: 1，数量: 5<br>
-                    将创建：A1, A2, A3, A4, A5
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" onclick="batchCreateTables()">
-                    <i class="bi bi-plus-circle me-2"></i>创建
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 编辑桌号模态框 -->
+<!-- 編輯桌號模態框 -->
 <div class="modal fade" id="editTableModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">编辑桌号</h5>
+                <h5 class="modal-title">編輯桌號</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editTableId">
                 
                 <div class="mb-3">
-                    <label for="editTableNumber" class="form-label">桌号 <span class="text-danger">*</span></label>
+                    <label for="editTableNumber" class="form-label">桌號 <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="editTableNumber" required>
                 </div>
                 
                 <div class="mb-3">
-                    <label for="editTableStatus" class="form-label">状态</label>
+                    <label for="editTableStatus" class="form-label">狀態</label>
                     <select class="form-select" id="editTableStatus">
-                        <option value="available">空闲</option>
+                        <option value="available">空閒</option>
                         <option value="occupied">使用中</option>
                         <option value="cleaning">清理中</option>
                     </select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                 <button type="button" class="btn btn-primary" onclick="submitEditTable()">
-                    <i class="bi bi-save me-2"></i>保存
+                    <i class="bi bi-save me-2"></i>儲存
                 </button>
             </div>
         </div>
@@ -150,7 +108,7 @@ function loadTables() {
     tbody.empty();
     
     if (tables.length === 0) {
-        tbody.html('<tr><td colspan="6" class="text-center text-muted">暂无桌号</td></tr>');
+        tbody.html('<tr><td colspan="6" class="text-center text-muted">暫無桌號</td></tr>');
         return;
     }
     
@@ -162,7 +120,7 @@ function loadTables() {
 
 function renderTableRow(table) {
     const statusMap = {
-        'available': '<span class="badge bg-success">空闲</span>',
+        'available': '<span class="badge bg-success">空閒</span>',
         'occupied': '<span class="badge bg-warning">使用中</span>',
         'cleaning': '<span class="badge bg-info">清理中</span>'
     };
@@ -184,50 +142,14 @@ function renderTableRow(table) {
             <td>${new Date(table.created_at).toLocaleString('zh-TW')}</td>
             <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary" onclick="editTable(${table.id})">
-                    <i class="bi bi-pencil"></i> 编辑
+                    <i class="bi bi-pencil"></i> 編輯
                 </button>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteTable(${table.id})">
-                    <i class="bi bi-trash"></i> 删除
+                    <i class="bi bi-trash"></i> 刪除
                 </button>
             </td>
         </tr>
     `;
-}
-
-function showBatchCreateModal() {
-    $('#batchCreateModal').modal('show');
-}
-
-function batchCreateTables() {
-    const prefix = $('#tablePrefix').val().trim();
-    const startNumber = parseInt($('#startNumber').val()) || 1;
-    const count = parseInt($('#tableCount').val());
-    
-    if (!count || count < 1 || count > 100) {
-        alert('请输入有效的数量（1-100）');
-        return;
-    }
-    
-    const data = {
-        prefix: prefix,
-        start_number: startNumber,
-        count: count
-    };
-    
-    $.ajax({
-        url: `/api/shops/${shopId}/tables/batch`,
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(data),
-        success: function(response) {
-            alert(response.message);
-            location.reload();
-        },
-        error: function(xhr) {
-            const error = xhr.responseJSON?.error || '创建失败';
-            alert(error);
-        }
-    });
 }
 
 function editTable(tableId) {
@@ -246,7 +168,7 @@ function submitEditTable() {
     const status = $('#editTableStatus').val();
     
     if (!tableNumber) {
-        alert('请输入桌号');
+        alert('請輸入桌號');
         return;
     }
     
@@ -265,14 +187,14 @@ function submitEditTable() {
             location.reload();
         },
         error: function(xhr) {
-            const error = xhr.responseJSON?.error || '更新失败';
+            const error = xhr.responseJSON?.error || '更新失敗';
             alert(error);
         }
     });
 }
 
 function deleteTable(tableId) {
-    if (!confirm('确定要删除此桌号吗？\n\nQRCode 图片也将被删除。')) {
+    if (!confirm('確定要刪除此桌號嗎？\n\nQRCode 圖片也將被刪除。')) {
         return;
     }
     
@@ -284,14 +206,14 @@ function deleteTable(tableId) {
             location.reload();
         },
         error: function(xhr) {
-            const error = xhr.responseJSON?.error || '删除失败';
+            const error = xhr.responseJSON?.error || '刪除失敗';
             alert(error);
         }
     });
 }
 
 function printAllQRCodes() {
-    // 打开打印页面
+    // 打開列印頁面
     window.open(`/store_admin/shops/${shopId}/tables/print`, '_blank');
 }
 </script>

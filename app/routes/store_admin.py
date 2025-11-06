@@ -243,6 +243,21 @@ def shop_tables(shop_id):
     
     return render_template('shop/tables/list.html', shop=shop, tables=tables_data)
 
+@store_admin_bp.route('/shops/<int:shop_id>/tables/batch-create')
+@role_required('store_admin')
+def tables_batch_create(shop_id):
+    """批量创建桌号页面"""
+    user = get_current_user()
+    
+    # 获取店铺
+    shop = Shop.query.get_or_404(shop_id)
+    
+    # 权限检查
+    if shop.owner_id != user.id:
+        return redirect(url_for('store_admin.shops'))
+    
+    return render_template('shop/tables/batch_create.html', shop=shop)
+
 @store_admin_bp.route('/shops/<int:shop_id>/payment-settings')
 @role_required('store_admin')
 def shop_payment_settings(shop_id):
