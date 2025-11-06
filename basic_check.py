@@ -18,7 +18,7 @@ def check_python_version():
     """檢查 Python 版本"""
     print_header("1. 檢查 Python 版本")
     version = sys.version_info
-    print(f"Python 版本: {version.major}.{version.minor}.{version.patch}")
+    print(f"Python 版本: {version.major}.{version.minor}.{version.micro}")
     
     if version.major >= 3 and version.minor >= 8:
         print("✓ Python 版本符合要求 (3.8+)")
