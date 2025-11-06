@@ -2,7 +2,7 @@
 Backend後台路由
 """
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
-from app.models import User, Shop, Product, Order, UpdateLog
+from app.models import User, Shop, Product, Order, UpdateLog, PaymentMethod
 from app.utils.decorators import login_required, role_required, get_current_user
 from app import db
 
@@ -417,3 +417,46 @@ def update_logs():
     users_data = [{'id': u.id, 'name': u.name} for u in users_list]
     
     return render_template('backend/update_logs.html', logs=logs_data, users=users_data)
+
+@backend_bp.route('/payment-methods')
+@role_required('admin')
+def payment_methods():
+    """支付方式管理页面"""
+    payment_methods_list = PaymentMethod.query.order_by(PaymentMethod.display_order).all()
+    
+    methods_data = []
+    for pm in payment_methods_list:
+        methods_data.append({
+            'id': pm.id,
+            'name': pm.name,
+            'code': pm.code,
+            'icon': pm.icon,
+            'is_active': pm.is_active,
+            'display_order': pm.display_order,
+            'created_at': pm.created_at.isoformat() if pm.created_at else None
+        })
+    
+    return render_template('backend/payment_methods/list.html', payment_methods=methods_data)
+
+@backend_bp.route('/payment-methods/add')
+@role_required('admin')
+def payment_method_add():
+    """新增支付方式页面"""
+    return render_template('backend/payment_methods/add.html')
+
+@backend_bp.route('/payment-methods/<int:method_id>/edit')
+@role_required('admin')
+def payment_method_edit(method_id):
+    """编辑支付方式页面"""
+    payment_method = PaymentMethod.query.get_or_404(method_id)
+    
+    method_data = {
+        'id': payment_method.id,
+        'name': payment_method.name,
+        'code': payment_method.code,
+        'icon': payment_method.icon,
+        'is_active': payment_method.is_active,
+        'display_order': payment_method.display_order
+    }
+    
+    return render_template('backend/payment_methods/edit.html', payment_method=method_data)

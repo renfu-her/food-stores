@@ -1,0 +1,182 @@
+{% extends "base/app.html" %}
+
+{% block content %}
+<!-- 访客点餐横幅 -->
+<div class="alert alert-primary mb-0">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <i class="fa-solid fa-qr-code me-2"></i>
+                <strong class="fs-5">{{ shop.name }}</strong>
+            </div>
+            <div>
+                <i class="fa-solid fa-chair me-2"></i>
+                桌号：<strong class="fs-4 text-danger">{{ table_number }}</strong>
+            </div>
+        </div>
+        <small class="text-muted"><i class="bi bi-info-circle me-1"></i>扫码点餐，无需登入，快速下单</small>
+    </div>
+</div>
+
+<!-- 商品展示区（复用 shop.html 的布局）-->
+<div class="container py-4">
+    <!-- Banner (如果有) -->
+    {% if shop.banner_image %}
+    <div class="shop-banner mb-4" style="height: 300px; background: url('{{ shop.banner_image }}') center/cover; border-radius: 15px;">
+    </div>
+    {% endif %}
+    
+    <!-- 店铺信息 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2>{{ shop.name }}</h2>
+            {% if shop.description %}
+            <p class="text-muted">{{ shop.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 分类筛选 -->
+    <div class="mb-3">
+        <button class="btn btn-sm btn-outline-primary me-2 category-filter active" data-category="all">
+            全部
+        </button>
+        {% for category in categories %}
+        <button class="btn btn-sm btn-outline-primary me-2 category-filter" data-category="{{ category.id }}">
+            {{ category.name }}
+        </button>
+        {% endfor %}
+    </div>
+    
+    <!-- 商品网格 -->
+    <div class="row" id="productsGrid">
+        {% for product in products %}
+        <div class="col-md-4 col-sm-6 mb-4 product-item" data-category="{{ product.category_id }}">
+            <div class="card h-100 shadow-sm">
+                {% if product.images %}
+                <img src="/uploads/{{ product.images[0].image_path }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text text-muted small">{{ product.description or '' }}</p>
+                    
+                    <div class="mb-2">
+                        {% if product.discounted_price and product.discounted_price > 0 %}
+                        <span class="text-decoration-line-through text-muted">${{ product.unit_price }}</span>
+                        <span class="text-danger fw-bold ms-2">${{ product.discounted_price }}</span>
+                        {% else %}
+                        <span class="fw-bold">${{ product.unit_price }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <button class="btn btn-primary w-100" onclick="addToCart({{ product.id }})">
+                        <i class="bi bi-cart-plus me-2"></i>加入购物车
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 购物车浮动按钮 -->
+<button class="btn btn-success btn-lg position-fixed bottom-0 end-0 m-4 shadow" onclick="viewCart()" style="border-radius: 50px; padding: 15px 30px;">
+    <i class="bi bi-cart3 me-2"></i>
+    购物车 <span class="badge bg-light text-dark ms-2" id="cartCount">0</span>
+</button>
+
+<script>
+// 访客模式全局变量
+window.isGuestOrder = true;
+window.guestShopId = {{ shop.id }};
+window.guestTableNumber = '{{ table_number }}';
+
+// 购物车存储在 localStorage
+let cart = JSON.parse(localStorage.getItem('guest_cart_{{ shop.id }}_{{ table_number }}') || '[]');
+
+function updateCartCount() {
+    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+    $('#cartCount').text(count);
+}
+
+function addToCart(productId) {
+    // 简化版：直接添加，实际应该弹出配料/饮品选择框
+    const product = {{ products | tojson }}.find(p => p.id === productId);
+    if (!product) return;
+    
+    const cartItem = {
+        product_id: productId,
+        name: product.name,
+        price: product.discounted_price || product.unit_price,
+        quantity: 1,
+        toppings: [],
+        drink_type: null
+    };
+    
+    cart.push(cartItem);
+    localStorage.setItem('guest_cart_{{ shop.id }}_{{ table_number }}', JSON.stringify(cart));
+    updateCartCount();
+    
+    alert('已加入购物车！');
+}
+
+function viewCart() {
+    if (cart.length === 0) {
+        alert('购物车是空的');
+        return;
+    }
+    
+    // 简单确认并提交
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    if (confirm(`订单总额：$${total}\n\n确定要提交订单吗？`)) {
+        submitGuestOrder();
+    }
+}
+
+function submitGuestOrder() {
+    $.ajax({
+        url: '/api/orders/guest',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            shop_id: window.guestShopId,
+            table_number: window.guestTableNumber,
+            items: cart,
+            payment_splits: [
+                {payment_method_id: 3, amount: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)}  // 默认现金
+            ]
+        }),
+        success: function(response) {
+            alert(`订单创建成功！\n\n订单编号：${response.order_number}\n桌号：${response.table_number}\n\n请告知服务人员您的桌号`);
+            localStorage.removeItem('guest_cart_{{ shop.id }}_{{ table_number }}');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert(xhr.responseJSON?.error || '订单创建失败');
+        }
+    });
+}
+
+// 分类筛选
+$('.category-filter').click(function() {
+    $('.category-filter').removeClass('active');
+    $(this).addClass('active');
+    
+    const categoryId = $(this).data('category');
+    
+    if (categoryId === 'all') {
+        $('.product-item').show();
+    } else {
+        $('.product-item').hide();
+        $(`.product-item[data-category="${categoryId}"]`).show();
+    }
+});
+
+$(document).ready(function() {
+    updateCartCount();
+});
+</script>
+{% endblock %}
+

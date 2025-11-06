@@ -1,0 +1,159 @@
+{% extends "base/backend_base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">编辑支付方式</h1>
+        <a href="{{ url_for('backend.payment_methods') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>返回列表
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    基本资料
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="methodName" class="form-label">支付方式名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="methodName" value="{{ payment_method.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="methodCode" class="form-label">代码</label>
+                        <input type="text" class="form-control" id="methodCode" value="{{ payment_method.code }}" disabled>
+                        <small class="text-muted">代码创建后不可修改</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="methodIcon" class="form-label">图标 (Font Awesome)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="methodIcon" value="{{ payment_method.icon }}" placeholder="例如：fa-brands fa-line">
+                            <button class="btn btn-outline-secondary" type="button" onclick="testIcon()">
+                                <i class="bi bi-eye"></i> 预览
+                            </button>
+                        </div>
+                        <div id="iconPreview" class="mt-2" style="font-size: 2rem;">
+                            {% if payment_method.icon %}
+                            <i class="{{ payment_method.icon }}"></i>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="displayOrder" class="form-label">显示顺序</label>
+                        <input type="number" class="form-control" id="displayOrder" value="{{ payment_method.display_order }}" min="0">
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="isActive" {{ 'checked' if payment_method.is_active else '' }}>
+                        <label class="form-check-label" for="isActive">
+                            启用此支付方式
+                        </label>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <div>
+                        {% if payment_method.code != 'cash' %}
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteMethod()">
+                            <i class="bi bi-trash me-2"></i>删除支付方式
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-secondary" disabled title="现金支付不能删除">
+                            <i class="bi bi-lock me-2"></i>现金支付不可删除
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-secondary me-2" onclick="window.location.href='{{ url_for('backend.payment_methods') }}'">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="submitForm()">
+                            <i class="bi bi-check-lg me-2"></i>保存更改
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">提示</div>
+                <div class="card-body">
+                    <p class="small">修改支付方式后，所有启用此支付方式的店铺都会受到影响。</p>
+                    <p class="small text-danger">
+                        <strong>注意：</strong>现金支付是系统必需的支付方式，不能删除或禁用。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const methodId = {{ payment_method.id }};
+
+function testIcon() {
+    const icon = $('#methodIcon').val();
+    if (icon) {
+        $('#iconPreview').html(`<i class="${icon}"></i>`);
+    } else {
+        $('#iconPreview').html('');
+    }
+}
+
+function submitForm() {
+    const name = $('#methodName').val().trim();
+    const icon = $('#methodIcon').val().trim();
+    const displayOrder = parseInt($('#displayOrder').val()) || 0;
+    const isActive = $('#isActive').is(':checked');
+    
+    if (!name) {
+        alert('请填写支付方式名称');
+        return;
+    }
+    
+    const data = {
+        name: name,
+        icon: icon,
+        display_order: displayOrder,
+        is_active: isActive
+    };
+    
+    $.ajax({
+        url: `/api/payment-methods/${methodId}`,
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            alert(response.message);
+            window.location.href = '{{ url_for('backend.payment_methods') }}';
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || '更新失败';
+            alert(error);
+        }
+    });
+}
+
+function deleteMethod() {
+    if (!confirm('确定要删除此支付方式吗？\n\n删除后将无法恢复，且已使用此支付方式的店铺设置将受影响。')) {
+        return;
+    }
+    
+    $.ajax({
+        url: `/api/payment-methods/${methodId}`,
+        method: 'DELETE',
+        success: function(response) {
+            alert(response.message);
+            window.location.href = '{{ url_for('backend.payment_methods') }}';
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || '删除失败';
+            alert(error);
+        }
+    });
+}
+</script>
+{% endblock %}
+

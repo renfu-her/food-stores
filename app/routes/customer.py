@@ -2,7 +2,7 @@
 商城使用者路由
 """
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
-from app.models import Shop, Product, Order, Category, About, News
+from app.models import Shop, Product, Order, Category, About, News, Table, PointTransaction
 from app.utils.decorators import login_required, get_current_user
 from app import db
 
@@ -118,3 +118,46 @@ def profile():
     """個人資料頁面"""
     user = get_current_user()
     return render_template('store/profile.html', user=user)
+
+@customer_bp.route('/store/<int:shop_id>/table/<table_number>')
+def guest_order(shop_id, table_number):
+    """访客点餐页面（扫描桌号QRCode进入）"""
+    # 获取店铺
+    shop = Shop.query.filter_by(id=shop_id).filter(Shop.deleted_at.is_(None)).first_or_404()
+    
+    # 检查店铺是否启用桌号点餐
+    if not shop.qrcode_enabled:
+        return render_template('store/error.html', 
+                             message='此店铺未启用桌号扫码点餐',
+                             shop=shop)
+    
+    # 获取桌号
+    table = Table.query.filter_by(shop_id=shop_id, table_number=table_number).first()
+    if not table:
+        return render_template('store/error.html',
+                             message='桌号不存在',
+                             shop=shop)
+    
+    # 获取产品
+    products = Product.query.filter_by(shop_id=shop_id, is_active=True).filter(Product.deleted_at.is_(None)).all()
+    categories = Category.query.all()
+    
+    return render_template('store/guest_order.html', 
+                         shop=shop,
+                         table=table,
+                         table_number=table_number,
+                         products=products,
+                         categories=categories)
+
+@customer_bp.route('/points')
+@login_required
+def points():
+    """回馈金页面"""
+    user = get_current_user()
+    
+    # 获取最近的交易记录（前20条）
+    transactions = PointTransaction.query.filter_by(user_id=user.id)\
+                                       .order_by(PointTransaction.created_at.desc())\
+                                       .limit(20).all()
+    
+    return render_template('store/points.html', user=user, transactions=transactions)

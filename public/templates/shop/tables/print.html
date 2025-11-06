@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打印桌号 QRCode - {{ shop.name }}</title>
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .page-break {
+                page-break-after: always;
+            }
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+        
+        .print-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        
+        .print-header p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .qrcode-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .qrcode-card {
+            background: white;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .qrcode-card h2 {
+            margin: 0 0 15px 0;
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .qrcode-card img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+        }
+        
+        .qrcode-card .table-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 15px 0;
+        }
+        
+        .qrcode-card .instructions {
+            font-size: 14px;
+            color: #666;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #ccc;
+        }
+        
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+        
+        .print-button button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        .print-button button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="print-header">
+            <h1>{{ shop.name }}</h1>
+            <p>桌号 QRCode 打印页面</p>
+            <p class="no-print">共 {{ tables|length }} 个桌号</p>
+        </div>
+        
+        <div class="qrcode-grid">
+            {% for table in tables %}
+            <div class="qrcode-card {% if loop.index % 4 == 0 %}page-break{% endif %}">
+                <h2>{{ shop.name }}</h2>
+                
+                {% if table.qrcode_path %}
+                <img src="/uploads/{{ table.qrcode_path }}" alt="QRCode {{ table.table_number }}">
+                {% else %}
+                <div style="padding: 50px; background: #f0f0f0; border: 1px dashed #ccc;">
+                    QRCode未生成
+                </div>
+                {% endif %}
+                
+                <div class="table-number">
+                    {{ table.table_number }} 桌
+                </div>
+                
+                <div class="instructions">
+                    <p>扫描 QRCode 点餐</p>
+                    <p>无需登入，快速下单</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="print-button no-print">
+        <button onclick="window.print()">
+            <i class="bi bi-printer"></i> 打印
+        </button>
+        <button onclick="window.close()" style="background: #6c757d; margin-left: 10px;">
+            关闭
+        </button>
+    </div>
+    
+    <!-- Bootstrap Icons for print button -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</body>
+</html>
+

@@ -3,7 +3,8 @@
 """
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import Order, OrderItem, Product, Shop, Topping, order_item_topping
+from app.models import Order, OrderItem, Product, Shop, Topping, Table, OrderPayment, PaymentMethod, order_item_topping
+from app.routes.api.points import create_point_transaction
 from app.utils.decorators import login_required, get_current_user, role_required
 from app.utils.validators import validate_integer, validate_order_status, validate_topping_count
 from app.utils.update_logger import log_update
@@ -714,3 +715,384 @@ def _create_single_order(user, data):
     
     db.session.commit()
     return order
+
+# =========================
+# 访客订单和增强结账
+# =========================
+
+@orders_api_bp.route('/guest', methods=['POST'])
+def create_guest_order():
+    """创建访客订单（桌号点餐，无需登入）"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': '请求数据不能为空'}), 400
+        
+        shop_id = data.get('shop_id')
+        table_number = data.get('table_number')
+        items = data.get('items', [])
+        payment_splits = data.get('payment_splits', [])  # 组合支付
+        recipient_info = data.get('recipient_info', {})
+        
+        if not shop_id or not table_number:
+            return jsonify({'error': '缺少店铺ID或桌号'}), 400
+        
+        if not items:
+            return jsonify({'error': '订单项不能为空'}), 400
+        
+        # 获取店铺
+        shop = Shop.query.get(shop_id)
+        if not shop:
+            return jsonify({'error': '店铺不存在'}), 404
+        
+        if not shop.qrcode_enabled:
+            return jsonify({'error': '此店铺未启用桌号点餐'}), 400
+        
+        # 获取或创建桌号
+        table = Table.query.filter_by(shop_id=shop_id, table_number=table_number).first()
+        if not table:
+            return jsonify({'error': '桌号不存在'}), 404
+        
+        # 创建临时用户或使用访客用户（user_id = 1 假设为系统访客账号）
+        # 这里简化处理，使用 shop owner 作为订单用户
+        guest_user_id = shop.owner_id
+        
+        # 计算订单总价
+        total_price = Decimal('0.00')
+        order_items_data = []
+        
+        for item in items:
+            product_id = item.get('product_id')
+            quantity = item.get('quantity', 1)
+            toppings_ids = item.get('toppings', [])
+            drink_type = item.get('drink_type')
+            
+            product = Product.query.get(product_id)
+            if not product or product.shop_id != shop_id:
+                continue
+            
+            # 计算单价（使用折扣价或原价）
+            if product.discounted_price and product.discounted_price > 0:
+                unit_price = product.discounted_price
+            else:
+                unit_price = product.unit_price
+            
+            item_total = unit_price * quantity
+            
+            # 添加饮品价格
+            drink_price = Decimal('0.00')
+            if drink_type == 'cold' and product.has_cold_drink:
+                drink_price = product.cold_drink_price or Decimal('0.00')
+            elif drink_type == 'hot' and product.has_hot_drink:
+                drink_price = product.hot_drink_price or Decimal('0.00')
+            
+            item_total += drink_price * quantity
+            
+            # 处理配料
+            toppings_list = []
+            for topping_id in toppings_ids:
+                topping = Topping.query.get(topping_id)
+                if topping and topping.shop_id == shop_id:
+                    topping_price = topping.price or Decimal('0.00')
+                    toppings_list.append((topping, topping_price))
+                    item_total += topping_price * quantity
+            
+            total_price += item_total
+            
+            order_items_data.append({
+                'product': product,
+                'quantity': quantity,
+                'unit_price': unit_price,
+                'drink_type': drink_type,
+                'drink_price': drink_price,
+                'toppings': toppings_list
+            })
+        
+        if total_price <= 0:
+            return jsonify({'error': '订单总价必须大于0'}), 400
+        
+        # 生成订单编号
+        order_number = generate_order_number(shop)
+        
+        # 创建订单
+        order = Order(
+            order_number=order_number,
+            user_id=user.id,
+            shop_id=shop_id,
+            is_guest_order=False,
+            status='pending',
+            total_price=total_price,
+            points_earned=points_earned,
+            points_used=points_to_use,
+            recipient_name=recipient_info.get('name') or user.name,
+            recipient_phone=recipient_info.get('phone') or user.phone,
+            recipient_address=recipient_info.get('address'),
+            delivery_note=recipient_info.get('note')
+        )
+        
+        db.session.add(order)
+        db.session.flush()
+        
+        # 添加订单项
+        for item_data in order_items_data:
+            order_item = OrderItem(
+                order_id=order.id,
+                product_id=item_data['product'].id,
+                quantity=item_data['quantity'],
+                unit_price=item_data['unit_price'],
+                drink_type=item_data.get('drink_type'),
+                drink_price=item_data.get('drink_price')
+            )
+            db.session.add(order_item)
+            db.session.flush()
+            
+            # 添加配料
+            for topping, topping_price in item_data['toppings']:
+                stmt = order_item_topping.insert().values(
+                    order_item_id=order_item.id,
+                    topping_id=topping.id,
+                    price=topping_price
+                )
+                db.session.execute(stmt)
+        
+        # 处理组合支付
+        if payment_splits:
+            for payment in payment_splits:
+                order_payment = OrderPayment(
+                    order_id=order.id,
+                    payment_method_id=payment['payment_method_id'],
+                    amount=Decimal(str(payment['amount'])),
+                    status='pending'
+                )
+                db.session.add(order_payment)
+        
+        db.session.commit()
+        
+        # 触发 SocketIO 事件
+        from app import socketio
+        socketio.emit('new_order', {
+            'order_id': order.id,
+            'order_number': order.order_number,
+            'shop_id': shop_id,
+            'table_number': table_number,
+            'is_guest_order': True,
+            'total_price': float(total_price)
+        }, room=f'/shop/{shop_id}')
+        
+        return jsonify({
+            'message': '访客订单创建成功',
+            'order_id': order.id,
+            'order_number': order.order_number,
+            'total_price': float(total_price),
+            'table_number': table_number
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@orders_api_bp.route('/checkout', methods=['POST'])
+@login_required
+def checkout_with_points_and_payment():
+    """增强结账（支持回馈金使用和组合支付）"""
+    try:
+        user = get_current_user()
+        data = request.get_json()
+        
+        shop_id = data.get('shop_id')
+        items = data.get('items', [])
+        points_to_use = data.get('points_to_use', 0)  # 使用的回馈金
+        payment_splits = data.get('payment_splits', [])  # 组合支付
+        recipient_info = data.get('recipient_info', {})
+        
+        if not shop_id or not items:
+            return jsonify({'error': '缺少必要参数'}), 400
+        
+        # 获取店铺
+        shop = Shop.query.get(shop_id)
+        if not shop:
+            return jsonify({'error': '店铺不存在'}), 404
+        
+        # 验证回馈金余额
+        if points_to_use > 0:
+            if points_to_use > user.points:
+                return jsonify({'error': '回馈金余额不足'}), 400
+        
+        # 计算订单总价
+        total_price = Decimal('0.00')
+        order_items_data = []
+        
+        for item in items:
+            product_id = item.get('product_id')
+            quantity = item.get('quantity', 1)
+            toppings_ids = item.get('toppings', [])
+            drink_type = item.get('drink_type')
+            
+            product = Product.query.get(product_id)
+            if not product or product.shop_id != shop_id:
+                continue
+            
+            # 计算单价
+            if product.discounted_price and product.discounted_price > 0:
+                unit_price = product.discounted_price
+            else:
+                unit_price = product.unit_price
+            
+            item_total = unit_price * quantity
+            
+            # 添加饮品价格
+            drink_price = Decimal('0.00')
+            if drink_type == 'cold' and product.has_cold_drink:
+                drink_price = product.cold_drink_price or Decimal('0.00')
+            elif drink_type == 'hot' and product.has_hot_drink:
+                drink_price = product.hot_drink_price or Decimal('0.00')
+            
+            item_total += drink_price * quantity
+            
+            # 处理配料
+            toppings_list = []
+            for topping_id in toppings_ids:
+                topping = Topping.query.get(topping_id)
+                if topping and topping.shop_id == shop_id:
+                    topping_price = topping.price or Decimal('0.00')
+                    toppings_list.append((topping, topping_price))
+                    item_total += topping_price * quantity
+            
+            total_price += item_total
+            
+            order_items_data.append({
+                'product': product,
+                'quantity': quantity,
+                'unit_price': unit_price,
+                'drink_type': drink_type,
+                'drink_price': drink_price,
+                'toppings': toppings_list
+            })
+        
+        if total_price <= 0:
+            return jsonify({'error': '订单总价必须大于0'}), 400
+        
+        # 计算使用回馈金后的应付金额
+        points_discount = Decimal(str(points_to_use))  # 1点=1元
+        amount_due = total_price - points_discount
+        
+        if amount_due < 0:
+            amount_due = Decimal('0.00')
+        
+        # 验证组合支付金额
+        payment_total = sum(Decimal(str(p['amount'])) for p in payment_splits)
+        if payment_total != amount_due:
+            return jsonify({'error': f'支付金额不正确。应付：${amount_due}，实付：${payment_total}'}), 400
+        
+        # 验证至少有一种支付方式
+        if not payment_splits:
+            return jsonify({'error': '请选择支付方式'}), 400
+        
+        # 生成订单编号
+        order_number = generate_order_number(shop)
+        
+        # 计算本次可赚取的回馈金（基于应付金额，不含回馈金抵扣部分）
+        points_rate = shop.points_rate or 30
+        points_earned = int(float(amount_due) / points_rate)
+        
+        # 创建订单
+        order = Order(
+            order_number=order_number,
+            user_id=user.id,
+            shop_id=shop_id,
+            is_guest_order=False,
+            status='pending',
+            total_price=total_price,
+            points_earned=points_earned,
+            points_used=points_to_use,
+            recipient_name=recipient_info.get('name') or user.name,
+            recipient_phone=recipient_info.get('phone') or user.phone,
+            recipient_address=recipient_info.get('address'),
+            delivery_note=recipient_info.get('note')
+        )
+        
+        db.session.add(order)
+        db.session.flush()
+        
+        # 添加订单项
+        for item_data in order_items_data:
+            order_item = OrderItem(
+                order_id=order.id,
+                product_id=item_data['product'].id,
+                quantity=item_data['quantity'],
+                unit_price=item_data['unit_price'],
+                drink_type=item_data.get('drink_type'),
+                drink_price=item_data.get('drink_price')
+            )
+            db.session.add(order_item)
+            db.session.flush()
+            
+            # 添加配料
+            for topping, topping_price in item_data['toppings']:
+                stmt = order_item_topping.insert().values(
+                    order_item_id=order_item.id,
+                    topping_id=topping.id,
+                    price=topping_price
+                )
+                db.session.execute(stmt)
+        
+        # 处理组合支付记录
+        for payment in payment_splits:
+            order_payment = OrderPayment(
+                order_id=order.id,
+                payment_method_id=payment['payment_method_id'],
+                amount=Decimal(str(payment['amount'])),
+                status='pending'
+            )
+            db.session.add(order_payment)
+        
+        # 处理回馈金使用
+        if points_to_use > 0:
+            create_point_transaction(
+                user_id=user.id,
+                transaction_type='use',
+                points=-points_to_use,  # 负数表示使用
+                order_id=order.id,
+                shop_id=shop_id,
+                description=f'订单 {order_number} 使用回馈金'
+            )
+        
+        # 处理回馈金赚取
+        if points_earned > 0:
+            create_point_transaction(
+                user_id=user.id,
+                transaction_type='earn',
+                points=points_earned,
+                order_id=order.id,
+                shop_id=shop_id,
+                description=f'订单 {order_number} 赚取回馈金'
+            )
+        
+        db.session.commit()
+        
+        # 触发 SocketIO 事件
+        from app import socketio
+        socketio.emit('new_order', {
+            'order_id': order.id,
+            'order_number': order.order_number,
+            'shop_id': shop_id,
+            'user_id': user.id,
+            'total_price': float(total_price),
+            'points_used': points_to_use,
+            'points_earned': points_earned
+        }, room=f'/shop/{shop_id}')
+        
+        return jsonify({
+            'message': '订单创建成功',
+            'order_id': order.id,
+            'order_number': order.order_number,
+            'total_price': float(total_price),
+            'points_used': points_to_use,
+            'points_earned': points_earned,
+            'amount_paid': float(amount_due)
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

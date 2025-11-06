@@ -4,6 +4,217 @@
 
 ---
 
+## 2025-11-06 20:45 - 回馈金 + 访客点餐 + 多元支付系统（核心完成）
+
+### 🎁 回馈金系统
+
+**功能特性：**
+- ✅ 每个店铺独立设置回馈比例（如：30元=1点）
+- ✅ 1 点回馈金 = $1
+- ✅ 回馈金可跨店使用
+- ✅ 自动累积：订单完成后自动计算并累积
+- ✅ 使用抵扣：结账时可使用回馈金抵扣订单金额
+- ✅ 完整交易记录：赚取/使用/过期记录
+
+**数据库更新：**
+- `user.points` - 用户回馈金余额
+- `shop.points_rate` - 店铺回馈比例（默认30）
+- `order.points_earned/used` - 订单回馈金记录
+- `point_transactions` 表 - 完整交易历史
+
+**API 端点：**
+```
+GET  /api/users/points                  # 查询余额
+GET  /api/users/points/transactions     # 交易明细
+POST /api/points/calculate              # 计算可赚取回馈金
+```
+
+---
+
+### 🍽️ 访客扫码点餐系统
+
+**功能特性：**
+- ✅ 无需登入即可点餐
+- ✅ 每个店铺独立桌号管理
+- ✅ 自动生成桌号 QRCode
+- ✅ 批量创建桌号（支持前缀：A1, A2... 或纯数字：01, 02...）
+- ✅ 桌号状态管理（空闲/使用中/清理中）
+- ✅ QRCode 批量打印（打印友好页面）
+
+**数据库更新：**
+- `shop.max_tables` - 最大桌号数量
+- `shop.qrcode_enabled` - 是否启用扫码点餐
+- `order.table_id` - 关联桌号
+- `order.is_guest_order` - 标记访客订单
+- `tables` 表 - 桌号管理
+
+**QRCode URL 格式：**
+```
+/store/{shop_id}/table/{table_number}
+例如：/store/1/table/A5
+```
+
+**API 端点：**
+```
+GET    /api/shops/:id/tables            # 获取所有桌号
+POST   /api/shops/:id/tables/batch      # 批量创建
+PUT    /api/shops/:id/tables/:tid       # 更新桌号
+DELETE /api/shops/:id/tables/:tid       # 删除桌号
+GET    /api/tables/:id/qrcode           # 获取 QRCode 图片
+```
+
+---
+
+### 💳 多元支付系统
+
+**功能特性：**
+- ✅ 支持多种支付方式（LINE Pay, 街口支付, 现金等）
+- ✅ 组合支付：一笔订单可用多种方式支付
+- ✅ 每个店铺独立设置接受的支付方式
+- ✅ 现金支付是必需的，不能禁用
+- ✅ 支付金额精确验证
+
+**数据库更新：**
+- `payment_methods` 表 - 系统支付方式
+- `shop_payment_methods` 表 - 店铺启用的支付方式
+- `order_payments` 表 - 订单支付记录（支持多条）
+
+**默认支付方式：**
+1. LINE Pay (`line_pay`) - <i class="fa-brands fa-line"></i>
+2. 街口支付 (`jko_pay`) - <i class="fa-solid fa-wallet"></i>
+3. 现金 (`cash`) - <i class="fa-solid fa-money-bill-1"></i>
+
+**API 端点：**
+
+*系统级（Admin Only）：*
+```
+GET    /api/payment-methods             # 所有支付方式
+POST   /api/payment-methods             # 创建
+PUT    /api/payment-methods/:id         # 更新
+DELETE /api/payment-methods/:id         # 删除
+```
+
+*店铺级：*
+```
+GET  /api/shops/:id/payment-methods       # 店铺设置
+PUT  /api/shops/:id/payment-methods       # 更新设置
+GET  /api/shops/:id/payment-methods/public  # 公开查询
+```
+
+---
+
+### 🔄 订单系统增强
+
+**新端点：**
+```python
+POST /api/orders/guest     # 访客订单（桌号点餐）
+POST /api/orders/checkout  # 增强结账（回馈金+组合支付）
+```
+
+**增强结账流程：**
+```
+1. 计算订单总额：$150
+2. 用户选择使用回馈金：30 点 = $30
+3. 应付金额：$150 - $30 = $120
+4. 组合支付：
+   - LINE Pay: $70
+   - 现金: $50
+   - 总计: $120 ✓
+5. 验证通过，创建订单
+6. 扣除回馈金：-30 点
+7. 计算新赚取：$120 ÷ 30 = 4 点
+8. 创建 2 条 OrderPayment 记录
+9. 创建 2 条 PointTransaction 记录
+10. 更新用户余额
+11. 触发 SocketIO 通知
+```
+
+---
+
+### 🎨 前端页面
+
+**Backend Admin：**
+- ✅ `/backend/payment-methods` - 支付方式管理（列表/新增/编辑/删除）
+
+**Store Admin：**
+- ✅ `/store_admin/shops/:id/edit` - 店铺设置增强（回馈金、桌号）
+- ✅ `/store_admin/shops/:id/tables` - 桌号管理
+- ✅ `/store_admin/shops/:id/tables/print` - QRCode 打印
+- ✅ `/store_admin/shops/:id/payment-settings` - 支付方式设置
+
+**Customer (前台)：**
+- ⏳ `/store/:shop_id/table/:table_number` - 访客点餐（路由已添加）
+- ⏳ `/points` - 回馈金查询（路由已添加）
+- ⏳ `/checkout` - 结账增强（需要修改现有页面）
+
+---
+
+### 📦 依赖更新
+
+`requirements.txt` 新增：
+```
+qrcode==7.4.2
+```
+
+---
+
+### 🔒 权限控制
+
+| 功能 | Admin | Store Admin | Customer | Guest |
+|------|-------|-------------|----------|-------|
+| 管理系统支付方式 | ✅ | ❌ | ❌ | ❌ |
+| 设置店铺支付方式 | ✅ | ✅ (自己店铺) | ❌ | ❌ |
+| 管理桌号 | ✅ | ✅ (自己店铺) | ❌ | ❌ |
+| 打印 QRCode | ✅ | ✅ (自己店铺) | ❌ | ❌ |
+| 查看回馈金 | ❌ | ❌ | ✅ (自己) | ❌ |
+| 使用回馈金 | ❌ | ❌ | ✅ | ❌ |
+| 访客点餐 | ❌ | ❌ | ❌ | ✅ |
+
+---
+
+### 🎯 完成度
+
+**整体进度：85%**
+
+✅ **已完成（100%）：**
+- 数据库迁移
+- 数据模型
+- 所有 API 端点
+- Backend 管理页面
+- Store Admin 管理页面
+
+⏳ **进行中（30%）：**
+- 前台访客点餐页面
+- 前台结账增强
+- 前台回馈金页面
+
+**新增文件：** 14 个  
+**修改文件：** 7 个  
+**新增 API 端点：** 15+ 个  
+**新增数据表：** 5 个  
+**新增模型类：** 5 个  
+
+---
+
+### 📝 相关文档
+
+- `docs/LOYALTY_SYSTEM_PROGRESS.md` - 详细进度报告
+- `docs/ICONS_REFERENCE.md` - 支付方式图标参考
+- `requirements.txt` - 更新了依赖
+
+---
+
+### ⚠️ 重要说明
+
+1. **数据库迁移已执行**：`51b0df6e1f1b`
+2. **默认支付方式已创建**：LINE Pay, 街口支付, 现金
+3. **QRCode 存储路径**：`public/uploads/qrcodes/shop_{id}/`
+4. **回馈金计算公式**：`points = floor(amount_paid / shop.points_rate)`
+5. **访客订单不累积回馈金**
+6. **现金支付不可删除或禁用**
+
+---
+
 ## 2025-11-06 20:30 - 文檔結構整理
 
 ### 📁 文件組織

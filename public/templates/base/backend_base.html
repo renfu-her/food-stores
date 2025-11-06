@@ -53,6 +53,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.payment_method') %}active{% endif %}" href="{{ url_for('backend.payment_methods') }}">
+                        <i class="bi bi-credit-card me-2"></i>支付方式
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint and request.endpoint.startswith('backend.order') %}active{% endif %}" href="{{ url_for('backend.orders') }}">
                         <i class="bi bi-receipt me-2"></i>訂單管理
                     </a>

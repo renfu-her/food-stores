@@ -69,6 +69,34 @@
                 </div>
             </div>
             
+            <!-- 回馈金使用 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-gift me-2"></i>使用回馈金</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>可用回馈金：</span>
+                        <strong class="text-primary fs-5"><span id="availablePoints">{{ user.points }}</span> 点</strong>
+                    </div>
+                    
+                    <div class="input-group mb-2">
+                        <span class="input-group-text">使用</span>
+                        <input type="number" class="form-control" id="pointsToUse" min="0" max="{{ user.points }}" value="0" onchange="calculateTotal()">
+                        <span class="input-group-text">点（1点=$1）</span>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="useAllPoints()">
+                            <i class="bi bi-check-all me-1"></i>使用全部
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearPoints()">
+                            <i class="bi bi-x me-1"></i>清除
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- 購物車商品 -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white">
@@ -83,29 +111,48 @@
                 </div>
             </div>
             
-            <!-- 支付方式 -->
+            <!-- 支付方式（组合支付）-->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>支付方式</h5>
+                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>支付方式（可组合）</h5>
                 </div>
                 <div class="card-body">
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_cod" value="cod" checked>
-                        <label class="form-check-label" for="payment_cod">
-                            <i class="bi bi-cash me-2"></i>貨到付款
-                        </label>
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>您可以使用多种支付方式组合支付此订单
+                    </p>
+                    
+                    <div id="paymentMethodsList">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            <span class="ms-2 text-muted">载入支付方式...</span>
+                        </div>
                     </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_card" value="card">
-                        <label class="form-check-label" for="payment_card">
-                            <i class="bi bi-credit-card me-2"></i>信用卡支付
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="payment_method" id="payment_transfer" value="transfer">
-                        <label class="form-check-label" for="payment_transfer">
-                            <i class="bi bi-bank me-2"></i>銀行轉帳
-                        </label>
+                    
+                    <div class="alert alert-light mt-3">
+                        <table class="table table-sm mb-0">
+                            <tr>
+                                <td>订单总额：</td>
+                                <td class="text-end fw-bold">$<span id="orderTotalCalc">0</span></td>
+                            </tr>
+                            <tr class="text-success">
+                                <td><i class="bi bi-gift me-1"></i>使用回馈金：</td>
+                                <td class="text-end">-$<span id="pointsDiscount">0</span></td>
+                            </tr>
+                            <tr class="table-primary">
+                                <td><strong>应付金额：</strong></td>
+                                <td class="text-end"><strong class="text-primary fs-5">$<span id="amountDue">0</span></strong></td>
+                            </tr>
+                            <tr>
+                                <td>已分配支付：</td>
+                                <td class="text-end">$<span id="paymentAllocated">0</span></td>
+                            </tr>
+                            <tr class="text-info">
+                                <td><i class="bi bi-star me-1"></i>本次可获得：</td>
+                                <td class="text-end fw-bold"><span id="pointsToEarn">0</span> 点回馈金</td>
+                            </tr>
+                        </table>
+                        
+                        <div id="paymentError" class="alert alert-danger mt-2" style="display:none;"></div>
                     </div>
                 </div>
             </div>
@@ -126,14 +173,22 @@
                         <span>小計</span>
                         <span id="subtotal">$0</span>
                     </div>
+                    <div class="d-flex justify-content-between mb-3 text-success">
+                        <span><i class="bi bi-gift me-1"></i>回馈金折扣</span>
+                        <span id="pointsDiscountSummary">-$0</span>
+                    </div>
                     <div class="d-flex justify-content-between mb-3">
                         <span>運費</span>
                         <span id="shippingFee" class="text-success">免運費</span>
                     </div>
                     <hr>
-                    <div class="d-flex justify-content-between mb-4">
-                        <h5 class="mb-0">總計</h5>
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5 class="mb-0">應付金額</h5>
                         <h5 class="mb-0 text-primary" id="orderTotal">$0</h5>
+                    </div>
+                    <div class="d-flex justify-content-between mb-4 text-info small">
+                        <span><i class="bi bi-star me-1"></i>可获回馈金</span>
+                        <strong><span id="pointsToEarnSummary">0</span> 点</strong>
                     </div>
                     <button class="btn btn-primary w-100 btn-lg mb-3" onclick="submitOrder()">
                         <i class="bi bi-check-circle me-2"></i>確認訂單
@@ -153,6 +208,8 @@
 <script src="{{ url_for('static', filename='js/jquery.twzipcode.js') }}"></script>
 <script>
 let cartData = [];
+let paymentMethods = [];
+let currentShopId = null;
 
 $(document).ready(function() {
     // 初始化 TWzipcode
@@ -206,13 +263,184 @@ async function loadCheckoutData() {
             return;
         }
         
+        // 获取店铺ID（假设购物车中所有商品来自同一店铺）
+        if (cartData.length > 0) {
+            currentShopId = cartData[0].shop_id;
+            loadPaymentMethods();
+        }
+        
         displayOrderItems();
         updateOrderSummary();
+        calculateTotal();
         
     } catch (error) {
         console.error('載入購物車失敗:', error);
         alert('載入失敗，請重試');
     }
+}
+
+// 加载店铺支付方式
+function loadPaymentMethods() {
+    $.get(`/api/shops/${currentShopId}/payment-methods/public`, function(data) {
+        paymentMethods = data.payment_methods;
+        renderPaymentMethods();
+    }).fail(function() {
+        $('#paymentMethodsList').html('<p class="text-danger">加载支付方式失败</p>');
+    });
+}
+
+// 渲染支付方式
+function renderPaymentMethods() {
+    const container = $('#paymentMethodsList');
+    container.empty();
+    
+    if (paymentMethods.length === 0) {
+        container.html('<p class="text-muted">此店铺未设置支付方式</p>');
+        return;
+    }
+    
+    paymentMethods.forEach(method => {
+        const html = `
+            <div class="payment-method-item mb-3 p-3 border rounded">
+                <div class="form-check">
+                    <input class="form-check-input payment-checkbox" 
+                           type="checkbox" 
+                           id="pm_${method.id}"
+                           value="${method.id}"
+                           data-code="${method.code}"
+                           onchange="togglePaymentAmount(${method.id})">
+                    <label class="form-check-label w-100" for="pm_${method.id}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="${method.icon} me-2 fs-5"></i>
+                                <strong>${method.name}</strong>
+                            </span>
+                            <input type="number" 
+                                   class="form-control form-control-sm payment-amount" 
+                                   id="amount_${method.id}"
+                                   data-method-id="${method.id}"
+                                   min="0" 
+                                   step="1"
+                                   placeholder="输入金额"
+                                   style="width: 140px; display: none;"
+                                   onchange="calculatePaymentTotal()">
+                        </div>
+                    </label>
+                </div>
+            </div>
+        `;
+        container.append(html);
+    });
+}
+
+// 切换支付方式金额输入框
+function togglePaymentAmount(methodId) {
+    const checkbox = $(`#pm_${methodId}`);
+    const amountInput = $(`#amount_${methodId}`);
+    
+    if (checkbox.is(':checked')) {
+        amountInput.show().focus();
+    } else {
+        amountInput.hide().val('');
+        calculatePaymentTotal();
+    }
+}
+
+// 计算支付总额
+function calculatePaymentTotal() {
+    let allocated = 0;
+    $('.payment-amount:visible').each(function() {
+        allocated += parseFloat($(this).val()) || 0;
+    });
+    
+    $('#paymentAllocated').text(allocated.toFixed(2));
+    
+    // 验证
+    const amountDue = parseFloat($('#amountDue').text());
+    const error = $('#paymentError');
+    
+    if (allocated > 0 && Math.abs(allocated - amountDue) > 0.01) {
+        error.html(`
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>支付金额不正确！</strong><br>
+            应付：$${amountDue.toFixed(2)}，已分配：$${allocated.toFixed(2)}，
+            差额：$${(amountDue - allocated).toFixed(2)}
+        `).show();
+        return false;
+    } else {
+        error.hide();
+        return true;
+    }
+}
+
+// 计算总额（含回馈金）
+function calculateTotal() {
+    // 计算订单总额
+    let total = 0;
+    for (const item of cartData) {
+        total += item.unit_price * item.quantity;
+    }
+    
+    $('#orderTotalCalc').text(total.toFixed(2));
+    
+    // 计算回馈金折扣
+    const pointsToUse = parseInt($('#pointsToUse').val()) || 0;
+    const pointsDiscount = pointsToUse;
+    
+    $('#pointsDiscount').text(pointsDiscount.toFixed(2));
+    $('#pointsDiscountSummary').text('-$' + pointsDiscount.toFixed(2));
+    
+    // 计算应付金额
+    const amountDue = Math.max(0, total - pointsDiscount);
+    $('#amountDue').text(amountDue.toFixed(2));
+    $('#orderTotal').text('$' + amountDue.toFixed(2));
+    
+    // 计算可赚取回馈金
+    if (currentShopId && amountDue > 0) {
+        $.post('/api/points/calculate', {
+            order_total: amountDue,
+            shop_id: currentShopId
+        }, function(data) {
+            $('#pointsToEarn').text(data.points_earned);
+            $('#pointsToEarnSummary').text(data.points_earned);
+        });
+    } else {
+        $('#pointsToEarn').text('0');
+        $('#pointsToEarnSummary').text('0');
+    }
+    
+    calculatePaymentTotal();
+}
+
+// 使用全部回馈金
+function useAllPoints() {
+    const total = parseFloat($('#orderTotalCalc').text());
+    const maxPoints = Math.min({{ user.points }}, Math.floor(total));
+    $('#pointsToUse').val(maxPoints);
+    calculateTotal();
+}
+
+// 清除回馈金
+function clearPoints() {
+    $('#pointsToUse').val(0);
+    calculateTotal();
+}
+
+// 获取支付分配
+function getPaymentSplits() {
+    const splits = [];
+    $('.payment-checkbox:checked').each(function() {
+        const methodId = parseInt($(this).val());
+        const amount = parseFloat($(`#amount_${methodId}`).val()) || 0;
+        
+        if (amount > 0) {
+            splits.push({
+                payment_method_id: methodId,
+                amount: amount
+            });
+        }
+    });
+    return splits;
 }
 
 // 顯示訂單商品
@@ -229,6 +457,17 @@ function displayOrderItems() {
             toppingsHtml = `<small class="text-muted d-block">配料：${toppingNames}</small>`;
         }
         
+        // 显示饮品
+        let drinkHtml = '';
+        if (item.drink_type) {
+            const drinkIcon = item.drink_type === 'cold' 
+                ? '<i class="fa-solid fa-snowflake text-info"></i>' 
+                : '<i class="fa-solid fa-mug-hot text-warning"></i>';
+            const drinkName = item.drink_type === 'cold' ? '冷飲' : '熱飲';
+            const drinkPriceText = item.drink_price > 0 ? ` (+$${item.drink_price})` : '';
+            drinkHtml = `<small class="text-muted d-block">${drinkIcon} ${drinkName}${drinkPriceText}</small>`;
+        }
+        
         const itemTotal = item.unit_price * item.quantity;
         
         html += `
@@ -236,10 +475,11 @@ function displayOrderItems() {
                 <div class="flex-grow-1">
                     <h6 class="mb-1">${item.product_name}</h6>
                     ${toppingsHtml}
+                    ${drinkHtml}
                     <small class="text-muted">單價：$${item.unit_price} × ${item.quantity}</small>
                 </div>
                 <div class="text-end">
-                    <strong class="text-primary">$${itemTotal}</strong>
+                    <strong class="text-primary">$${itemTotal.toFixed(2)}</strong>
                 </div>
             </div>
         `;
@@ -256,8 +496,8 @@ function updateOrderSummary() {
     }
     
     document.getElementById('itemsCount').textContent = cartData.length + ' 件';
-    document.getElementById('subtotal').textContent = '$' + total;
-    document.getElementById('orderTotal').textContent = '$' + total;
+    document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
+    calculateTotal();
 }
 
 // 提交訂單
@@ -275,39 +515,56 @@ async function submitOrder() {
         return;
     }
     
-    const delivery_note = document.getElementById('delivery_note').value.trim();
-    const payment_method = document.querySelector('input[name="payment_method"]:checked').value;
+    // 验证组合支付
+    if (!calculatePaymentTotal()) {
+        alert('请正确分配支付金额');
+        return;
+    }
     
-    // 準備訂單項目（不需要按店鋪分組，後端會自動處理）
+    const paymentSplits = getPaymentSplits();
+    if (paymentSplits.length === 0) {
+        alert('请选择至少一种支付方式');
+        return;
+    }
+    
+    const delivery_note = document.getElementById('delivery_note').value.trim();
+    const pointsToUse = parseInt($('#pointsToUse').val()) || 0;
+    
+    // 準備訂單項目
     const items = cartData.map(item => ({
         product_id: item.product_id,
         quantity: item.quantity,
-        toppings: item.toppings || []
+        drink_type: item.drink_type,
+        toppings: item.toppings ? item.toppings.map(t => t.id) : []
     }));
     
-    // 建立訂單（後端會自動按店鋪分組）
+    // 使用增强结账API
     try {
-        const response = await fetch('/api/orders', {
+        const response = await fetch('/api/orders/checkout', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                items: items,  // 不再需要 shop_id
-                recipient_name: recipient_name,
-                recipient_phone: recipient_phone,
-                county: county,  // 獨立發送縣市
-                district: district,  // 獨立發送區域
-                zipcode: zipcode,  // 獨立發送郵遞區號
-                address: recipient_address,  // 詳細地址
-                delivery_note: delivery_note,
-                payment_method: payment_method
+                shop_id: currentShopId,
+                items: items,
+                points_to_use: pointsToUse,
+                payment_splits: paymentSplits,
+                recipient_info: {
+                    name: recipient_name,
+                    phone: recipient_phone,
+                    county: county,
+                    district: district,
+                    zipcode: zipcode,
+                    address: recipient_address,
+                    note: delivery_note
+                }
             })
         });
         
         if (!response.ok) {
             const error = await response.json();
-            alert('建立訂單失敗: ' + (error.message || '未知錯誤'));
+            alert('建立訂單失敗: ' + (error.error || '未知錯誤'));
             return;
         }
         
@@ -321,7 +578,13 @@ async function submitOrder() {
             updateCartCount();
         }
         
-        alert('訂單建立成功！');
+        // 显示详细信息
+        alert(`訂單創建成功！\n\n` +
+              `訂單編號：${result.order_number}\n` +
+              `使用回饋金：${result.points_used} 点\n` +
+              `獲得回饋金：${result.points_earned} 点\n` +
+              `實付金額：$${result.amount_paid}`);
+        
         window.location.href = '{{ url_for("customer.orders") }}';
         
     } catch (error) {

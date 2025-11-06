@@ -37,12 +37,14 @@ class User(db.Model):
     address = db.Column(db.String(500), nullable=True)  # 詳細地址
     
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    points = db.Column(db.Integer, default=0, nullable=False)  # 回馈金点数
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
     # 關係
     shops = db.relationship('Shop', backref='owner', lazy=True, cascade='all, delete-orphan')
     orders = db.relationship('Order', backref='user', lazy=True)
+    point_transactions = db.relationship('PointTransaction', backref='user', lazy=True)
     
     def __repr__(self):
         return f'<User {self.name}>'
@@ -58,6 +60,9 @@ class Shop(db.Model):
     banner_image = db.Column(db.String(500), nullable=True)  # Banner 橫幅圖片
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     max_toppings_per_order = db.Column(db.Integer, default=5, nullable=False)
+    points_rate = db.Column(db.Integer, default=30, nullable=False)  # 回馈比例（N元=1点）
+    max_tables = db.Column(db.Integer, default=0, nullable=False)  # 最大桌号数量
+    qrcode_enabled = db.Column(db.Boolean, default=False, nullable=False)  # 是否启用桌号扫码
     status = db.Column(db.String(20), default='active', nullable=False)  # active, inactive
     deleted_at = db.Column(db.DateTime, nullable=True, index=True)  # 軟刪除時間戳
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -68,6 +73,8 @@ class Shop(db.Model):
     toppings = db.relationship('Topping', backref='shop', lazy=True, cascade='all, delete-orphan')
     orders = db.relationship('Order', backref='shop', lazy=True)
     images = db.relationship('ShopImage', backref='shop', lazy=True, cascade='all, delete-orphan', order_by='ShopImage.display_order')
+    tables = db.relationship('Table', backref='shop', lazy=True, cascade='all, delete-orphan')
+    shop_payment_methods = db.relationship('ShopPaymentMethod', backref='shop', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<Shop {self.name}>'
@@ -161,6 +168,10 @@ class Order(db.Model):
     order_number = db.Column(db.String(50), unique=True, nullable=False, index=True)  # 訂單編號
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False, index=True)
+    table_id = db.Column(db.Integer, db.ForeignKey('tables.id'), nullable=True)  # 桌号ID（访客订单）
+    is_guest_order = db.Column(db.Boolean, default=False, nullable=False)  # 是否访客订单
+    points_earned = db.Column(db.Integer, default=0, nullable=False)  # 本次赚取回馈金
+    points_used = db.Column(db.Integer, default=0, nullable=False)  # 本次使用回馈金
     status = db.Column(db.String(20), default='pending', nullable=False, index=True)  # pending, process, success
     total_price = db.Column(db.Numeric(10, 2), nullable=False)
     recipient_name = db.Column(db.String(100), nullable=True)  # 收货人姓名
@@ -173,6 +184,8 @@ class Order(db.Model):
     
     # 關係
     items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
+    payments = db.relationship('OrderPayment', backref='order', lazy=True, cascade='all, delete-orphan')
+    table = db.relationship('Table', backref='orders', foreign_keys=[table_id])
     
     def __repr__(self):
         return f'<Order {self.order_number}>'
@@ -408,4 +421,83 @@ class UpdateLog(db.Model):
     
     def __repr__(self):
         return f'<UpdateLog {self.action} {self.table_name} #{self.record_id}>'
+
+class Table(db.Model):
+    """桌号管理模型"""
+    __tablename__ = 'tables'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False)
+    table_number = db.Column(db.String(20), nullable=False)  # 桌号（如：A1, B2, 01, 02）
+    status = db.Column(db.String(20), default='available', nullable=False)  # available/occupied/cleaning
+    qrcode_path = db.Column(db.String(255), nullable=True)  # QRCode 图片路径
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<Table {self.table_number} - Shop {self.shop_id}>'
+
+class PaymentMethod(db.Model):
+    """支付方式模型"""
+    __tablename__ = 'payment_methods'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)  # LINE Pay, 街口支付, 现金
+    code = db.Column(db.String(20), unique=True, nullable=False)  # line_pay, jko_pay, cash
+    icon = db.Column(db.String(100), nullable=True)  # Font Awesome icon class
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    display_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # 關係
+    shop_payment_methods = db.relationship('ShopPaymentMethod', backref='payment_method', lazy=True, cascade='all, delete-orphan')
+    order_payments = db.relationship('OrderPayment', backref='payment_method', lazy=True)
+    
+    def __repr__(self):
+        return f'<PaymentMethod {self.name}>'
+
+class ShopPaymentMethod(db.Model):
+    """店家启用的支付方式"""
+    __tablename__ = 'shop_payment_methods'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False)
+    payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.id'), nullable=False)
+    is_enabled = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<ShopPaymentMethod shop={self.shop_id} method={self.payment_method_id}>'
+
+class OrderPayment(db.Model):
+    """订单支付记录（支持组合支付）"""
+    __tablename__ = 'order_payments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    payment_method_id = db.Column(db.Integer, db.ForeignKey('payment_methods.id'), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)  # 此支付方式的金额
+    status = db.Column(db.String(20), default='pending', nullable=False)  # pending/completed/failed
+    transaction_id = db.Column(db.String(100), nullable=True)  # 第三方交易ID
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<OrderPayment order={self.order_id} amount={self.amount}>'
+
+class PointTransaction(db.Model):
+    """回馈金交易记录"""
+    __tablename__ = 'point_transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=True)
+    type = db.Column(db.String(20), nullable=False)  # earn/use/expire
+    points = db.Column(db.Integer, nullable=False)  # 正数=赚取，负数=使用
+    balance = db.Column(db.Integer, nullable=False)  # 交易后余额
+    description = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<PointTransaction user={self.user_id} points={self.points}>'
 

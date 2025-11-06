@@ -2,7 +2,7 @@
 商店管理者路由
 """
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
-from app.models import Shop, Product, Order, Category, Topping
+from app.models import Shop, Product, Order, Category, Topping, Table, PaymentMethod, ShopPaymentMethod
 from app.utils.decorators import login_required, role_required, get_current_user
 from app import db
 
@@ -214,3 +214,90 @@ def statistics():
                          success_orders=success_orders,
                          total_revenue=total_revenue,
                          order_percentage=order_percentage)
+
+@store_admin_bp.route('/shops/<int:shop_id>/tables')
+@role_required('store_admin')
+def shop_tables(shop_id):
+    """店铺桌号管理页面"""
+    user = get_current_user()
+    
+    # 获取店铺
+    shop = Shop.query.get_or_404(shop_id)
+    
+    # 权限检查：只能管理自己的店铺
+    if shop.owner_id != user.id:
+        return redirect(url_for('store_admin.shops'))
+    
+    # 获取所有桌号
+    tables = Table.query.filter_by(shop_id=shop_id).order_by(Table.table_number).all()
+    
+    tables_data = []
+    for table in tables:
+        tables_data.append({
+            'id': table.id,
+            'table_number': table.table_number,
+            'status': table.status,
+            'qrcode_path': table.qrcode_path,
+            'created_at': table.created_at.isoformat() if table.created_at else None
+        })
+    
+    return render_template('shop/tables/list.html', shop=shop, tables=tables_data)
+
+@store_admin_bp.route('/shops/<int:shop_id>/payment-settings')
+@role_required('store_admin')
+def shop_payment_settings(shop_id):
+    """店铺支付方式设置页面"""
+    user = get_current_user()
+    
+    # 获取店铺
+    shop = Shop.query.get_or_404(shop_id)
+    
+    # 权限检查
+    if shop.owner_id != user.id:
+        return redirect(url_for('store_admin.shops'))
+    
+    # 获取所有可用支付方式
+    all_methods = PaymentMethod.query.filter_by(is_active=True).order_by(PaymentMethod.display_order).all()
+    
+    # 获取店铺已启用的支付方式
+    shop_methods = ShopPaymentMethod.query.filter_by(shop_id=shop_id).all()
+    enabled_method_ids = {sm.payment_method_id for sm in shop_methods if sm.is_enabled}
+    
+    methods_data = []
+    for pm in all_methods:
+        methods_data.append({
+            'id': pm.id,
+            'name': pm.name,
+            'code': pm.code,
+            'icon': pm.icon,
+            'is_enabled': pm.id in enabled_method_ids,
+            'is_required': pm.code == 'cash'
+        })
+    
+    return render_template('shop/payment_settings.html', shop=shop, payment_methods=methods_data)
+
+@store_admin_bp.route('/shops/<int:shop_id>/tables/print')
+@role_required('store_admin')
+def print_tables_qrcode(shop_id):
+    """打印所有桌号 QRCode 页面"""
+    user = get_current_user()
+    
+    # 获取店铺
+    shop = Shop.query.get_or_404(shop_id)
+    
+    # 权限检查
+    if shop.owner_id != user.id:
+        return redirect(url_for('store_admin.shops'))
+    
+    # 获取所有桌号
+    tables = Table.query.filter_by(shop_id=shop_id).order_by(Table.table_number).all()
+    
+    tables_data = []
+    for table in tables:
+        tables_data.append({
+            'id': table.id,
+            'table_number': table.table_number,
+            'qrcode_path': table.qrcode_path
+        })
+    
+    return render_template('shop/tables/print.html', shop=shop, tables=tables_data)
