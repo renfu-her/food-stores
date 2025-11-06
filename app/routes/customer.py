@@ -161,3 +161,9 @@ def points():
                                        .limit(20).all()
     
     return render_template('store/points.html', user=user, transactions=transactions)
+
+@customer_bp.route('/order-success')
+@login_required
+def order_success():
+    """訂單成功頁面"""
+    return render_template('store/order_success.html')

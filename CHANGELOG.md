@@ -4,6 +4,366 @@
 
 ---
 
+## 2025-11-07 00:15 - 完善訂單項目顯示（配料和飲品）
+
+### ✨ 功能完善
+
+**在所有訂單頁面顯示完整的訂單項目詳情：**
+
+**問題描述：**
+- 訂單列表只顯示「肉包 x 1 $90.00」
+- 沒有顯示配料信息（如：測試、胡椒、辣椒醬）
+- 沒有顯示飲品選擇（冷飲/熱飲）和價格
+- 用戶無法看到完整的訂單內容
+
+**修改內容：**
+
+1. **Store Admin 訂單管理** (`public/templates/shop/orders.html`)：
+   ```html
+   肉包 x 1 $100.00
+   └─ 配料: 測試、胡椒、辣椒醬
+   └─ ❄️ 冷飲 (+$10)
+   ```
+
+2. **一般用戶訂單列表** (`public/templates/store/orders.html`)：
+   - 同樣顯示配料和飲品信息
+   - 結構一致
+
+3. **添加樣式** (`public/static/css/store.css`)：
+   ```css
+   .order-item .item-main {
+       display: flex;
+       justify-content: space-between;
+   }
+   
+   .order-item .item-details {
+       margin-left: 0.5rem;
+       padding-left: 0.5rem;
+       border-left: 2px solid #e9ecef;
+   }
+   ```
+
+**顯示邏輯：**
+- 產品名稱和價格在第一行
+- 配料和飲品在第二行（縮排顯示）
+- 使用圖標區分冷飲（❄️）和熱飲（☕）
+- 顯示額外費用（如：+$10）
+
+**顯示效果對比：**
+
+**改善前：**
+```
+肉包 x 1 $90.00
+```
+
+**改善後：**
+```
+肉包 x 1 $100.00
+  配料: 測試、胡椒、辣椒醬
+  ❄️ 冷飲 (+$10)
+```
+
+**影響範圍：**
+- `public/templates/shop/orders.html` - Store Admin 訂單管理
+- `public/templates/store/orders.html` - 用戶訂單列表
+- `public/static/css/store.css` - 樣式定義
+
+**適用所有角色：**
+- ✅ Backend 管理員
+- ✅ Store Admin 店家
+- ✅ 一般用戶（Customer）
+- ✅ 顯示內容一致
+
+**優勢：**
+- ✅ 完整顯示訂單詳情
+- ✅ 清晰呈現配料和飲品
+- ✅ 價格明細透明
+- ✅ 便於核對訂單內容
+
+---
+
+## 2025-11-07 00:10 - 改善訂單成功頁面體驗
+
+### ✨ 功能優化
+
+**將訂單成功通知從 Alert 彈窗改為專屬頁面：**
+
+**改善原因：**
+- Alert 彈窗體驗不佳，用戶需要點擊「確定」才能繼續
+- 無法展示完整的訂單資訊
+- 不符合現代 Web 應用的 UX 標準
+
+**實現內容：**
+
+1. **創建訂單成功頁面**：
+   - `public/templates/store/order_success.html` - 登入用戶
+   - `public/templates/guest/order_success.html` - 訪客
+
+2. **添加路由**：
+   - `app/routes/customer.py`：`/order-success`
+   - `app/routes/guest.py`：`/shop/<shop_id>/table/<table_number>/order-success`
+
+3. **修改結帳頁面**：
+   - `public/templates/store/checkout.html`
+   - `public/templates/guest/checkout.html`
+   - 移除 `alert()` 彈窗
+   - 改為跳轉到成功頁面並傳遞參數
+
+**頁面功能：**
+- ✅ 大型成功圖標（綠色打勾）
+- ✅ 顯示訂單編號
+- ✅ 顯示訂單金額
+- ✅ 顯示回饋金使用/獲得（登入用戶）
+- ✅ 顯示桌號（訪客）
+- ✅ 繼續點餐/查看訂單按鈕
+
+**URL 參數傳遞：**
+```javascript
+登入用戶：
+/order-success?order_number=xxx&amount_paid=100&points_used=10&points_earned=5
+
+訪客：
+/guest/shop/3/table/02/order-success?order_number=xxx&amount_paid=100&table_number=02&shop_id=3
+```
+
+**用戶體驗對比：**
+
+**改善前（Alert）：**
+```
+[彈窗]
+訂單創建成功！
+
+訂單編號：ORDER...
+使用回饋金：10 点
+獲得回饋金：5 点
+實付金額：$100
+
+[確定] ← 需要手動點擊
+```
+
+**改善後（頁面）：**
+```
+✓ 訂單已成功建立！
+
+訂單編號：ORDER...
+訂單金額：$100
+使用回饋金：10 點
+獲得回饋金：5 點
+
+[查看訂單] [返回首頁] ← 清晰的導航
+```
+
+**影響範圍：**
+- 新增 2 個模板文件
+- 新增 2 個路由
+- 修改 2 個結帳頁面的 JavaScript
+
+**優勢：**
+- ✅ 專業的頁面呈現
+- ✅ 完整顯示訂單資訊
+- ✅ 清晰的後續操作指引
+- ✅ 符合現代 UX 標準
+- ✅ 支持 URL 分享和書籤
+
+---
+
+## 2025-11-07 00:00 - 修復訪客訂單 API 錯誤
+
+### 🐛 Bug 修復
+
+**修復訪客訂單創建時的變量未定義錯誤：**
+
+**問題描述：**
+- 訪客結帳時出現「店铺 ID <Shop 007包子>不存在」500 錯誤
+- 訪客訂單 API 使用了未定義的 `user` 變量
+- 調用 `generate_order_number(shop)` 時傳入了 Shop 對象而非 shop_id
+- 代碼錯誤複製自登入用戶的 checkout API
+
+**修復內容：**
+
+**修正 `/api/orders/guest` 端點** (`app/routes/api/orders.py`)：
+
+1. **修正訂單編號生成**：
+   ```python
+   舊：order_number = generate_order_number(shop)  # 傳入 Shop 對象
+   新：order_number = generate_order_number(shop_id)  # 傳入數字 ID
+   ```
+
+2. **修正變量引用**：
+   ```python
+   舊：user_id=user.id  # user 未定義
+   新：user_id=guest_user_id  # 使用店家 owner_id
+   ```
+
+3. **修正訪客訂單標記**：
+   ```python
+   舊：is_guest_order=False
+   新：is_guest_order=True
+   ```
+
+4. **修正回饋金邏輯**：
+   ```python
+   舊：points_earned=points_earned  # 未定義
+       points_used=points_to_use   # 未定義
+   新：points_earned=0  # 訪客不賺取回饋金
+       points_used=0    # 訪客不使用回饋金
+   ```
+
+5. **修正收件人資訊**：
+   ```python
+   舊：recipient_name=recipient_info.get('name') or user.name
+       recipient_phone=recipient_info.get('phone') or user.phone
+   新：recipient_name=customer_name or '访客'
+       recipient_phone=customer_phone
+   ```
+
+6. **添加桌號記錄**：
+   ```python
+   table_id=table.id  # 記錄桌號 ID
+   recipient_address=f'桌号: {table_number}'  # 用地址欄記錄桌號
+   ```
+
+7. **修正返回值**：
+   ```python
+   新增：amount_paid, is_guest_order 字段
+   ```
+
+**修復後的訪客訂單流程：**
+1. 獲取店鋪和桌號
+2. 驗證店鋪是否啟用桌號點餐
+3. 使用店家 owner_id 作為訂單擁有者
+4. 創建訪客訂單（`is_guest_order=True`）
+5. 記錄桌號信息（`table_id`）
+6. 不處理回饋金（訪客沒有會員功能）
+7. 觸發 WebSocket 通知店家
+
+**測試重點：**
+- ✅ 訪客可以成功下單
+- ✅ 訂單標記為訪客訂單
+- ✅ 訂單包含桌號信息
+- ✅ 店家收到實時通知
+
+**重要提示：** 需要重啟 Flask 應用才能生效！
+
+---
+
+## 2025-11-06 23:55 - 調整結帳頁面卡片間距
+
+### 🎨 UI/UX 微調
+
+**縮小結帳頁面卡片之間的間距：**
+
+**修改內容：**
+- 在結帳頁面添加自定義 CSS
+- 將所有卡片的 `margin-bottom` 設為 `5px`
+- 使用 `!important` 覆蓋 Bootstrap 預設樣式
+
+**CSS 規則：**
+```css
+.container .card {
+    margin-bottom: 5px !important;
+}
+```
+
+**影響範圍：**
+- `public/templates/store/checkout.html` - 登入用戶結帳頁面
+- `public/templates/guest/checkout.html` - 訪客結帳頁面
+
+**效果：**
+- 卡片之間更緊湊
+- 減少頁面滾動長度
+- 資訊更集中
+
+**原始間距：** `mb-3`（≈16px）或 `mb-4`（≈24px）  
+**新間距：** `5px`
+
+---
+
+## 2025-11-06 23:45 - 改善支付方式區塊視覺呈現
+
+### 🎨 UI/UX 改善
+
+**優化支付方式區塊的間距和視覺設計：**
+
+**問題描述：**
+- 支付選項和訂單摘要看起來很擠
+- 元素之間缺乏足夠的呼吸空間
+- 視覺層次不夠明確
+
+**改善內容：**
+
+1. **調整卡片間距**：
+   - 訂單商品卡片：`mb-4` → `mb-3`（與支付方式卡片間距適中）
+   - 支付方式卡片：移除 `card-header`，改用 `card-body pt-4 pb-4`
+
+2. **圖標左對齊**：
+   ```html
+   標題：<h5 class="ps-2"><i class="bi bi-wallet2 me-2"></i>選擇支付方式</h5>
+   選項：<div class="ps-2">
+            <input radio> <i class="icon"></i> 現金
+          </div>
+   ```
+   - 標題和支付選項都添加 `ps-2`
+   - 圖標在同一條垂直線上對齊
+
+3. **優化支付選項樣式**：
+   - 使用 `<label>` 包裹，整個區塊可點擊
+   - 圓角：`rounded-3`（更柔和）
+   - 背景：`bg-light bg-opacity-50`（淡灰色）
+   - 內邊距：`p-3`（舒適）
+   - Radio button 尺寸：`1.2em`（更大）
+
+4. **增加區塊間距**：
+   - 標題與支付選項：`mb-4`（更明確的分隔）
+   - 支付選項之間：`mb-3`
+   - 支付選項與訂單摘要：`mb-4` + `border-top pt-4`
+
+5. **重新設計訂單摘要**：
+   - 使用 Flexbox 佈局（更整齊）
+   - 分隔線明確區隔
+   - 應付金額淡藍色背景高亮
+   - 圖標添加 `text-primary` 色彩
+
+**影響範圍：**
+- `public/templates/store/checkout.html`
+- `public/templates/guest/checkout.html`
+
+**視覺效果對比：**
+
+**改善前：**
+```
+┌─────────────────────────────┐
+│ ⓘ 請選擇一種支付方式          │
+│ ◉ 💵 現金                    │ ← 間距緊湊
+│                             │
+│ 訂單總額：    $100          │
+│ 應付金額：    $100          │ ← 表格樣式
+└─────────────────────────────┘
+```
+
+**改善後：**
+```
+┌─────────────────────────────┐
+│                             │
+│  ◉  💵  現金               │ ← 更大、更舒適
+│                             │
+│                             │
+│ ─────────────────────────  │ ← 分隔線
+│ 訂單總額          $100      │
+│ ┌───────────────────────┐  │
+│ │ 應付金額        $100   │  │ ← 高亮顯示
+│ └───────────────────────┘  │
+└─────────────────────────────┘
+```
+
+**用戶體驗提升：**
+- ✅ 視覺更清爽，不擁擠
+- ✅ 點擊目標更大，更易操作
+- ✅ 層次分明，資訊易讀
+- ✅ 移動裝置友好
+
+---
+
 ## 2025-11-06 23:40 - 簡化前台支付方式為單選
 
 ### 🔄 功能調整

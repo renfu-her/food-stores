@@ -813,22 +813,28 @@ def create_guest_order():
             return jsonify({'error': '订单总价必须大于0'}), 400
         
         # 生成订单编号
-        order_number = generate_order_number(shop)
+        order_number = generate_order_number(shop_id)
         
-        # 创建订单
+        # 获取客户信息（访客提供的）
+        customer_name = data.get('customer_name')
+        customer_phone = data.get('customer_phone')
+        note = data.get('note')
+        
+        # 创建订单（访客订单）
         order = Order(
             order_number=order_number,
-            user_id=user.id,
+            user_id=guest_user_id,  # 使用店家 owner_id 作为访客订单的用户
             shop_id=shop_id,
-            is_guest_order=False,
+            table_id=table.id,  # 记录桌号
+            is_guest_order=True,  # 标记为访客订单
             status='pending',
             total_price=total_price,
-            points_earned=points_earned,
-            points_used=points_to_use,
-            recipient_name=recipient_info.get('name') or user.name,
-            recipient_phone=recipient_info.get('phone') or user.phone,
-            recipient_address=recipient_info.get('address'),
-            delivery_note=recipient_info.get('note')
+            points_earned=0,  # 访客订单不赚取回馈金
+            points_used=0,  # 访客订单不使用回馈金
+            recipient_name=customer_name or '访客',
+            recipient_phone=customer_phone,
+            recipient_address=f'桌号: {table_number}',  # 用地址栏记录桌号
+            delivery_note=note
         )
         
         db.session.add(order)
@@ -884,8 +890,9 @@ def create_guest_order():
             'message': '访客订单创建成功',
             'order_id': order.id,
             'order_number': order.order_number,
-            'total_price': float(total_price),
-            'table_number': table_number
+            'amount_paid': float(total_price),
+            'table_number': table_number,
+            'is_guest_order': True
         }), 201
         
     except Exception as e:

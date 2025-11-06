@@ -103,4 +103,15 @@ def checkout(shop_id, table_number):
                          table_number=table_number,
                          payment_methods=methods_data)
 
+@guest_bp.route('/shop/<int:shop_id>/table/<table_number>/order-success')
+def order_success(shop_id, table_number):
+    """訪客訂單成功頁面"""
+    shop = Shop.query.filter_by(id=shop_id).filter(Shop.deleted_at.is_(None)).first_or_404()
+    table = Table.query.filter_by(shop_id=shop_id, table_number=table_number).first_or_404()
+    
+    return render_template('guest/order_success.html',
+                         shop=shop,
+                         table=table,
+                         table_number=table_number)
+
 

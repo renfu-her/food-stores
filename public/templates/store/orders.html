@@ -37,9 +37,33 @@
                     <div class="items-list">
                         {% for item in order.items %}
                         <div class="order-item">
-                            <span class="item-name">{{ item.product.name if item.product else 'N/A' }}</span>
-                            <span class="item-quantity">x {{ item.quantity }}</span>
-                            <span class="item-price">${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</span>
+                            <div class="item-main">
+                                <span class="item-name">{{ item.product.name if item.product else 'N/A' }}</span>
+                                <span class="item-quantity">x {{ item.quantity }}</span>
+                                <span class="item-price">${{ "%.2f"|format(item.unit_price|float * item.quantity) }}</span>
+                            </div>
+                            {% if item.toppings or item.drink_type %}
+                            <div class="item-details">
+                                {% if item.toppings %}
+                                <small class="text-muted">
+                                    配料: 
+                                    {% for topping in item.toppings %}
+                                        {{ topping.name }}{% if not loop.last %}、{% endif %}
+                                    {% endfor %}
+                                </small>
+                                {% endif %}
+                                {% if item.drink_type %}
+                                <small class="text-muted ms-2">
+                                    {% if item.drink_type == 'cold' %}
+                                    <i class="fa-solid fa-snowflake text-info"></i> 冷飲
+                                    {% elif item.drink_type == 'hot' %}
+                                    <i class="fa-solid fa-mug-hot text-warning"></i> 熱飲
+                                    {% endif %}
+                                    {% if item.drink_price > 0 %}(+${{ "%.2f"|format(item.drink_price|float) }}){% endif %}
+                                </small>
+                                {% endif %}
+                            </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>

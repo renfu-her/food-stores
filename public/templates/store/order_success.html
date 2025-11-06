@@ -1,0 +1,85 @@
+{% extends "base/store_base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-check-circle text-success" style="font-size: 5rem;"></i>
+                    </div>
+                    
+                    <h2 class="mb-3 text-success">訂單已成功建立！</h2>
+                    <p class="text-muted mb-4">感謝您的訂購，我們已收到您的訂單</p>
+                    
+                    <div class="alert alert-light border mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6 text-start">
+                                <strong class="text-muted">訂單編號</strong>
+                                <p class="mb-0 fs-5 text-primary" id="orderNumber">-</p>
+                            </div>
+                            <div class="col-md-6 text-start">
+                                <strong class="text-muted">訂單金額</strong>
+                                <p class="mb-0 fs-5 text-dark" id="orderAmount">-</p>
+                            </div>
+                            <div class="col-md-6 text-start">
+                                <strong class="text-muted">使用回饋金</strong>
+                                <p class="mb-0 text-success" id="pointsUsed">-</p>
+                            </div>
+                            <div class="col-md-6 text-start">
+                                <strong class="text-muted">獲得回饋金</strong>
+                                <p class="mb-0 text-info" id="pointsEarned">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="{{ url_for('customer.orders') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-receipt me-2"></i>查看訂單
+                        </a>
+                        <a href="{{ url_for('customer.index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-house me-2"></i>返回首頁
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // 從 URL 參數獲取訂單資訊
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderNumber = urlParams.get('order_number');
+    const amountPaid = urlParams.get('amount_paid');
+    const pointsUsed = urlParams.get('points_used');
+    const pointsEarned = urlParams.get('points_earned');
+    
+    if (orderNumber) {
+        $('#orderNumber').text(orderNumber);
+    }
+    
+    if (amountPaid) {
+        $('#orderAmount').text('$' + parseFloat(amountPaid).toFixed(2));
+    }
+    
+    if (pointsUsed) {
+        $('#pointsUsed').text(pointsUsed + ' 點');
+    } else {
+        $('#pointsUsed').text('0 點');
+    }
+    
+    if (pointsEarned) {
+        $('#pointsEarned').text(pointsEarned + ' 點');
+    } else {
+        $('#pointsEarned').text('0 點');
+    }
+});
+</script>
+{% endblock %}
+
