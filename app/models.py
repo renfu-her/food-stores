@@ -211,6 +211,14 @@ class OrderItem(db.Model):
     toppings = db.relationship('Topping', secondary=order_item_topping, lazy='subquery',
                                backref=db.backref('order_items', lazy=True))
     
+    def get_topping_prices(self):
+        """獲取此訂單項目中每個配料的價格"""
+        result = db.session.execute(
+            db.select(order_item_topping.c.topping_id, order_item_topping.c.price)
+            .where(order_item_topping.c.order_item_id == self.id)
+        )
+        return {row[0]: row[1] for row in result}
+    
     def __repr__(self):
         return f'<OrderItem {self.id}>'
 

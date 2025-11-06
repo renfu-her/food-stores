@@ -28,6 +28,14 @@
                     <div class="info-item">
                         <strong>店鋪:</strong> {{ order.shop.name if order.shop else 'N/A' }}
                     </div>
+                    {% if order.table_id %}
+                    <div class="info-item">
+                        <strong>用餐方式:</strong> 
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-shop me-1"></i>內用 - 桌號: {{ order.table.table_number if order.table else 'N/A' }}
+                        </span>
+                    </div>
+                    {% endif %}
                     <div class="info-item">
                         <strong>總價:</strong> <span class="total-amount">${{ "%.2f"|format(order.total_price|float) }}</span>
                     </div>
@@ -45,21 +53,35 @@
                             {% if item.toppings or item.drink_type %}
                             <div class="item-details">
                                 {% if item.toppings %}
-                                <small class="text-muted">
-                                    配料: 
-                                    {% for topping in item.toppings %}
-                                        {{ topping.name }}{% if not loop.last %}、{% endif %}
-                                    {% endfor %}
+                                {% set topping_prices = item.get_topping_prices() %}
+                                {% set ns = namespace(paid_items=[], free_items=[]) %}
+                                {% for topping in item.toppings %}
+                                    {% set topping_price = topping_prices.get(topping.id, 0)|float %}
+                                    {% if topping_price > 0 %}
+                                        {% set _ = ns.paid_items.append(topping.name ~ ' (+$' ~ "%.0f"|format(topping_price) ~ ')') %}
+                                    {% else %}
+                                        {% set _ = ns.free_items.append(topping.name) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if ns.paid_items|length > 0 %}
+                                <small class="text-muted d-block mb-1">
+                                    配料: {{ ns.paid_items|join('、') }}
                                 </small>
                                 {% endif %}
+                                {% if ns.free_items|length > 0 %}
+                                <small class="text-muted d-block mb-1">
+                                    免費配料: {{ ns.free_items|join('、') }}
+                                </small>
+                                {% endif %}
+                                {% endif %}
                                 {% if item.drink_type %}
-                                <small class="text-muted ms-2">
+                                <small class="text-muted d-block">
                                     {% if item.drink_type == 'cold' %}
                                     <i class="fa-solid fa-snowflake text-info"></i> 冷飲
                                     {% elif item.drink_type == 'hot' %}
                                     <i class="fa-solid fa-mug-hot text-warning"></i> 熱飲
                                     {% endif %}
-                                    {% if item.drink_price > 0 %}(+${{ "%.2f"|format(item.drink_price|float) }}){% endif %}
+                                    {% if item.drink_price > 0 %}(+${{ "%.0f"|format(item.drink_price|float) }}){% endif %}
                                 </small>
                                 {% endif %}
                             </div>

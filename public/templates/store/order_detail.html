@@ -57,6 +57,37 @@
                 </div>
                 
                 <div class="col-md-6">
+                    {% if order.table_id %}
+                    <h5 class="mb-3"><i class="bi bi-shop me-2"></i>用餐資訊</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <td width="120" class="text-muted">用餐方式</td>
+                            <td>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-shop me-1"></i>內用
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">桌號</td>
+                            <td>
+                                <strong class="text-primary fs-5">{{ order.table.table_number if order.table else 'N/A' }}</strong>
+                            </td>
+                        </tr>
+                        {% if order.recipient_name and order.recipient_name != '访客' %}
+                        <tr>
+                            <td class="text-muted">顧客姓名</td>
+                            <td>{{ order.recipient_name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if order.recipient_phone %}
+                        <tr>
+                            <td class="text-muted">聯絡電話</td>
+                            <td>{{ order.recipient_phone }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                    {% else %}
                     <h5 class="mb-3"><i class="bi bi-truck me-2"></i>配送資訊</h5>
                     <table class="table table-sm">
                         {% if order.recipient_name %}
@@ -84,6 +115,7 @@
                         </tr>
                         {% endif %}
                     </table>
+                    {% endif %}
                 </div>
             </div>
             
