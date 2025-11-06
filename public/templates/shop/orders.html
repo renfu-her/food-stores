@@ -54,21 +54,28 @@
                             {% if item.toppings or item.drink_type %}
                             <div class="item-details">
                                 {% if item.toppings %}
-                                <small class="text-muted">
+                                <small class="text-muted d-block mb-1">
                                     配料: 
+                                    {% set ns = namespace(topping_items=[]) %}
                                     {% for topping in item.toppings %}
-                                        {{ topping.name }}{% if not loop.last %}、{% endif %}
+                                        {% set topping_price = topping.price|float %}
+                                        {% if topping_price > 0 %}
+                                            {% set _ = ns.topping_items.append(topping.name ~ ' (+$' ~ "%.0f"|format(topping_price) ~ ')') %}
+                                        {% else %}
+                                            {% set _ = ns.topping_items.append(topping.name ~ ' (FREE)') %}
+                                        {% endif %}
                                     {% endfor %}
+                                    {{ ns.topping_items|join('、') }}
                                 </small>
                                 {% endif %}
                                 {% if item.drink_type %}
-                                <small class="text-muted ms-2">
+                                <small class="text-muted d-block">
                                     {% if item.drink_type == 'cold' %}
                                     <i class="fa-solid fa-snowflake text-info"></i> 冷飲
                                     {% elif item.drink_type == 'hot' %}
                                     <i class="fa-solid fa-mug-hot text-warning"></i> 熱飲
                                     {% endif %}
-                                    {% if item.drink_price > 0 %}(+${{ "%.2f"|format(item.drink_price|float) }}){% endif %}
+                                    {% if item.drink_price > 0 %}(+${{ "%.0f"|format(item.drink_price|float) }}){% endif %}
                                 </small>
                                 {% endif %}
                             </div>
