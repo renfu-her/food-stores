@@ -412,15 +412,18 @@ function displayOrderItems() {
         const itemTotal = item.unit_price * item.quantity;
         
         html += `
-            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-start mb-3 pb-3 border-bottom">
                 <div class="flex-grow-1">
                     <h6 class="mb-1">${item.product_name}</h6>
                     ${toppingsHtml}
                     ${drinkHtml}
                     <small class="text-muted">單價：$${item.unit_price} × ${item.quantity}</small>
                 </div>
-                <div class="text-end">
-                    <strong class="text-primary">$${itemTotal.toFixed(2)}</strong>
+                <div class="text-end d-flex flex-column align-items-end">
+                    <strong class="text-primary mb-2">$${itemTotal.toFixed(2)}</strong>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeItemFromCheckout(${item.product_id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -439,6 +442,32 @@ function updateOrderSummary() {
     document.getElementById('itemsCount').textContent = cartData.length + ' 件';
     document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
     calculateTotal();
+}
+
+// 從結帳頁面移除商品
+function removeItemFromCheckout(productId) {
+    if (!confirm('確定要移除此商品嗎？')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '/api/cart/remove',
+        method: 'DELETE',
+        contentType: 'application/json',
+        data: JSON.stringify({ product_id: productId }),
+        success: function() {
+            // 重新載入購物車數據
+            loadCheckoutData();
+            
+            // 更新購物車徽章
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        },
+        error: function() {
+            alert('移除失敗，請重試');
+        }
+    });
 }
 
 // 提交訂單

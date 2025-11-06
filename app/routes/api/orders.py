@@ -997,7 +997,7 @@ def checkout_with_points_and_payment():
             return jsonify({'error': '请选择支付方式'}), 400
         
         # 生成订单编号
-        order_number = generate_order_number(shop)
+        order_number = generate_order_number(shop_id)
         
         # 计算本次可赚取的回馈金（基于应付金额，不含回馈金抵扣部分）
         points_rate = shop.points_rate or 30

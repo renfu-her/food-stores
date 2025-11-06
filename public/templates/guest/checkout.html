@@ -232,17 +232,21 @@ function displayOrderItems() {
         }
         
         const itemTotal = item.unit_price * item.quantity;
+        const itemIndex = cartData.indexOf(item);
         
         html += `
-            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-start mb-3 pb-3 border-bottom">
                 <div class="flex-grow-1">
                     <h6 class="mb-1">${item.product_name}</h6>
                     ${toppingsHtml}
                     ${drinkHtml}
                     <small class="text-muted">單價：$${item.unit_price} × ${item.quantity}</small>
                 </div>
-                <div class="text-end">
-                    <strong class="text-primary">$${itemTotal.toFixed(2)}</strong>
+                <div class="text-end d-flex flex-column align-items-end">
+                    <strong class="text-primary mb-2">$${itemTotal.toFixed(2)}</strong>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeItemFromCheckout(${itemIndex})">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -263,6 +267,29 @@ function updateOrderSummary() {
     document.getElementById('orderTotal').textContent = '$' + total.toFixed(2);
     document.getElementById('orderTotalCalc').textContent = total.toFixed(2);
     document.getElementById('orderTotalCalc2').textContent = total.toFixed(2);
+}
+
+// 從結帳頁面移除商品
+function removeItemFromCheckout(index) {
+    if (!confirm('確定要移除此商品嗎？')) {
+        return;
+    }
+    
+    // 從 localStorage 移除
+    cartData.splice(index, 1);
+    localStorage.setItem(CART_KEY, JSON.stringify(cartData));
+    
+    // 檢查購物車是否為空
+    if (cartData.length === 0) {
+        alert('購物車已清空');
+        window.location.href = `/guest/shop/${SHOP_ID}/table/${TABLE_NUMBER}/cart`;
+        return;
+    }
+    
+    // 重新顯示
+    displayOrderItems();
+    updateOrderSummary();
+    updateCartCount();
 }
 
 // 提交訂單

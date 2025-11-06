@@ -85,6 +85,7 @@ def add_to_cart():
             cart_item = {
                 'product_id': product_id,
                 'product_name': product.name,
+                'shop_id': product.shop_id,  # 添加店鋪 ID
                 'quantity': quantity,
                 'unit_price': unit_price,
                 'toppings': toppings,
