@@ -179,7 +179,7 @@ $(document).ready(function() {
             url: '/api/auth/logout',
             method: 'POST',
             success: function() {
-                window.location.href = '/shop/login';
+                window.location.href = '/store_admin/login';
             },
             error: function(xhr) {
                 console.error('登出失敗:', xhr);

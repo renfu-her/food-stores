@@ -132,7 +132,7 @@ python cleanup_old_images.py --clean
 ## 📖 詳細文檔
 
 - **完整清理策略**：`docs/IMAGE_CLEANUP_POLICY.md`
-- **Pillow 安裝指南**：`INSTALL_PILLOW.md`
+- **Pillow 安裝指南**：`docs/INSTALL_PILLOW.md`
 - **技術實現**：`app/utils/image_processor.py`
 - **清理工具**：`cleanup_old_images.py`
 

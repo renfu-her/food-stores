@@ -24,7 +24,7 @@
 ### Shop Admin（店主）
 
 ```
-/shop
+/store_admin
 ├── /shops
 │   ├── list.html         → 自己的店鋪列表（owner_id 過濾）
 │   ├── add.html          → 新增店鋪（自動為當前用戶）
@@ -73,20 +73,20 @@
 
 ```python
 # 店鋪管理
-GET  /shop/shops              # 店鋪列表
-GET  /shop/shops/add          # 新增店鋪
-GET  /shop/shops/<id>/edit    # 編輯店鋪
+GET  /store_admin/shops              # 店鋪列表
+GET  /store_admin/shops/add          # 新增店鋪
+GET  /store_admin/shops/<id>/edit    # 編輯店鋪
 
 # 產品管理
-GET  /shop/products              # 產品列表
-GET  /shop/products/add          # 新增產品
-GET  /shop/products/<id>/edit    # 編輯產品
+GET  /store_admin/products              # 產品列表
+GET  /store_admin/products/add          # 新增產品
+GET  /store_admin/products/<id>/edit    # 編輯產品
 
 # 其他
-GET  /shop/profile            # 店鋪設定
-GET  /shop/toppings           # 配料管理
-GET  /shop/orders             # 訂單管理
-GET  /shop/statistics         # 統計資料
+GET  /store_admin/profile            # 店鋪設定
+GET  /store_admin/toppings           # 配料管理
+GET  /store_admin/orders             # 訂單管理
+GET  /store_admin/statistics         # 統計資料
 ```
 
 ### API 路由
@@ -228,7 +228,7 @@ products = Product.query.filter_by(is_active=True) \
 python app.py
 
 # 訪問店主後台
-http://localhost:5000/shop
+http://localhost:5000/store_admin
 
 # 登入帳號
 Email: store1@store.com

@@ -26,7 +26,7 @@ CDN：
 - Badge 版：`<span class="badge bg-info"><i class="fa-solid fa-snowflake"></i></span>`
 
 **使用場景：**
-- ✅ 產品列表（/backend, /shop）
+- ✅ 產品列表（/backend, /store_admin）
 - ✅ 商品選擇（商店前台）
 - ✅ 購物車
 - ✅ 訂單詳情
@@ -51,7 +51,7 @@ CDN：
 - Badge 版：`<span class="badge bg-warning"><i class="fa-solid fa-mug-hot"></i></span>`
 
 **使用場景：**
-- ✅ 產品列表（/backend, /shop）
+- ✅ 產品列表（/backend, /store_admin）
 - ✅ 商品選擇（商店前台）
 - ✅ 購物車
 - ✅ 訂單詳情
@@ -69,7 +69,7 @@ CDN：
 |------|------|---------|
 | **Backend - 產品列表** | `/backend/products` | Badge 版 |
 | **Backend - 訂單詳情** | `/backend/orders/<id>` | 文字版（帶顏色）|
-| **Shop Admin - 產品列表** | `/shop/products` | Badge 版 |
+| **Shop Admin - 產品列表** | `/store_admin/products` | Badge 版 |
 | **商店前台 - 商品頁** | `/store/shop/<id>` | 文字版（帶顏色）|
 | **商店前台 - 購物車** | `/store/cart` | 文字版（帶顏色）|
 | **商店前台 - 訂單詳情** | `/store/orders/<id>` | Badge 版 |

@@ -212,7 +212,7 @@ def admin_page():
     # 只有 admin 角色可以訪問
     pass
 
-@app.route('/shop')
+@app.route('/store_admin')
 @role_required('store_admin')
 def shop_page():
     # 只有 store_admin 角色可以訪問
@@ -232,7 +232,7 @@ def role_required(*roles):
                 # 根據路由智能重定向
                 if request.path.startswith('/backend'):
                     return redirect(url_for('backend.login'))
-                elif request.path.startswith('/shop'):
+                elif request.path.startswith('/store_admin'):
                     return redirect(url_for('store_admin.login'))
                 else:
                     return redirect(url_for('customer.login'))
@@ -374,7 +374,7 @@ with app.app_context():
 # 測試：PUT /api/shops/<shop_b_id>
 # 預期：返回 403 Forbidden
 
-# 測試：GET /shop/products
+# 測試：GET /store_admin/products
 # 預期：只顯示店鋪 A 的產品
 ```
 

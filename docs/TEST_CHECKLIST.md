@@ -1,14 +1,14 @@
-# 測試清單 - Shop Admin vs Backend
+# 測試清單 - Store Admin vs Backend
 
-> 驗證 `/shop` 和 `/backend` 功能是否一致
+> 驗證 `/store_admin` 和 `/backend` 功能是否一致
 
 ---
 
 ## ✅ 店鋪管理測試
 
-### 1. 店鋪列表頁（/shop/shops）
+### 1. 店鋪列表頁（/store_admin/shops）
 
-- [ ] 訪問 `/shop/shops` 能正常顯示
+- [ ] 訪問 `/store_admin/shops` 能正常顯示
 - [ ] 列表顯示當前用戶擁有的店鋪
 - [ ] 搜尋功能正常（名稱、描述）
 - [ ] 狀態篩選正常（營業中/已關閉）
@@ -19,7 +19,7 @@
 - [ ] 表格欄位：ID, 店鋪名稱, 訂單ID, 最大配料, 狀態, 建立時間, 操作
 - [ ] ❌ 無「店主篩選」（與 Backend 差異）
 
-### 2. 新增店鋪頁（/shop/shops/add）
+### 2. 新增店鋪頁（/store_admin/shops/add）
 
 - [ ] 頁面正常顯示
 - [ ] 「返回」按鈕跳轉到列表頁
@@ -33,7 +33,7 @@
 - [ ] 錯誤提示正常顯示
 - [ ] shop.owner_id 自動設為當前用戶
 
-### 3. 編輯店鋪頁（/shop/shops/<id>/edit）
+### 3. 編輯店鋪頁（/store_admin/shops/<id>/edit）
 
 - [ ] 頁面正常顯示
 - [ ] 表單預填現有數據
@@ -54,9 +54,9 @@
 
 ## ✅ 產品管理測試
 
-### 4. 產品列表頁（/shop/products）
+### 4. 產品列表頁（/store_admin/products）
 
-- [ ] 訪問 `/shop/products` 能正常顯示
+- [ ] 訪問 `/store_admin/products` 能正常顯示
 - [ ] 列表顯示當前店鋪的產品
 - [ ] 搜尋功能正常（產品名稱、描述）
 - [ ] 分類篩選正常
@@ -68,9 +68,9 @@
 - [ ] 「刪除」按鈕執行軟刪除
 - [ ] 「上下架」按鈕切換狀態
 - [ ] 表格欄位：ID, 產品名稱, 分類, 單價, 折扣價, 庫存, 飲品圖標, 狀態, 操作
-- [ ] 飲品圖標正確顯示（🧊 冷飲, ☕ 熱飲）
+- [ ] 飲品圖標正確顯示（<i class="fa-solid fa-snowflake"></i> 冷飲, <i class="fa-solid fa-mug-hot"></i> 熱飲）
 
-### 5. 新增產品頁（/shop/products/add）
+### 5. 新增產品頁（/store_admin/products/add）
 
 - [ ] 頁面正常顯示
 - [ ] 「返回」按鈕跳轉到列表頁
@@ -88,7 +88,7 @@
 - [ ] 錯誤提示正常顯示
 - [ ] product.shop_id 自動設為當前店鋪
 
-### 6. 編輯產品頁（/shop/products/<id>/edit）
+### 6. 編輯產品頁（/store_admin/products/<id>/edit）
 
 - [ ] 頁面正常顯示
 - [ ] 表單預填現有數據
@@ -122,7 +122,7 @@ python test_permissions.py
 - [ ] **店主 A 登入**
   - [ ] 店鋪列表只顯示店鋪 A
   - [ ] 產品列表只顯示店鋪 A 的產品
-  - [ ] 無法訪問 `/shop/shops/<shop_b_id>/edit`（404）
+  - [ ] 無法訪問 `/store_admin/shops/<shop_b_id>/edit`（404）
   - [ ] API 無法修改店鋪 B：`PUT /api/shops/<shop_b_id>` 返回 403
   - [ ] API 無法修改產品 B：`PUT /api/products/<product_b_id>` 返回 403
 
@@ -158,7 +158,7 @@ python test_permissions.py
 
 ### 9. 與 Backend 對比
 
-- [ ] **頁面佈局** - Shop Admin 和 Backend 完全相同
+- [ ] **頁面佈局** - Store Admin 和 Backend 完全相同
 - [ ] **表格樣式** - 相同的 Bootstrap 樣式
 - [ ] **按鈕樣式** - 相同的顏色和圖標
 - [ ] **表單佈局** - 相同的 8欄/4欄 分割
@@ -179,8 +179,8 @@ python test_permissions.py
   - [ ] 修改加價正常儲存
 
 - [ ] **列表顯示：**
-  - [ ] 有冷飲顯示 🧊 圖標
-  - [ ] 有熱飲顯示 ☕ 圖標
+  - [ ] 有冷飲顯示圖標
+  - [ ] 有熱飲顯示圖標
   - [ ] 無飲品顯示 `-`
 
 - [ ] **前台顧客：**
@@ -221,7 +221,7 @@ python test_permissions.py
   - [ ] 播放提示音
   - [ ] 頂部橫幅通知
   - [ ] 訂單管理頁面顯示訂單
-  - [ ] 訂單詳情顯示飲品資訊（🧊 冷飲）
+  - [ ] 訂單詳情顯示飲品資訊（冷飲圖標）
   - [ ] 更新訂單狀態正常
 
 ---
@@ -235,7 +235,7 @@ python test_permissions.py
 python app.py
 
 # 2. 登入店主帳號
-http://localhost:5000/shop
+http://localhost:5000/store_admin
 Email: store1@store.com
 密碼: Qq123456@
 
@@ -260,11 +260,11 @@ Email: store1@store.com
 ### 成功標準
 
 ✅ **頁面一致性**
-- Shop Admin 的店鋪管理和產品管理頁面與 Backend 完全相同
+- Store Admin 的店鋪管理和產品管理頁面與 Backend 完全相同
 - 除了模板繼承和路由引用外，HTML 結構相同
 
 ✅ **功能一致性**
-- 所有 Backend 的功能在 Shop Admin 都正常工作
+- 所有 Backend 的功能在 Store Admin 都正常工作
 - 飲品選項設置和顯示正常
 - Banner 和圖片上傳正常
 - 配料管理（在 edit 頁面）正常
@@ -312,7 +312,7 @@ Email: store1@store.com
 問題：無
 
 總結：
-所有功能測試通過，Shop Admin 與 Backend 功能完全對齊。
+所有功能測試通過，Store Admin 與 Backend 功能完全對齊。
 ```
 
 ---

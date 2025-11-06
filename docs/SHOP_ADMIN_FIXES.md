@@ -262,7 +262,7 @@ const data = {
 
 1. **訪問店鋪列表：**
    ```
-   http://localhost:5000/shop/shops
+   http://localhost:5000/store_admin/shops
    ✓ 頁面正常顯示
    ✓ 列表顯示自己的店鋪
    ✓ 無 JSON 序列化錯誤
@@ -270,7 +270,7 @@ const data = {
 
 2. **新增店鋪：**
    ```
-   http://localhost:5000/shop/shops/add
+   http://localhost:5000/store_admin/shops/add
    ✓ 頁面正常顯示
    ✓ 無"選擇店主"欄位
    ✓ 提交後 owner_id 自動為當前用戶
@@ -278,7 +278,7 @@ const data = {
 
 3. **編輯店鋪：**
    ```
-   http://localhost:5000/shop/shops/1/edit
+   http://localhost:5000/store_admin/shops/1/edit
    ✓ 頁面正常顯示
    ✓ 店主欄位顯示為禁用文本框
    ✓ 提交時不包含 owner_id
@@ -286,7 +286,7 @@ const data = {
 
 4. **訪問產品列表：**
    ```
-   http://localhost:5000/shop/products
+   http://localhost:5000/store_admin/products
    ✓ 頁面正常顯示
    ✓ 列表顯示自己店鋪的產品
    ✓ 無 JSON 序列化錯誤
@@ -294,7 +294,7 @@ const data = {
 
 5. **新增產品：**
    ```
-   http://localhost:5000/shop/products/add
+   http://localhost:5000/store_admin/products/add
    ✓ 頁面正常顯示
    ✓ 無"所屬店鋪"欄位
    ✓ shop_id 自動為當前店鋪
@@ -303,7 +303,7 @@ const data = {
 
 6. **編輯產品：**
    ```
-   http://localhost:5000/shop/products/1/edit
+   http://localhost:5000/store_admin/products/1/edit
    ✓ 頁面正常顯示
    ✓ 無"所屬店鋪"欄位
    ✓ 提交時不包含 shop_id

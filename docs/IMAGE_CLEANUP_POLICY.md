@@ -186,7 +186,7 @@ python cleanup_old_images.py --clean
 
 - `app/utils/image_processor.py` - 圖片處理核心邏輯
 - `cleanup_old_images.py` - 手動清理工具
-- `INSTALL_PILLOW.md` - Pillow 安裝指南
+- `docs/INSTALL_PILLOW.md` - Pillow 安裝指南
 - `requirements.txt` - 依賴包列表（包含 Pillow）
 
 ## 🔗 API 端點總覽

@@ -1,6 +1,6 @@
 # Backend vs Shop Admin 對比說明
 
-> 本文檔說明 `/backend` (Admin) 和 `/shop` (Store Admin) 的設計差異和實現方式
+> 本文檔說明 `/backend` (Admin) 和 `/store_admin` (Store Admin) 的設計差異和實現方式
 
 ---
 
@@ -29,12 +29,12 @@
 ```
 Backend                          Shop Admin
 ────────────────────────────────────────────────────
-/backend/shops                   /shop/shops
+/backend/shops                   /store_admin/shops
 ├── list.html                    ├── list.html
 ├── add.html                     ├── add.html
 └── edit.html                    └── edit.html
 
-/backend/products                /shop/products
+/backend/products                /store_admin/products
 ├── list.html                    ├── list.html
 ├── add.html                     ├── add.html
 └── edit.html                    └── edit.html
@@ -127,7 +127,7 @@ def shops():
     shops = Shop.query.filter_by(owner_id=user.id) \  # ← 只查詢自己的
                       .filter(Shop.deleted_at.is_(None)) \
                       .all()
-    return render_template('shop/shops/list.html', 
+    return render_template('store_admin/shops/list.html', 
                          shops=shops, 
                          user=user)  # ← 無需 users 列表
 ```
@@ -381,7 +381,7 @@ Backend:                     Shop Admin:
 ### Shop Admin 新增店鋪流程
 
 ```
-1. 店主登入 /shop
+1. 店主登入 /store_admin
    ↓
 2. 點擊「店鋪管理」
    ↓

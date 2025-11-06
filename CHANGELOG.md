@@ -4,6 +4,110 @@
 
 ---
 
+## 2025-11-06 20:30 - 文檔結構整理
+
+### 📁 文件組織
+
+**將根目錄的 Markdown 文檔移動到 `/docs` 目錄：**
+
+| 原路徑 | 新路徑 |
+|--------|--------|
+| `IMAGE_MANAGEMENT_GUIDE.md` | `docs/IMAGE_MANAGEMENT_GUIDE.md` |
+| `INSTALL_PILLOW.md` | `docs/INSTALL_PILLOW.md` |
+| `TEST_CHECKLIST.md` | `docs/TEST_CHECKLIST.md` |
+
+**同時更新的內容：**
+1. **`docs/TEST_CHECKLIST.md`**
+   - 更新所有 `/shop/*` 路徑為 `/store_admin/*`
+   - 更新測試標題和說明文字
+   - 更新飲品圖標顯示（從 Emoji 改為 Font Awesome）
+
+2. **引用更新：**
+   - `CHANGELOG.md` - 更新文檔路徑引用
+   - `docs/IMAGE_CLEANUP_POLICY.md` - 更新 `INSTALL_PILLOW.md` 引用
+   - `docs/IMAGE_MANAGEMENT_GUIDE.md` - 更新內部文檔引用
+
+**原因：**
+- 保持項目結構清晰，所有文檔集中在 `/docs` 目錄
+- 便於查找和維護
+- 符合標準項目結構慣例
+
+**文檔目錄結構：**
+```
+docs/
+├── BACKEND_VS_SHOP.md          # Backend vs Store Admin 對比
+├── ICONS_REFERENCE.md          # 圖標參考手冊
+├── IMAGE_CLEANUP_POLICY.md     # 圖片清理策略
+├── IMAGE_MANAGEMENT_GUIDE.md   # 圖片管理指南 ⬅️ 新位置
+├── INSTALL_PILLOW.md           # Pillow 安裝指南 ⬅️ 新位置
+├── PERMISSIONS.md              # 權限系統說明
+├── QUICK_REFERENCE.md          # 快速參考卡
+├── SHOP_ADMIN_FIXES.md         # Store Admin 修復記錄
+├── SHOP_ADMIN_GUIDE.md         # Store Admin 操作指南
+└── TEST_CHECKLIST.md           # 測試清單 ⬅️ 新位置
+```
+
+---
+
+## 2025-11-06 20:15 - 店鋪管理 URL 前綴更名
+
+### 🔄 路由重構
+
+**將店鋪管理 URL 前綴從 `/shop` 改為 `/store_admin`：**
+
+**原因：**
+- 提高語義清晰度，與 Blueprint 名稱 `store_admin` 保持一致
+- 避免與商店前台路由 `/store` 混淆
+- 更明確地表示這是「商店管理員」專用後台
+
+**修改內容：**
+
+| 項目 | 原路徑 | 新路徑 |
+|------|--------|--------|
+| 店鋪列表 | `/shop/shops` | `/store_admin/shops` |
+| 新增店鋪 | `/shop/shops/add` | `/store_admin/shops/add` |
+| 編輯店鋪 | `/shop/shops/<id>/edit` | `/store_admin/shops/<id>/edit` |
+| 產品列表 | `/shop/products` | `/store_admin/products` |
+| 新增產品 | `/shop/products/add` | `/store_admin/products/add` |
+| 編輯產品 | `/shop/products/<id>/edit` | `/store_admin/products/<id>/edit` |
+| 登入頁面 | `/shop/login` | `/store_admin/login` |
+| 儀表板 | `/shop/dashboard` | `/store_admin/dashboard` |
+
+**修改的文件：**
+
+1. **`app/__init__.py`**
+   - 修改 Blueprint 註冊：`url_prefix='/store_admin'`
+
+2. **`public/templates/base/shop_base.html`**
+   - 修改登出後重定向 URL
+
+3. **`public/templates/shop/products/list.html`**
+   - 修改編輯產品鏈接
+
+4. **`public/templates/shop/shops/list.html`**
+   - 修改編輯店鋪鏈接
+
+5. **文檔更新：**
+   - `docs/SHOP_ADMIN_GUIDE.md`
+   - `docs/QUICK_REFERENCE.md`
+   - `docs/BACKEND_VS_SHOP.md`
+   - `docs/SHOP_ADMIN_FIXES.md`
+   - `docs/ICONS_REFERENCE.md`
+   - `docs/PERMISSIONS.md`
+
+**重要說明：**
+- ✅ Blueprint 內部名稱 `store_admin` 保持不變
+- ✅ 所有 `url_for('store_admin.xxx')` 自動生效
+- ✅ 模板目錄 `public/templates/shop/` 保持不變（僅 URL 變化）
+- ✅ API 端點無變化
+- ✅ 數據庫無變化
+
+**向下兼容性：**
+- ⚠️ 舊的 `/shop/*` URL 將不再有效
+- 建議用戶清除瀏覽器緩存並重新登入
+
+---
+
 ## 2025-11-06 20:00 - 冷熱飲圖標升級為 Font Awesome
 
 ### 🎨 UI/UX 改進
@@ -18,7 +122,7 @@
 **修改的頁面：**
 1. ✅ `/backend` - 產品列表（如有）
 2. ✅ `/backend` - 訂單詳情
-3. ✅ `/shop` - 產品列表
+3. ✅ `/store_admin` - 產品列表
 4. ✅ 商店前台 - 商品頁面（選擇飲品）
 5. ✅ 商店前台 - 購物車
 6. ✅ 商店前台 - 訂單詳情
@@ -86,8 +190,8 @@ python cleanup_old_images.py --clean
 **新增文件：**
 - `cleanup_old_images.py` - 手動清理工具
 - `docs/IMAGE_CLEANUP_POLICY.md` - 完整清理策略文檔
-- `IMAGE_MANAGEMENT_GUIDE.md` - 圖片管理快速指南
-- `INSTALL_PILLOW.md` - Pillow 安裝指南
+- `docs/IMAGE_MANAGEMENT_GUIDE.md` - 圖片管理快速指南
+- `docs/INSTALL_PILLOW.md` - Pillow 安裝指南
 
 **核心改進：**
 - 💾 **節省空間**：文件大小減少 30-80%
@@ -990,7 +1094,7 @@ Backend (9 項)               Shop Admin (5 項)
   - 數據流對比
   - UI/UX 差異
   - shop_id 和 owner_id 處理說明
-- ✅ `TEST_CHECKLIST.md` - 完整測試清單（60+ 測試項目）
+- ✅ `docs/TEST_CHECKLIST.md` - 完整測試清單（60+ 測試項目）
   - 店鋪管理測試（列表/新增/編輯）
   - 產品管理測試（列表/新增/編輯/飲品）
   - 權限隔離測試
