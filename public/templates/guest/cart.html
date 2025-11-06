@@ -1,0 +1,207 @@
+{% extends "base/guest_base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-cart3 me-2"></i>購物車
+            </h2>
+            <div class="alert alert-info">
+                <i class="bi bi-table me-2"></i>桌號：<strong>{{ table_number }}</strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row" id="cartContainer">
+        <!-- 購物車項目列表 -->
+        <div class="col-lg-8" id="cartItemsColumn">
+            <div id="cartItems">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">載入中...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 結帳摘要 -->
+        <div class="col-lg-4" id="cartSummaryColumn">
+            <div class="card shadow-sm" id="cartSummary" style="display: none; position: sticky; top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>訂單摘要</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>商品總計</span>
+                        <span id="itemsCount" class="fw-bold">0 件</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>小計</span>
+                        <span id="subtotal">$0</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <h5 class="mb-0">總計</h5>
+                        <h5 class="mb-0 text-primary" id="cartTotal">$0</h5>
+                    </div>
+                    <button class="btn btn-primary w-100 btn-lg" onclick="checkout()">
+                        <i class="bi bi-credit-card me-2"></i>前往結帳
+                    </button>
+                    <a href="{{ url_for('guest.order', shop_id=shop.id, table_number=table_number) }}" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="bi bi-arrow-left me-2"></i>繼續購物
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+const SHOP_ID = {{ shop.id }};
+const TABLE_NUMBER = '{{ table_number }}';
+const CART_KEY = `guestCart_${SHOP_ID}_${TABLE_NUMBER}`;
+
+function loadCart() {
+    const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    const cartItemsDiv = document.getElementById('cartItems');
+    
+    if (cart.length === 0) {
+        // 空購物車
+        document.getElementById('cartItemsColumn').className = 'col-12';
+        document.getElementById('cartSummaryColumn').style.display = 'none';
+        
+        cartItemsDiv.innerHTML = `
+            <div class="card shadow-sm text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-cart-x display-1 text-muted mb-3"></i>
+                    <h4 class="mb-3">購物車是空的</h4>
+                    <p class="text-muted mb-4">還沒有添加任何商品，快去選購吧！</p>
+                    <a href="{{ url_for('guest.order', shop_id=shop.id, table_number=table_number) }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-shop me-2"></i>開始購物
+                    </a>
+                </div>
+            </div>
+        `;
+        document.getElementById('cartSummary').style.display = 'none';
+        return;
+    }
+    
+    // 有商品時：恢復左右分欄
+    document.getElementById('cartItemsColumn').className = 'col-lg-8';
+    document.getElementById('cartSummaryColumn').style.display = 'block';
+    
+    // 顯示購物車項目
+    let html = '';
+    let total = 0;
+    
+    cart.forEach((item, index) => {
+        const itemTotal = item.unit_price * item.quantity;
+        total += itemTotal;
+        
+        // 顯示配料
+        let toppingsHtml = '';
+        if (item.toppings && item.toppings.length > 0) {
+            const toppingNames = item.toppings.map(t => {
+                return t.price > 0 ? `${t.name} (+$${t.price})` : `${t.name} (FREE)`;
+            }).join('、');
+            toppingsHtml = `<p class="text-muted small mb-1">配料：${toppingNames}</p>`;
+        }
+        
+        // 顯示飲品選項
+        let drinkHtml = '';
+        if (item.drink_type) {
+            const drinkIcon = item.drink_type === 'cold' 
+                ? '<i class="fa-solid fa-snowflake text-info"></i>' 
+                : '<i class="fa-solid fa-mug-hot text-warning"></i>';
+            const drinkName = item.drink_type === 'cold' ? '冷飲' : '熱飲';
+            const drinkPriceDisplay = item.drink_price > 0 ? ` (+$${item.drink_price})` : '';
+            drinkHtml = `<p class="text-muted small mb-1">飲品：${drinkIcon} ${drinkName}${drinkPriceDisplay}</p>`;
+        }
+        
+        html += `
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body p-3">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="mb-2">${item.product_name}</h5>
+                            ${toppingsHtml}
+                            ${drinkHtml}
+                            <p class="text-muted mb-0 small">單價：$${item.unit_price}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="input-group input-group-sm">
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${index}, ${item.quantity - 1})">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                                <input type="number" class="form-control text-center" value="${item.quantity}" min="1" readonly>
+                                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${index}, ${item.quantity + 1})">
+                                    <i class="bi bi-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <h5 class="mb-0 text-primary">$${itemTotal.toFixed(2)}</h5>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${index})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    cartItemsDiv.innerHTML = html;
+    document.getElementById('itemsCount').textContent = cart.length + ' 件';
+    document.getElementById('cartTotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('cartSummary').style.display = 'block';
+}
+
+function removeFromCart(index) {
+    if (confirm('確定要從購物車中移除這個商品嗎？')) {
+        let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+        cart.splice(index, 1);
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        loadCart();
+        updateCartCount();
+    }
+}
+
+function updateQuantity(index, quantity) {
+    if (quantity < 1) {
+        removeFromCart(index);
+        return;
+    }
+    
+    let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    if (cart[index]) {
+        cart[index].quantity = quantity;
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        loadCart();
+        updateCartCount();
+    }
+}
+
+function checkout() {
+    const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    
+    if (cart.length === 0) {
+        alert('購物車是空的');
+        return;
+    }
+    
+    window.location.href = `/guest/shop/${SHOP_ID}/table/${TABLE_NUMBER}/checkout`;
+}
+
+// 頁面載入時載入購物車
+loadCart();
+</script>
+{% endblock %}
+

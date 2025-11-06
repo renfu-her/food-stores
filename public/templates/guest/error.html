@@ -1,0 +1,32 @@
+{% extends "base/app.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card shadow">
+                <div class="card-body py-5">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
+                    <h2 class="mt-4 mb-3">{{ message or '出現錯誤' }}</h2>
+                    
+                    {% if shop %}
+                    <p class="text-muted mb-4">店鋪：{{ shop.name }}</p>
+                    {% endif %}
+                    
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{{ url_for('customer.index') }}" class="btn btn-primary">
+                            <i class="bi bi-house me-2"></i>返回首頁
+                        </a>
+                        {% if shop %}
+                        <a href="{{ url_for('customer.shop', shop_id=shop.id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-shop me-2"></i>訪問店鋪
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

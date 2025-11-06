@@ -1,0 +1,525 @@
+{% extends "base/guest_base.html" %}
+
+{% block content %}
+<!-- 店鋪 Banner 橫幅 (4:1 比例) -->
+{% if shop.banner_image %}
+<div class="position-relative mb-3" style="width: 100%; padding-top: 25%; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <img src="{{ shop.banner_image }}" class="position-absolute top-0 start-0 w-100 h-100" alt="{{ shop.name }} Banner" style="object-fit: cover;">
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.3) 100%);"></div>
+    <div class="position-absolute bottom-0 start-0 w-100 p-4 text-white">
+        <h1 class="display-4 mb-2">{{ shop.name }}</h1>
+        <p class="lead mb-0">{{ shop.description or '歡迎光臨' }}</p>
+    </div>
+</div>
+{% else %}
+<div class="container mb-3">
+    <div class="page-header">
+        <h1>{{ shop.name }}</h1>
+        <p class="shop-description">{{ shop.description or '暫無描述' }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- 桌號信息提示 -->
+<div class="container">
+    <div class="alert alert-info mb-3">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>您正在使用訪客點餐</strong> - 桌號：<strong class="text-primary">{{ table_number }}</strong>
+    </div>
+</div>
+
+<div class="container">
+    
+    <div class="mb-3">
+        <select id="categoryFilter" onchange="filterProducts()" class="form-select" style="max-width: 300px;">
+            <option value="">全部分類</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    {% if products %}
+    <div class="row g-3">
+        {% for product in products %}
+        <div class="col-sm-6 col-md-4 col-lg-3 product-card-item" data-category="{{ product.category_id }}">
+            <div class="card h-100 shadow-sm">
+                <!-- 產品圖片（可點擊） -->
+                <div class="position-relative" style="cursor: pointer;" onclick="showProductDetail({{ product.id }})">
+                    {% if product.images and product.images|length > 0 %}
+                        <img class="card-img-top" src="{{ product.images[0] }}" alt="{{ product.name }}" style="width:100%; object-fit: cover; height: 200px;">
+                    {% else %}
+                        <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="min-height: 200px;">
+                            <i class="bi bi-box-seam display-4 text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-body p-2">
+                    <h4 class="card-title mb-1" style="cursor: pointer;" onclick="showProductDetail({{ product.id }})">
+                        <span class="text-primary text-decoration-none">{{ product.name }}</span>
+                    </h4>
+                    <p class="card-text text-muted small mb-1" style="min-height: 40px;">{{ product.description or '暫無描述' }}</p>
+                    <div class="mb-1">
+                        {% if product.discounted_price %}
+                            <span class="text-decoration-line-through text-muted me-2">${{ product.unit_price|int }}</span>
+                            <span class="text-danger fw-bold fs-5">${{ product.discounted_price|int }}</span>
+                        {% else %}
+                            <span class="fw-bold fs-5">${{ product.unit_price|int }}</span>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-primary w-100" onclick="showProductDetail({{ product.id }})">查看詳情</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>此店鋪暫無產品</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- 產品詳情模態框（與登入用戶相同） -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalTitle">產品詳情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- 產品圖片輪播 -->
+                        <div id="productImageCarousel" class="carousel slide" data-bs-ride="false">
+                            <div class="carousel-inner" id="productCarouselInner">
+                                <!-- 圖片將動態載入 -->
+                            </div>
+                            <button class="carousel-control-prev" type="button" data-bs-target="#productImageCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#productImageCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h3 id="productModalName" class="mb-3"></h3>
+                        <p id="productModalDescription" class="text-muted mb-3"></p>
+                        
+                        <div class="mb-3">
+                            <div id="productModalPrice"></div>
+                        </div>
+                        
+                        <!-- 配料選擇 -->
+                        <div id="toppingsSection" class="mb-3" style="display: none;">
+                            <label class="form-label mb-2">
+                                配料選擇 
+                                <small class="text-muted" id="toppingLimit"></small>
+                            </label>
+                            <div id="toppingsList" class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                <!-- 配料將動態載入 -->
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                已選 <span id="selectedToppingCount">0</span> 個配料
+                            </small>
+                        </div>
+                        
+                        <!-- 飲品選擇 -->
+                        <div id="drinksSection" class="mb-3" style="display: none;">
+                            <label class="form-label mb-2">飲品選擇</label>
+                            <div class="border rounded p-2">
+                                <div id="drinksList">
+                                    <!-- 飲品選項將動態載入 -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="productQuantity" class="form-label mb-2">數量</label>
+                            <input type="number" class="form-control" id="productQuantity" value="1" min="1" onchange="updateTotalPrice()">
+                        </div>
+                        
+                        <!-- 總價顯示 -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                <span class="fw-bold">總價：</span>
+                                <span id="totalPrice" class="fs-4 fw-bold text-primary">$0</span>
+                            </div>
+                        </div>
+                        
+                        <div id="productModalError" class="alert alert-danger mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" onclick="addToCart()">
+                    <i class="bi bi-cart-plus me-2"></i>加入購物車
+                </button>
+                <button type="button" class="btn btn-primary" onclick="buyNow()">
+                    <i class="bi bi-credit-card me-2"></i>直接結帳
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+let currentProduct = null;
+let productModal;
+const SHOP_ID = {{ shop.id }};
+const TABLE_NUMBER = '{{ table_number }}';
+const CART_KEY = `guestCart_${SHOP_ID}_${TABLE_NUMBER}`;
+
+// 產品數據（從後端傳入）
+const productsData = {{ products|tojson|safe }};
+
+$(document).ready(function() {
+    productModal = new bootstrap.Modal(document.getElementById('productModal'));
+    updateCartCount();
+});
+
+function filterProducts() {
+    const categoryId = document.getElementById('categoryFilter').value;
+    const cards = document.querySelectorAll('.product-card-item');
+    cards.forEach(card => {
+        if (!categoryId || card.dataset.category == categoryId) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// 顯示產品詳情
+function showProductDetail(productId) {
+    const product = productsData.find(p => p.id === productId);
+    if (!product) {
+        alert('產品不存在');
+        return;
+    }
+    
+    currentProduct = product;
+    
+    // 載入產品圖片
+    loadProductImages(product);
+    
+    // 設置標題和描述
+    $('#productModalTitle').text(product.name);
+    $('#productModalName').text(product.name);
+    $('#productModalDescription').text(product.description || '暫無描述');
+    
+    // 設置價格
+    let priceHtml = '';
+    if (product.discounted_price) {
+        priceHtml = `
+            <span class="text-decoration-line-through text-muted me-2 fs-5">$${product.unit_price}</span>
+            <span class="text-danger fw-bold fs-3">$${product.discounted_price}</span>
+        `;
+    } else {
+        priceHtml = `<span class="fw-bold fs-3">$${product.unit_price}</span>`;
+    }
+    $('#productModalPrice').html(priceHtml);
+    
+    // 載入配料選項
+    loadToppings(product);
+    
+    // 載入飲品選項
+    loadDrinks(product);
+    
+    // 重置數量
+    $('#productQuantity').val(1);
+    $('#productModalError').hide();
+    
+    // 更新總價
+    updateTotalPrice();
+    
+    // 顯示模態框
+    productModal.show();
+}
+
+// 載入產品圖片輪播
+function loadProductImages(product) {
+    const carouselInner = $('#productCarouselInner');
+    carouselInner.empty();
+    
+    if (product.images && product.images.length > 0) {
+        product.images.forEach((imagePath, index) => {
+            const activeClass = index === 0 ? 'active' : '';
+            const carouselItem = `
+                <div class="carousel-item ${activeClass}">
+                    <img src="${imagePath}" class="d-block w-100 rounded" alt="${product.name}" style="max-height: 400px; object-fit: contain;">
+                </div>
+            `;
+            carouselInner.append(carouselItem);
+        });
+        
+        if (product.images.length <= 1) {
+            $('.carousel-control-prev, .carousel-control-next').hide();
+        } else {
+            $('.carousel-control-prev, .carousel-control-next').show();
+        }
+    } else {
+        const noImageHtml = `
+            <div class="carousel-item active">
+                <div class="d-flex align-items-center justify-content-center bg-light rounded" style="min-height: 300px;">
+                    <i class="bi bi-box-seam display-1 text-muted"></i>
+                </div>
+            </div>
+        `;
+        carouselInner.html(noImageHtml);
+        $('.carousel-control-prev, .carousel-control-next').hide();
+    }
+}
+
+// 載入配料選項
+function loadToppings(product) {
+    const toppingsList = $('#toppingsList');
+    toppingsList.empty();
+    
+    $.ajax({
+        url: `/api/shops/${SHOP_ID}`,
+        method: 'GET',
+        success: function(shop) {
+            const maxToppings = shop.max_toppings_per_order || 5;
+            
+            $.ajax({
+                url: `/api/toppings?shop_id=${SHOP_ID}&is_active=true`,
+                method: 'GET',
+                success: function(response) {
+                    const toppings = response.toppings || response;
+                    
+                    if (toppings && toppings.length > 0) {
+                        $('#toppingsSection').show();
+                        $('#toppingLimit').text(`(最多 ${maxToppings} 個)`);
+                        
+                        toppings.forEach(topping => {
+                            const priceDisplay = topping.price == 0 ? 'FREE' : `+$${topping.price}`;
+                            const toppingHtml = `
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input topping-checkbox" 
+                                           type="checkbox" 
+                                           id="topping_${topping.id}" 
+                                           value="${topping.id}"
+                                           data-price="${topping.price}"
+                                           data-name="${topping.name}"
+                                           onchange="handleToppingChange(${maxToppings})">
+                                    <label class="form-check-label d-flex justify-content-between w-100" for="topping_${topping.id}">
+                                        <span>${topping.name}</span>
+                                        <span class="text-muted">${priceDisplay}</span>
+                                    </label>
+                                </div>
+                            `;
+                            toppingsList.append(toppingHtml);
+                        });
+                    } else {
+                        $('#toppingsSection').hide();
+                    }
+                },
+                error: function() {
+                    $('#toppingsSection').hide();
+                }
+            });
+        },
+        error: function() {
+            $('#toppingsSection').hide();
+        }
+    });
+}
+
+// 處理配料勾選變化
+function handleToppingChange(maxToppings) {
+    const selectedCount = $('.topping-checkbox:checked').length;
+    $('#selectedToppingCount').text(selectedCount);
+    
+    if (selectedCount >= maxToppings) {
+        $('.topping-checkbox:not(:checked)').attr('disabled', true);
+    } else {
+        $('.topping-checkbox').attr('disabled', false);
+    }
+    
+    updateTotalPrice();
+}
+
+// 載入飲品選項
+function loadDrinks(product) {
+    const drinksList = $('#drinksList');
+    const drinksSection = $('#drinksSection');
+    drinksList.empty();
+    
+    const hasDrinks = product.has_cold_drink || product.has_hot_drink;
+    
+    if (hasDrinks) {
+        drinksSection.show();
+        
+        let drinksHtml = '';
+        
+        if (product.has_cold_drink) {
+            const coldPrice = product.cold_drink_price || 0;
+            const priceDisplay = coldPrice === 0 ? '' : ` (+$${coldPrice})`;
+            drinksHtml += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input drink-radio" 
+                           type="radio" 
+                           name="drinkType" 
+                           id="drink_cold" 
+                           value="cold"
+                           data-price="${coldPrice}"
+                           onchange="updateTotalPrice()">
+                    <label class="form-check-label d-flex justify-content-between w-100" for="drink_cold">
+                        <span><i class="fa-solid fa-snowflake text-info"></i> 冷飲</span>
+                        <span class="text-muted">${priceDisplay}</span>
+                    </label>
+                </div>
+            `;
+        }
+        
+        if (product.has_hot_drink) {
+            const hotPrice = product.hot_drink_price || 0;
+            const priceDisplay = hotPrice === 0 ? '' : ` (+$${hotPrice})`;
+            drinksHtml += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input drink-radio" 
+                           type="radio" 
+                           name="drinkType" 
+                           id="drink_hot" 
+                           value="hot"
+                           data-price="${hotPrice}"
+                           onchange="updateTotalPrice()">
+                    <label class="form-check-label d-flex justify-content-between w-100" for="drink_hot">
+                        <span><i class="fa-solid fa-mug-hot text-warning"></i> 熱飲</span>
+                        <span class="text-muted">${priceDisplay}</span>
+                    </label>
+                </div>
+            `;
+        }
+        
+        drinksHtml += `
+            <div class="form-check mb-2">
+                <input class="form-check-input drink-radio" 
+                       type="radio" 
+                       name="drinkType" 
+                       id="drink_none" 
+                       value="none"
+                       data-price="0"
+                       checked
+                       onchange="updateTotalPrice()">
+                <label class="form-check-label" for="drink_none">
+                    <span>不需要</span>
+                </label>
+            </div>
+        `;
+        
+        drinksList.html(drinksHtml);
+    } else {
+        drinksSection.hide();
+    }
+}
+
+// 更新總價
+function updateTotalPrice() {
+    if (!currentProduct) return;
+    
+    const quantity = parseInt($('#productQuantity').val()) || 1;
+    const basePrice = currentProduct.discounted_price || currentProduct.unit_price;
+    
+    let toppingsPrice = 0;
+    $('.topping-checkbox:checked').each(function() {
+        toppingsPrice += parseFloat($(this).data('price')) || 0;
+    });
+    
+    let drinkPrice = 0;
+    const selectedDrink = $('input[name="drinkType"]:checked');
+    if (selectedDrink.length > 0 && selectedDrink.val() !== 'none') {
+        drinkPrice = parseFloat(selectedDrink.data('price')) || 0;
+    }
+    
+    const totalPrice = (basePrice + toppingsPrice + drinkPrice) * quantity;
+    $('#totalPrice').text(`$${totalPrice}`);
+}
+
+// 加入購物車（使用 localStorage）
+function addToCart() {
+    if (!currentProduct) return;
+    
+    const quantity = parseInt($('#productQuantity').val());
+    
+    if (quantity < 1) {
+        $('#productModalError').text('請輸入有效數量').show();
+        return;
+    }
+    
+    // 收集選中的配料
+    const selectedToppings = [];
+    $('.topping-checkbox:checked').each(function() {
+        selectedToppings.push({
+            id: parseInt($(this).val()),
+            name: $(this).data('name'),
+            price: parseFloat($(this).data('price'))
+        });
+    });
+    
+    // 收集飲品選擇
+    let drinkType = null;
+    let drinkPrice = null;
+    const selectedDrink = $('input[name="drinkType"]:checked');
+    if (selectedDrink.length > 0 && selectedDrink.val() !== 'none') {
+        drinkType = selectedDrink.val();
+        drinkPrice = parseFloat(selectedDrink.data('price'));
+    }
+    
+    // 計算單價（包含配料和飲品）
+    const basePrice = currentProduct.discounted_price || currentProduct.unit_price;
+    let toppingsPrice = 0;
+    selectedToppings.forEach(t => toppingsPrice += t.price);
+    const unitPrice = basePrice + toppingsPrice + (drinkPrice || 0);
+    
+    // 獲取現有購物車
+    let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    
+    // 添加商品
+    cart.push({
+        product_id: currentProduct.id,
+        product_name: currentProduct.name,
+        quantity: quantity,
+        unit_price: unitPrice,
+        toppings: selectedToppings,
+        drink_type: drinkType,
+        drink_price: drinkPrice
+    });
+    
+    // 儲存購物車
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    
+    productModal.hide();
+    alert('已加入購物車！');
+    updateCartCount();
+}
+
+// 直接結帳
+function buyNow() {
+    addToCart();
+    window.location.href = `/guest/shop/${SHOP_ID}/table/${TABLE_NUMBER}/checkout`;
+}
+
+// 更新購物車數量
+function updateCartCount() {
+    const cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    const count = cart.length;
+    const badge = $('#cartCount');
+    
+    if (count > 0) {
+        badge.text(count).show();
+    } else {
+        badge.hide();
+    }
+}
+</script>
+{% endblock %}
+

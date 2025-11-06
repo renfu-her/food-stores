@@ -1,0 +1,396 @@
+{% extends "base/guest_base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-credit-card me-2"></i>結帳
+            </h2>
+            <div class="alert alert-info">
+                <i class="bi bi-table me-2"></i>桌號：<strong>{{ table_number }}</strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- 左側：訂單信息 -->
+        <div class="col-lg-8">
+            <!-- 桌號信息 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-table me-2"></i>用餐信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="customer_name" class="form-label">姓名（選填）</label>
+                            <input type="text" class="form-control" id="customer_name" placeholder="請輸入您的姓名">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="customer_phone" class="form-label">聯絡電話（選填）</label>
+                            <input type="tel" class="form-control" id="customer_phone" placeholder="請輸入聯絡電話">
+                        </div>
+                        <div class="col-12">
+                            <label for="order_note" class="form-label">備註</label>
+                            <textarea class="form-control" id="order_note" rows="2" placeholder="如有特殊需求，請在此填寫..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 購物車商品 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-bag-check me-2"></i>訂單商品</h5>
+                </div>
+                <div class="card-body" id="orderItems">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">載入中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 支付方式 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-wallet2 me-2"></i>支付方式（可組合）</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>您可以使用多種支付方式組合支付此訂單
+                    </p>
+                    
+                    <div id="paymentMethodsList">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                            <span class="ms-2 text-muted">載入支付方式...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-light mt-3">
+                        <table class="table table-sm mb-0">
+                            <tr>
+                                <td>訂單總額：</td>
+                                <td class="text-end fw-bold">$<span id="orderTotalCalc">0</span></td>
+                            </tr>
+                            <tr>
+                                <td>已分配支付：</td>
+                                <td class="text-end">$<span id="paymentAllocated">0</span></td>
+                            </tr>
+                        </table>
+                        
+                        <div id="paymentError" class="alert alert-danger mt-2" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右側：訂單摘要 -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm" style="position: sticky; top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>訂單摘要</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>商品總計</span>
+                        <span id="itemsCount">0 件</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>小計</span>
+                        <span id="subtotal">$0</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <h5 class="mb-0">應付金額</h5>
+                        <h5 class="mb-0 text-primary" id="orderTotal">$0</h5>
+                    </div>
+                    <button class="btn btn-primary w-100 btn-lg mb-3" onclick="submitOrder()">
+                        <i class="bi bi-check-circle me-2"></i>確認訂單
+                    </button>
+                    <a href="{{ url_for('guest.cart', shop_id=shop.id, table_number=table_number) }}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-left me-2"></i>返回購物車
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+const SHOP_ID = {{ shop.id }};
+const TABLE_NUMBER = '{{ table_number }}';
+const CART_KEY = `guestCart_${SHOP_ID}_${TABLE_NUMBER}`;
+let cartData = [];
+let paymentMethods = [];
+
+$(document).ready(function() {
+    loadCheckoutData();
+});
+
+// 載入購物車數據
+function loadCheckoutData() {
+    cartData = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+    
+    if (cartData.length === 0) {
+        alert('購物車是空的');
+        window.location.href = `/guest/shop/${SHOP_ID}/table/${TABLE_NUMBER}/cart`;
+        return;
+    }
+    
+    loadPaymentMethods();
+    displayOrderItems();
+    updateOrderSummary();
+}
+
+// 載入店鋪支付方式
+function loadPaymentMethods() {
+    $.get(`/api/shops/${SHOP_ID}/payment-methods/public`, function(data) {
+        paymentMethods = data.payment_methods;
+        renderPaymentMethods();
+    }).fail(function() {
+        $('#paymentMethodsList').html('<p class="text-danger">載入支付方式失敗</p>');
+    });
+}
+
+// 渲染支付方式
+function renderPaymentMethods() {
+    const container = $('#paymentMethodsList');
+    container.empty();
+    
+    if (paymentMethods.length === 0) {
+        container.html('<p class="text-muted">此店鋪未設置支付方式</p>');
+        return;
+    }
+    
+    paymentMethods.forEach(method => {
+        const html = `
+            <div class="payment-method-item mb-3 p-3 border rounded">
+                <div class="form-check">
+                    <input class="form-check-input payment-checkbox" 
+                           type="checkbox" 
+                           id="pm_${method.id}"
+                           value="${method.id}"
+                           data-code="${method.code}"
+                           onchange="togglePaymentAmount(${method.id})">
+                    <label class="form-check-label w-100" for="pm_${method.id}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>
+                                <i class="${method.icon} me-2 fs-5"></i>
+                                <strong>${method.name}</strong>
+                            </span>
+                            <input type="number" 
+                                   class="form-control form-control-sm payment-amount" 
+                                   id="amount_${method.id}"
+                                   data-method-id="${method.id}"
+                                   min="0" 
+                                   step="1"
+                                   placeholder="輸入金額"
+                                   style="width: 140px; display: none;"
+                                   onchange="calculatePaymentTotal()">
+                        </div>
+                    </label>
+                </div>
+            </div>
+        `;
+        container.append(html);
+    });
+}
+
+// 切換支付方式金額輸入框
+function togglePaymentAmount(methodId) {
+    const checkbox = $(`#pm_${methodId}`);
+    const amountInput = $(`#amount_${methodId}`);
+    
+    if (checkbox.is(':checked')) {
+        amountInput.show().focus();
+    } else {
+        amountInput.hide().val('');
+        calculatePaymentTotal();
+    }
+}
+
+// 計算支付總額
+function calculatePaymentTotal() {
+    let allocated = 0;
+    $('.payment-amount:visible').each(function() {
+        allocated += parseFloat($(this).val()) || 0;
+    });
+    
+    $('#paymentAllocated').text(allocated.toFixed(2));
+    
+    // 驗證
+    const total = parseFloat($('#orderTotalCalc').text());
+    const error = $('#paymentError');
+    
+    if (allocated > 0 && Math.abs(allocated - total) > 0.01) {
+        error.html(`
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>支付金額不正確！</strong><br>
+            應付：$${total.toFixed(2)}，已分配：$${allocated.toFixed(2)}，
+            差額：$${(total - allocated).toFixed(2)}
+        `).show();
+        return false;
+    } else {
+        error.hide();
+        return true;
+    }
+}
+
+// 獲取支付分配
+function getPaymentSplits() {
+    const splits = [];
+    $('.payment-checkbox:checked').each(function() {
+        const methodId = parseInt($(this).val());
+        const amount = parseFloat($(`#amount_${methodId}`).val()) || 0;
+        
+        if (amount > 0) {
+            splits.push({
+                payment_method_id: methodId,
+                amount: amount
+            });
+        }
+    });
+    return splits;
+}
+
+// 顯示訂單商品
+function displayOrderItems() {
+    const container = document.getElementById('orderItems');
+    let html = '';
+    
+    cartData.forEach(item => {
+        let toppingsHtml = '';
+        if (item.toppings && item.toppings.length > 0) {
+            const toppingNames = item.toppings.map(t => {
+                return t.price > 0 ? `${t.name} (+$${t.price})` : `${t.name} (FREE)`;
+            }).join('、');
+            toppingsHtml = `<small class="text-muted d-block">配料：${toppingNames}</small>`;
+        }
+        
+        let drinkHtml = '';
+        if (item.drink_type) {
+            const drinkIcon = item.drink_type === 'cold' 
+                ? '<i class="fa-solid fa-snowflake text-info"></i>' 
+                : '<i class="fa-solid fa-mug-hot text-warning"></i>';
+            const drinkName = item.drink_type === 'cold' ? '冷飲' : '熱飲';
+            const drinkPriceText = item.drink_price > 0 ? ` (+$${item.drink_price})` : '';
+            drinkHtml = `<small class="text-muted d-block">${drinkIcon} ${drinkName}${drinkPriceText}</small>`;
+        }
+        
+        const itemTotal = item.unit_price * item.quantity;
+        
+        html += `
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                <div class="flex-grow-1">
+                    <h6 class="mb-1">${item.product_name}</h6>
+                    ${toppingsHtml}
+                    ${drinkHtml}
+                    <small class="text-muted">單價：$${item.unit_price} × ${item.quantity}</small>
+                </div>
+                <div class="text-end">
+                    <strong class="text-primary">$${itemTotal.toFixed(2)}</strong>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// 更新訂單摘要
+function updateOrderSummary() {
+    let total = 0;
+    cartData.forEach(item => {
+        total += item.unit_price * item.quantity;
+    });
+    
+    document.getElementById('itemsCount').textContent = cartData.length + ' 件';
+    document.getElementById('subtotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('orderTotal').textContent = '$' + total.toFixed(2);
+    document.getElementById('orderTotalCalc').textContent = total.toFixed(2);
+}
+
+// 提交訂單
+async function submitOrder() {
+    // 驗證組合支付
+    if (!calculatePaymentTotal()) {
+        alert('請正確分配支付金額');
+        return;
+    }
+    
+    const paymentSplits = getPaymentSplits();
+    if (paymentSplits.length === 0) {
+        alert('請選擇至少一種支付方式');
+        return;
+    }
+    
+    const customer_name = document.getElementById('customer_name').value.trim();
+    const customer_phone = document.getElementById('customer_phone').value.trim();
+    const order_note = document.getElementById('order_note').value.trim();
+    
+    // 準備訂單項目
+    const items = cartData.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        drink_type: item.drink_type,
+        toppings: item.toppings ? item.toppings.map(t => t.id) : []
+    }));
+    
+    // 使用訪客結帳 API
+    try {
+        const response = await fetch('/api/orders/guest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                shop_id: SHOP_ID,
+                table_number: TABLE_NUMBER,
+                items: items,
+                payment_splits: paymentSplits,
+                customer_name: customer_name || null,
+                customer_phone: customer_phone || null,
+                note: order_note || null
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            alert('建立訂單失敗: ' + (error.error || '未知錯誤'));
+            return;
+        }
+        
+        const result = await response.json();
+        
+        // 清空購物車
+        localStorage.removeItem(CART_KEY);
+        updateCartCount();
+        
+        // 顯示成功信息
+        alert(`訂單創建成功！\n\n` +
+              `訂單編號：${result.order_number}\n` +
+              `桌號：${TABLE_NUMBER}\n` +
+              `實付金額：$${result.amount_paid}\n\n` +
+              `請等待店家確認訂單`);
+        
+        // 返回點餐頁面
+        window.location.href = `/guest/shop/${SHOP_ID}/table/${TABLE_NUMBER}`;
+        
+    } catch (error) {
+        console.error('提交訂單失敗:', error);
+        alert('提交訂單失敗，請重試');
+    }
+}
+
+// 頁面載入時載入數據
+loadCheckoutData();
+</script>
+{% endblock %}
+

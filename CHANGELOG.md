@@ -56,13 +56,19 @@
 - 新增訪客點餐系統
 - 需要創建對應的前端模板
 
-**下一步需要：**
-- 創建訪客模板：
-  - `public/templates/guest/order.html`
-  - `public/templates/guest/cart.html`
-  - `public/templates/guest/checkout.html`
-  - `public/templates/guest/error.html`
-- 修改訂單 API 支持訪客下單（包含桌號信息）
+**已完成訪客模板：**
+- ✅ `public/templates/base/guest_base.html` - 訪客專用 base template
+- ✅ `public/templates/guest/order.html` - 訪客點餐頁面
+- ✅ `public/templates/guest/cart.html` - 訪客購物車（使用 localStorage）
+- ✅ `public/templates/guest/checkout.html` - 訪客結帳頁面
+- ✅ `public/templates/guest/error.html` - 訪客錯誤頁面
+
+**訪客模板特點：**
+- 使用 localStorage 儲存購物車數據（不需登入）
+- 所有路由包含桌號信息（`/guest/shop/{shop_id}/table/{table_number}`）
+- 顯示桌號信息在頁面頂部
+- 不顯示登入/註冊按鈕
+- 結帳時包含桌號，方便店家追蹤
 
 **測試重點：**
 - ✅ QR Code URL 指向正確的訪客路由
