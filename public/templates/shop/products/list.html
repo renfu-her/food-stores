@@ -121,8 +121,8 @@ function renderProductRow(product) {
     
     // 飲品圖標
     let drinkBadges = '';
-    if (product.has_cold_drink) drinkBadges += '<span class="badge bg-info">🧊</span> ';
-    if (product.has_hot_drink) drinkBadges += '<span class="badge bg-warning">☕</span>';
+    if (product.has_cold_drink) drinkBadges += '<span class="badge bg-info"><i class="fa-solid fa-snowflake"></i></span> ';
+    if (product.has_hot_drink) drinkBadges += '<span class="badge bg-warning"><i class="fa-solid fa-mug-hot"></i></span>';
     if (!drinkBadges) drinkBadges = '<span class="text-muted">-</span>';
     
     const statusBadge = product.is_active 

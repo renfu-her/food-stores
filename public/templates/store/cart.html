@@ -113,9 +113,12 @@ async function loadCart() {
             // 顯示飲品選項
             let drinkHtml = '';
             if (item.drink_type) {
-                const drinkName = item.drink_type === 'cold' ? '🧊 冷飲' : '☕ 熱飲';
+                const drinkIcon = item.drink_type === 'cold' 
+                    ? '<i class="fa-solid fa-snowflake text-info"></i>' 
+                    : '<i class="fa-solid fa-mug-hot text-warning"></i>';
+                const drinkName = item.drink_type === 'cold' ? '冷飲' : '熱飲';
                 const drinkPriceDisplay = item.drink_price > 0 ? ` (+$${item.drink_price})` : '';
-                drinkHtml = `<p class="text-muted small mb-1">飲品：${drinkName}${drinkPriceDisplay}</p>`;
+                drinkHtml = `<p class="text-muted small mb-1">飲品：${drinkIcon} ${drinkName}${drinkPriceDisplay}</p>`;
             }
             
             html += `

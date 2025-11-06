@@ -404,7 +404,7 @@ function loadDrinks(product) {
                            data-price="${coldPrice}"
                            onchange="updateTotalPrice()">
                     <label class="form-check-label d-flex justify-content-between w-100" for="drink_cold">
-                        <span>🧊 冷飲</span>
+                        <span><i class="fa-solid fa-snowflake text-info"></i> 冷飲</span>
                         <span class="text-muted">${priceDisplay}</span>
                     </label>
                 </div>
@@ -425,7 +425,7 @@ function loadDrinks(product) {
                            data-price="${hotPrice}"
                            onchange="updateTotalPrice()">
                     <label class="form-check-label d-flex justify-content-between w-100" for="drink_hot">
-                        <span>☕ 熱飲</span>
+                        <span><i class="fa-solid fa-mug-hot text-warning"></i> 熱飲</span>
                         <span class="text-muted">${priceDisplay}</span>
                     </label>
                 </div>
