@@ -4,6 +4,54 @@
 
 ---
 
+## 2025-11-06 22:15 - 修復店鋪設置更新問題
+
+### 🐛 Bug 修復
+
+**修復桌號設置和回饋金設置無法更新的問題：**
+
+**問題描述：**
+- 在店鋪編輯頁面更新「桌號掃碼點餐」和「回饋金設置」時，雖然點擊更新按鈕，但數據沒有保存成功
+- 原因：API 端點沒有處理 `qrcode_enabled`、`max_tables`、`points_rate` 這三個字段
+
+**修復內容：**
+
+1. **修改 API**：`app/routes/api/shops.py`
+   - 在 `update_shop` 函數中新增對以下字段的處理：
+     ```python
+     # 更新回饋金比例
+     if 'points_rate' in data:
+         shop.points_rate = points_rate_value  # 1-1000
+     
+     # 更新桌號設置
+     if 'qrcode_enabled' in data:
+         shop.qrcode_enabled = bool(data['qrcode_enabled'])
+     
+     if 'max_tables' in data:
+         shop.max_tables = max_tables_value  # 0-200
+     ```
+
+2. **驗證規則**：
+   - `points_rate`：整數，範圍 1-1000
+   - `max_tables`：整數，範圍 0-200
+   - `qrcode_enabled`：布林值
+
+3. **更新日誌記錄**：
+   - 在更新日誌中包含新增的字段
+   - 在 API 響應中返回這些字段
+
+**影響範圍：**
+- `/api/shops/<shop_id>` PUT 端點
+- 店鋪編輯頁面的「回饋金設置」和「桌號設置」功能
+
+**測試重點：**
+- ✅ 更新回饋金比例可以正確保存
+- ✅ 啟用/停用桌號掃碼點餐可以正確保存
+- ✅ 更新最大桌號數量可以正確保存
+- ✅ 驗證錯誤時顯示正確的錯誤訊息
+
+---
+
 ## 2025-11-06 22:00 - 店鋪管理介面繁體中文化
 
 ### 🌐 本地化優化

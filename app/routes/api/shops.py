@@ -326,6 +326,36 @@ def update_shop(shop_id):
                     'details': {}
                 }), 400
             shop.max_toppings_per_order = max_toppings_value
+        
+        # 更新回饋金比例
+        if 'points_rate' in data:
+            is_valid, points_rate_value, error_msg = validate_integer(
+                data['points_rate'], '回饋金比例', min_value=1, max_value=1000
+            )
+            if not is_valid:
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': error_msg,
+                    'details': {}
+                }), 400
+            shop.points_rate = points_rate_value
+        
+        # 更新桌號設置
+        if 'qrcode_enabled' in data:
+            shop.qrcode_enabled = bool(data['qrcode_enabled'])
+        
+        if 'max_tables' in data:
+            is_valid, max_tables_value, error_msg = validate_integer(
+                data['max_tables'], '最大桌號數量', min_value=0, max_value=200
+            )
+            if not is_valid:
+                return jsonify({
+                    'error': 'validation_error',
+                    'message': error_msg,
+                    'details': {}
+                }), 400
+            shop.max_tables = max_tables_value
+        
         if 'status' in data and user.role == 'admin':
             shop.status = data['status']
         
@@ -338,6 +368,9 @@ def update_shop(shop_id):
                 'name': shop.name,
                 'description': shop.description,
                 'max_toppings_per_order': shop.max_toppings_per_order,
+                'points_rate': shop.points_rate,
+                'qrcode_enabled': shop.qrcode_enabled,
+                'max_tables': shop.max_tables,
                 'status': shop.status
             },
             description=f'更新店鋪: {shop.name}'
@@ -353,6 +386,9 @@ def update_shop(shop_id):
                 'description': shop.description,
                 'owner_id': shop.owner_id,
                 'max_toppings_per_order': shop.max_toppings_per_order,
+                'points_rate': shop.points_rate,
+                'qrcode_enabled': shop.qrcode_enabled,
+                'max_tables': shop.max_tables,
                 'status': shop.status
             }
         }), 200
