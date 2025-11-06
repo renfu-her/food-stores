@@ -229,5 +229,5 @@ python init_payment_methods.py
 ---
 
 **最後更新：** 2025-11-06
-**維護者：** Food Stores 開發團隊
+**維護者：** Quick Foods 開發團隊
 

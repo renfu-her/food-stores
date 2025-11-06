@@ -129,7 +129,7 @@ def init_default_settings():
         },
         {
             'key': 'mail_from_name',
-            'value': 'Food Stores',
+            'value': 'Quick Foods',
             'type': 'text',
             'description': '發件人名稱',
             'category': 'email'

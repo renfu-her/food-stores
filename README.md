@@ -1,4 +1,4 @@
-# 🍔 Food Stores - 多店鋪食品訂購平台
+# 🍔 Quick Foods - 多店鋪食品訂購平台
 
 一個功能完整的多店鋪食品訂購管理系統，基於 Flask 開發，支援商品管理、訂單處理、即時通知、配料系統和飲品選項。
 
@@ -1291,5 +1291,5 @@ flask db upgrade
 
 <div align="center">
   <p>用 ❤️ 打造</p>
-  <p>© 2025 Food Stores. All Rights Reserved.</p>
+  <p>© 2025 Quick Foods. All Rights Reserved.</p>
 </div>

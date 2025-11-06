@@ -4,6 +4,52 @@
 
 ---
 
+## 2025-11-07 00:35 - 品牌名稱更新為 Quick Foods
+
+### 🔄 系統更新
+
+**將系統名稱從 "Food Stores" 更改為 "Quick Foods"：**
+
+**修改範圍：**
+
+**前端模板（12 個文件）：**
+- `public/templates/base/app.html` - 主要基礎模板
+- `public/templates/base/guest_base.html` - 訪客基礎模板
+- `public/templates/base/shop_base.html` - 店家基礎模板
+- `public/templates/base/backend_base.html` - 後台基礎模板
+- `public/templates/base/store_base.html` - 前台基礎模板
+- `public/templates/shop/login.html` - 店家登入頁面
+- `public/templates/backend/login.html` - 後台登入頁面
+- `public/templates/backend/settings.html` - 系統設定頁面
+- `public/templates/store/index.html` - 首頁
+
+**後端代碼（1 個文件）：**
+- `app/utils/order_number.py` - 預設郵件發件人名稱
+
+**文檔（3 個文件）：**
+- `README.md` - 專案說明
+- `about.md` - 關於我們
+- `docs/PAYMENT_METHODS_SETUP.md` - 支付方式設定文檔
+
+**修改內容：**
+- 頁面標題：`Food Stores` → `Quick Foods`
+- 導航欄品牌：`Food Stores` → `Quick Foods`
+- 頁面內容：「歡迎來到 Food Stores」 → 「歡迎來到 Quick Foods」
+- 系統設定預設值：`Food Stores` → `Quick Foods`
+- 文檔維護者：`Food Stores 開發團隊` → `Quick Foods 開發團隊`
+
+**影響位置：**
+- ✅ 所有頁面的瀏覽器標題
+- ✅ 導航欄品牌顯示
+- ✅ 登入頁面標題
+- ✅ 首頁歡迎標語
+- ✅ 系統郵件發件人名稱
+- ✅ 專案文檔
+
+**總計：** 16 個文件，25 處修改
+
+---
+
 ## 2025-11-07 00:30 - 結帳頁面添加刪除商品功能
 
 ### ✨ 功能增強
