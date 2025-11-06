@@ -86,7 +86,10 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+{{ super() }}
 <script>
 function testIcon() {
     const icon = $('#methodIcon').val();
