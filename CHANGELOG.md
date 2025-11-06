@@ -4,6 +4,46 @@
 
 ---
 
+## 2025-11-07 00:45 - 新增基礎檢查工具（無依賴版本）
+
+### 🔧 基礎診斷工具
+
+**新增 `basic_check.py` - 不需要任何外部依賴的基礎檢查工具：**
+
+**解決問題：**
+當用戶在正式主機上遇到 `ModuleNotFoundError: No module named 'dotenv'` 時，無法執行其他診斷工具。
+
+**功能：**
+1. 檢查 Python 版本（需要 3.8+）
+2. 檢查關鍵文件是否存在
+3. 檢查目錄結構（自動創建缺失目錄）
+4. 檢查 .env 文件和配置
+5. 檢查 requirements.txt
+6. 檢查已安裝的 Python 套件
+7. 提供詳細的修復建議
+
+**使用方式：**
+```bash
+# 無需任何依賴，可立即執行
+python basic_check.py
+```
+
+**新增文檔：**
+- `INSTALL_QUICK.md` - 正式主機快速安裝指南
+  - 解決 ModuleNotFoundError 錯誤
+  - 完整安裝步驟
+  - 診斷工具使用順序
+  - 常見錯誤解決方案
+
+**診斷工具推薦使用順序：**
+1. `basic_check.py` - 基礎檢查（無需依賴）
+2. 安裝依賴：`pip install -r requirements.txt`
+3. `quick_diagnose.py` - 快速診斷
+4. `check_deployment.py` - 完整檢查
+5. `test_app.py` - 應用測試
+
+---
+
 ## 2025-11-07 00:40 - 新增部署工具和文檔
 
 ### 📦 部署支援
