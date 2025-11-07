@@ -4,6 +4,236 @@
 
 ---
 
+## 2025-11-07 01:02 - 支援將靜態文件移動到專案根目錄
+
+### 🔄 結構優化
+
+**新增功能：** 支援將靜態文件從 `public/static` 移動到專案根目錄的 `static`
+
+**新增文件：**
+1. **`move_static_to_root.py`** - 自動遷移腳本
+   - 自動移動 `public/static` 到 `static`
+   - 顯示遷移進度和文件統計
+   - 提供後續步驟指引
+
+2. **`docs/MOVE_STATIC_TO_ROOT.md`** - 完整遷移指南
+   - 遷移步驟說明
+   - Flask 配置更新
+   - Nginx 配置更新
+   - 驗證和回滾方法
+
+**Flask 配置更新：**
+- `app/__init__.py` 現在自動檢測 `static` 目錄
+- 如果 `static` 存在，使用它；否則使用 `public/static`
+- 使用絕對路徑，更可靠
+
+**優點：**
+- ✅ 簡化 Nginx 配置（不需要 `public/` 前綴）
+- ✅ 更符合 Flask 慣例
+- ✅ 減少路徑錯誤
+- ✅ 向後兼容（如果 `static` 不存在，仍使用 `public/static`）
+
+**使用方式：**
+```bash
+# 執行遷移
+python move_static_to_root.py
+
+# 更新 Nginx 配置
+# alias /path/to/quick-foods/static;  # 簡化了
+
+# 重新載入服務
+sudo systemctl reload nginx
+```
+
+---
+
+## 2025-11-07 01:00 - Nginx 配置診斷（配置正確但仍 404）
+
+### 🔍 問題診斷
+
+**情況：** Nginx 配置看起來正確（已包含 `public/static`），但仍出現 404 錯誤
+
+**可能原因：**
+1. Nginx 配置未重新載入
+2. 靜態文件不存在於伺服器
+3. 文件權限問題
+4. 有其他配置文件覆蓋
+5. 配置順序問題
+
+**新增文檔：**
+- `docs/NGINX_CONFIG_DIAGNOSIS.md` - Nginx 配置診斷指南
+  - 配置正確但仍 404 的診斷步驟
+  - 文件存在性檢查
+  - 權限設置
+  - 配置驗證方法
+  - 優化後的完整配置範例
+
+**診斷步驟：**
+1. 確認文件存在：`ls -la public/static/css/`
+2. 檢查權限：`chmod -R 755 public/static`
+3. 測試配置：`sudo nginx -t`
+4. 重新載入：`sudo systemctl reload nginx`
+5. 測試訪問：`curl -I https://domain.com/static/css/style.css`
+
+---
+
+## 2025-11-07 00:58 - 提供 Nginx 路徑修復快速指南
+
+### 📚 文檔更新
+
+**新增快速修復指南：**
+
+- `docs/QUICK_FIX_NGINX_PATH.md` - Nginx 靜態文件路徑快速修復指南
+  - 問題診斷步驟
+  - 找到配置文件的方法
+  - 詳細修改步驟
+  - 完整配置範例
+  - 驗證方法
+  - 替代方案
+
+**關鍵修復：**
+- 在 Nginx 配置的 `alias` 路徑中添加 `public/` 前綴
+- 從：`/path/to/quick-foods.ai-tracks.com/static`
+- 改為：`/path/to/quick-foods.ai-tracks.com/public/static`
+
+**額外問題：**
+- 發現 Flask 應用可能未在 8093 端口運行
+- 提供檢查和啟動方法
+
+---
+
+## 2025-11-07 00:55 - 修復 Nginx 靜態文件路徑錯誤
+
+### 🐛 Bug 修復
+
+**問題：** Nginx 日誌顯示靜態文件 404 錯誤
+
+**錯誤訊息：**
+```
+openat() "/home/.../quick-foods.ai-tracks.com/static/css/style.css" 
+failed (2: No such file or directory)
+```
+
+**根本原因：**
+- Nginx 配置中的 `alias` 路徑缺少 `public/` 前綴
+- 實際路徑應該是：`/path/to/public/static/...`
+- Nginx 配置錯誤：`/path/to/static/...`
+
+**解決方案：**
+
+1. **修正 Nginx 配置（推薦）：**
+   ```nginx
+   location /static {
+       alias /home/.../quick-foods.ai-tracks.com/public/static;  # 添加 public/
+   }
+   ```
+
+2. **或讓 Flask 處理靜態文件（更簡單）：**
+   - 不配置 `/static` location
+   - 讓所有請求轉發給 Flask
+   - Flask 會自動處理靜態文件
+
+**新增文檔：**
+- `docs/FIX_NGINX_STATIC_PATH.md` - Nginx 靜態文件路徑錯誤修復指南
+
+**修復步驟：**
+1. 編輯 Nginx 配置文件
+2. 修正 `alias` 路徑（添加 `public/`）
+3. 測試配置：`sudo nginx -t`
+4. 重新載入：`sudo systemctl reload nginx`
+
+---
+
+## 2025-11-07 00:52 - 新增 Flask 靜態文件處理說明（不依賴 Nginx）
+
+### 📚 文檔更新
+
+**新增文檔和測試工具：**
+
+1. **`docs/FLASK_STATIC_WITHOUT_NGINX.md`** - Flask 靜態文件處理完整說明
+   - Flask 內建靜態文件處理機制
+   - 不依賴 Nginx 的配置方法
+   - 兩種部署方式對比（純 Flask vs Flask+Nginx）
+   - 效能對比和適用場景
+   - 測試方法
+
+2. **`test_flask_static.py`** - Flask 靜態文件測試工具
+   - 檢查 Flask 靜態文件配置
+   - 測試 URL 生成
+   - 檢查文件是否存在
+   - 提供測試 URL
+
+**重點說明：**
+- ✅ Flask **內建**靜態文件處理，不需要 Nginx 也可以
+- ✅ Flask 會自動處理 `/static/` 路徑的所有請求
+- ✅ 適合開發和小規模應用
+- ✅ 如果使用 Nginx，可以只配置反向代理，讓 Flask 處理靜態文件
+
+**使用方式：**
+```bash
+# 測試 Flask 靜態文件配置
+python test_flask_static.py
+
+# 直接使用 Flask（不通過 Nginx）
+python app.py
+# 訪問 http://localhost:5000/static/css/style.css
+```
+
+---
+
+## 2025-11-07 00:50 - 新增靜態文件檢查工具和 404 錯誤解決方案
+
+### 🔧 靜態文件問題診斷
+
+**問題：** 正式主機上靜態文件（CSS/JS）返回 404 錯誤
+
+**新增工具和文檔：**
+
+1. **`check_static_files.py`** - 靜態文件檢查工具
+   - 檢查必要靜態文件是否存在
+   - 檢查文件權限
+   - 檢查 Flask 靜態文件配置
+   - 測試 URL 生成
+
+2. **`docs/FIX_STATIC_404.md`** - 靜態文件 404 錯誤完整解決方案
+   - 文件上傳檢查
+   - Nginx 配置指南
+   - 文件權限設置
+   - 完整診斷步驟
+
+**常見原因：**
+- 靜態文件未上傳到正式主機
+- Nginx 未配置 `/static` 路由
+- 文件權限不正確
+- Flask 靜態文件路徑配置錯誤
+
+**解決方案：**
+1. 執行 `python check_static_files.py` 檢查
+2. 確保文件已上傳
+3. 配置 Nginx 處理靜態文件
+4. 設置正確的文件權限
+
+---
+
+## 2025-11-07 00:47 - 修復基礎檢查工具錯誤
+
+### 🐛 Bug 修復
+
+**修復 `basic_check.py` 中的 AttributeError：**
+
+**問題：**
+- 錯誤訊息：`AttributeError: 'sys.version_info' object has no attribute 'patch'`
+- 原因：`sys.version_info` 使用 `micro` 而非 `patch` 屬性
+
+**修復：**
+- 將 `version.patch` 改為 `version.micro`
+- 正確顯示 Python 版本號（例如：3.10.12）
+
+**影響文件：**
+- `basic_check.py` - 修正 Python 版本檢查函數
+
+---
+
 ## 2025-11-07 00:45 - 新增基礎檢查工具（無依賴版本）
 
 ### 🔧 基礎診斷工具

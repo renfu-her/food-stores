@@ -17,9 +17,13 @@ socketio = SocketIO(
 
 def create_app(config_class=Config):
     """應用工廠函數"""
+    import os
+    # 獲取專案根目錄（app/__init__.py 的父目錄的父目錄）
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
     app = Flask(__name__, 
-                template_folder='../public/templates',
-                static_folder='../public/static')
+                template_folder=os.path.join(BASE_DIR, 'public', 'templates'),
+                static_folder=os.path.join(BASE_DIR, 'static') if os.path.exists(os.path.join(BASE_DIR, 'static')) else os.path.join(BASE_DIR, 'public', 'static'))
     app.config.from_object(config_class)
     
     # 初始化擴展

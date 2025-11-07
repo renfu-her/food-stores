@@ -1,0 +1,112 @@
+# Nginx 配置範例 - Quick Foods
+# 保存為 /etc/nginx/sites-available/quick-foods
+# 或 /etc/nginx/conf.d/quick-foods.conf
+
+server {
+    listen 80;
+    server_name quick-foods.ai-tracks.com;
+    
+    # 日誌文件
+    access_log /var/log/nginx/quick-foods-access.log;
+    error_log /var/log/nginx/quick-foods-error.log;
+    
+    # 最大上傳大小
+    client_max_body_size 16M;
+    
+    # ============================================
+    # 靜態文件配置（重要！解決 404 錯誤）
+    # ============================================
+    location /static {
+        # 修改為您的實際路徑
+        alias /home/ai-tracks-quick-foods/htdocs/quick-foods.ai-tracks.com/public/static;
+        
+        # 快取設置
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        
+        # 確保文件存在
+        try_files $uri =404;
+        
+        # 允許訪問
+        access_log off;
+    }
+    
+    # 上傳文件
+    location /uploads {
+        alias /home/ai-tracks-quick-foods/htdocs/quick-foods.ai-tracks.com/public/uploads;
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+    
+    # ============================================
+    # SocketIO 配置（即時通知功能）
+    # ============================================
+    location /socket.io {
+        proxy_pass http://127.0.0.1:8000/socket.io;
+        proxy_http_version 1.1;
+        
+        # WebSocket 升級
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # 基本代理頭
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket 超時
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+    
+    # ============================================
+    # Flask 應用代理
+    # ============================================
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        
+        # 基本代理頭
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # 超時設置
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # 緩衝設置
+        proxy_buffering off;
+    }
+}
+
+# ============================================
+# HTTPS 配置（可選，推薦）
+# ============================================
+# 使用 Let's Encrypt 獲取 SSL 證書後啟用：
+#
+# server {
+#     listen 443 ssl http2;
+#     server_name quick-foods.ai-tracks.com;
+#     
+#     ssl_certificate /etc/letsencrypt/live/quick-foods.ai-tracks.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/quick-foods.ai-tracks.com/privkey.pem;
+#     
+#     # SSL 配置
+#     ssl_protocols TLSv1.2 TLSv1.3;
+#     ssl_ciphers HIGH:!aNULL:!MD5;
+#     ssl_prefer_server_ciphers on;
+#     
+#     # 其他配置與 HTTP 相同
+#     ...
+# }
+#
+# # HTTP 重定向到 HTTPS
+# server {
+#     listen 80;
+#     server_name quick-foods.ai-tracks.com;
+#     return 301 https://$server_name$request_uri;
+# }
+
