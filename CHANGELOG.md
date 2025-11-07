@@ -4,6 +4,62 @@
 
 ---
 
+## 2025-01-27 14:15:36 UTC+8 - 修復應用上下文錯誤：RuntimeError: Working outside of application context
+
+### 🐛 Bug 修復
+
+**問題：**
+- 應用啟動時出現 `RuntimeError: Working outside of application context` 錯誤
+- 錯誤發生在 `app/__init__.py` 第 45 行，嘗試訪問 `db.engine` 時
+
+**原因：**
+- 代碼嘗試在應用上下文外訪問 Flask-SQLAlchemy 的 `engine` 屬性
+- Flask-SQLAlchemy 的 `engine` 屬性需要在應用上下文中才能訪問
+- 手動創建 engine 的代碼是多餘的，因為 Flask-SQLAlchemy 3.x 會自動讀取 `SQLALCHEMY_ENGINE_OPTIONS` 配置
+
+**修復內容：**
+- ✅ 移除 `app/__init__.py` 中手動創建 engine 的代碼（第 42-53 行）
+- ✅ Flask-SQLAlchemy 會自動處理 `SQLALCHEMY_ENGINE_OPTIONS` 配置
+- ✅ 簡化代碼，避免應用上下文錯誤
+
+**影響範圍：**
+- 應用啟動流程
+- 數據庫連接池配置（仍然有效，由 Flask-SQLAlchemy 自動處理）
+
+**測試建議：**
+- 重啟應用服務：`sudo systemctl restart quick-foods`
+- 檢查應用日誌確認無錯誤
+- 驗證數據庫連接正常
+
+---
+
+## 2025-01-27 14:30:00 UTC+8 - 新增 Internal Server Error 快速修復指南
+
+### 📚 文檔新增
+
+**新增內容：**
+
+1. **新增故障排除文檔**
+   - ✅ `docs/QUICK_FIX_500_ERROR.md` - Internal Server Error 快速修復指南
+   - 提供完整的 500 錯誤診斷步驟
+   - 包含常見問題的快速修復方法
+   - 提供詳細的日誌查看和錯誤定位指南
+
+**文檔內容：**
+- 立即執行的診斷步驟（使用 `quick_diagnose.py`）
+- 錯誤日誌查看方法（Gunicorn、Nginx、Systemd）
+- 常見問題快速修復（.env 配置、數據庫連接、權限等）
+- 完整檢查清單
+- 根據錯誤類型定位問題的方法
+- 服務重啟和資源檢查指南
+
+**使用場景：**
+- 生產環境出現 500 Internal Server Error
+- 需要快速定位和修復問題
+- 系統部署後的故障排除
+
+---
+
 ## 2025-11-08 00:06 - 性能優化：修復 N+1 查詢問題和添加數據庫連接池
 
 ### ⚡ 性能優化
