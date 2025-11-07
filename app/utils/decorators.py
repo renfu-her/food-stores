@@ -42,7 +42,7 @@ def role_required(*roles):
                 from flask import redirect, url_for
                 if request.path.startswith('/backend'):
                     return redirect(url_for('backend.login'))
-                elif request.path.startswith('/shop'):
+                elif request.path.startswith('/store_admin'):
                     return redirect(url_for('store_admin.login'))
                 
                 # 其他页面重定向到前台登录
@@ -66,7 +66,7 @@ def role_required(*roles):
                 
                 if request.path.startswith('/backend'):
                     return redirect(url_for('backend.login'))
-                elif request.path.startswith('/shop'):
+                elif request.path.startswith('/store_admin'):
                     return redirect(url_for('store_admin.login'))
                 
                 # 其他页面返回错误
