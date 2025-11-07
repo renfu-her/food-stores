@@ -5,14 +5,28 @@
 import os
 from pathlib import Path
 
+def get_uploads_dir():
+    """獲取 uploads 目錄（優先使用根目錄的 uploads，否則使用 public/uploads）"""
+    BASE_DIR = Path(__file__).parent
+    uploads_dir = BASE_DIR / 'uploads'
+    uploads_dir_public = BASE_DIR / 'public' / 'uploads'
+    
+    if uploads_dir.exists():
+        return uploads_dir
+    elif uploads_dir_public.exists():
+        return uploads_dir_public
+    else:
+        return None
+
 def cleanup_old_images():
     """清理所有非 WebP 格式的舊圖片"""
     
     # 定義 uploads 目錄
-    uploads_dir = Path(__file__).parent / 'public' / 'uploads'
+    uploads_dir = get_uploads_dir()
     
-    if not uploads_dir.exists():
+    if not uploads_dir or not uploads_dir.exists():
         print(f"❌ 目錄不存在: {uploads_dir}")
+        print("   請確認 uploads 目錄是否存在（根目錄或 public/ 下）")
         return
     
     # 支持的舊圖片格式
@@ -76,10 +90,11 @@ def cleanup_old_images():
 def preview_old_images():
     """預覽將要刪除的舊圖片（不實際刪除）"""
     
-    uploads_dir = Path(__file__).parent / 'public' / 'uploads'
+    uploads_dir = get_uploads_dir()
     
-    if not uploads_dir.exists():
+    if not uploads_dir or not uploads_dir.exists():
         print(f"❌ 目錄不存在: {uploads_dir}")
+        print("   請確認 uploads 目錄是否存在（根目錄或 public/ 下）")
         return
     
     old_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp'}
@@ -137,7 +152,7 @@ if __name__ == '__main__':
     python cleanup_old_images.py --clean
 
 說明：
-- 此工具會掃描 public/uploads 目錄
+- 此工具會掃描 uploads 目錄（優先根目錄，否則 public/uploads）
 - 刪除所有非 WebP 格式的圖片（.jpg, .jpeg, .png, .gif, .bmp）
 - 保留所有 .webp 格式的圖片
 - 建議先使用 --preview 預覽將要刪除的文件

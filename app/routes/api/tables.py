@@ -9,6 +9,7 @@ import qrcode
 from io import BytesIO
 import os
 from datetime import datetime
+from app.utils.upload_path import get_upload_folder, get_upload_file_path
 
 tables_api_bp = Blueprint('tables_api', __name__)
 
@@ -180,7 +181,7 @@ def update_table(shop_id, table_id):
             
             # 删除旧 QRCode 文件
             if table.qrcode_path:
-                old_path = os.path.join(current_app.root_path, '..', 'public', 'uploads', table.qrcode_path)
+                old_path = get_upload_file_path(table.qrcode_path, current_app.root_path)
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
@@ -223,7 +224,7 @@ def delete_table(shop_id, table_id):
     
     # 删除 QRCode 文件
     if table.qrcode_path:
-        qrcode_file = os.path.join(current_app.root_path, '..', 'public', 'uploads', table.qrcode_path)
+        qrcode_file = get_upload_file_path(table.qrcode_path, current_app.root_path)
         if os.path.exists(qrcode_file):
             os.remove(qrcode_file)
     
@@ -240,7 +241,7 @@ def get_table_qrcode(table_id):
     if not table.qrcode_path:
         return jsonify({'error': 'QRCode不存在'}), 404
     
-    qrcode_file = os.path.join(current_app.root_path, '..', 'public', 'uploads', table.qrcode_path)
+    qrcode_file = get_upload_file_path(table.qrcode_path, current_app.root_path)
     
     if not os.path.exists(qrcode_file):
         return jsonify({'error': 'QRCode文件不存在'}), 404
@@ -275,7 +276,8 @@ def generate_table_qrcode(shop_id, table_number):
     img = qr.make_image(fill_color="black", back_color="white")
     
     # 确保目录存在
-    qrcode_dir = os.path.join(current_app.root_path, '..', 'public', 'uploads', 'qrcodes', f'shop_{shop_id}')
+    upload_folder = get_upload_folder(current_app.root_path)
+    qrcode_dir = os.path.join(upload_folder, 'qrcodes', f'shop_{shop_id}')
     os.makedirs(qrcode_dir, exist_ok=True)
     
     # 保存文件

@@ -4,6 +4,57 @@
 
 ---
 
+## 2025-11-07 01:10 - 支援將 uploads 移動到專案根目錄
+
+### 🔄 結構優化
+
+**新增功能：** 支援將上傳文件從 `public/uploads` 移動到專案根目錄的 `uploads`
+
+**新增文件：**
+1. **`move_uploads_to_root.py`** - 自動遷移腳本
+   - 自動移動 `public/uploads` 到 `uploads`
+   - 支援合併現有文件
+   - 顯示遷移進度和文件統計
+
+2. **`app/utils/upload_path.py`** - 上傳路徑輔助函數
+   - `get_upload_folder()` - 獲取上傳目錄路徑
+   - `get_upload_file_path()` - 根據相對路徑獲取絕對路徑
+   - 自動檢測根目錄或 public/ 下的 uploads
+
+3. **`docs/MOVE_UPLOADS_TO_ROOT.md`** - 完整遷移指南
+
+**更新的程式碼：**
+- ✅ `app/config.py` - UPLOAD_FOLDER 自動檢測
+- ✅ `app/__init__.py` - `/uploads/` 路由自動檢測
+- ✅ `app/routes/api/shop_images.py` - 使用輔助函數
+- ✅ `app/routes/api/product_images.py` - 使用輔助函數
+- ✅ `app/routes/api/home_banners.py` - 使用輔助函數
+- ✅ `app/routes/api/news.py` - 使用輔助函數
+- ✅ `app/routes/api/shop_banner.py` - 使用輔助函數
+- ✅ `app/routes/api/tables.py` - QRCode 路徑更新
+- ✅ `cleanup_old_images.py` - 支援新路徑結構
+
+**優點：**
+- ✅ 簡化 Nginx 配置（不需要 `public/` 前綴）
+- ✅ 與 static 目錄結構一致
+- ✅ 減少路徑錯誤
+- ✅ 向後兼容（如果 `uploads` 不存在，自動使用 `public/uploads`）
+
+**使用方式：**
+```bash
+# 執行遷移
+python move_uploads_to_root.py
+
+# 更新 Nginx 配置
+# alias /path/to/quick-foods/uploads;  # 簡化了
+
+# 重新載入服務
+sudo systemctl reload nginx
+sudo systemctl restart quick-foods
+```
+
+---
+
 ## 2025-11-07 01:08 - 圖片路徑說明文檔
 
 ### 📚 文檔更新
