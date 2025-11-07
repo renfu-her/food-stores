@@ -95,7 +95,10 @@ def create_app(config_class=Config):
         def uploaded_file(filename):
             from flask import send_from_directory
             import os
-            upload_folder = os.path.join(app.root_path, '..', 'public', 'uploads')
+            # 優先使用根目錄的 uploads，否則使用 public/uploads（向後兼容）
+            uploads_dir = os.path.join(BASE_DIR, 'uploads')
+            uploads_dir_public = os.path.join(BASE_DIR, 'public', 'uploads')
+            upload_folder = uploads_dir if os.path.exists(uploads_dir) else uploads_dir_public
             return send_from_directory(upload_folder, filename)
         
         # 根路径指向前台首页

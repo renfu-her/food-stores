@@ -35,7 +35,11 @@ class Config:
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.environ.get('SOCKETIO_CORS_ALLOWED_ORIGINS', '*')
     
     # 文件上傳配置
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'public', 'uploads')
+    # 優先使用根目錄的 uploads，否則使用 public/uploads（向後兼容）
+    BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+    uploads_dir = os.path.join(BASE_DIR, 'uploads')
+    uploads_dir_public = os.path.join(BASE_DIR, 'public', 'uploads')
+    UPLOAD_FOLDER = uploads_dir if os.path.exists(uploads_dir) else uploads_dir_public
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_UPLOAD_SIZE_MB', '16')) * 1024 * 1024  # 默認16MB
     ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 

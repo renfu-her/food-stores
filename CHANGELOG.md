@@ -4,6 +4,32 @@
 
 ---
 
+## 2025-11-07 01:08 - 圖片路徑說明文檔
+
+### 📚 文檔更新
+
+**新增文檔：**
+- `docs/UPLOADS_PATH_EXPLANATION.md` - 圖片路徑使用說明
+  - 當前配置說明
+  - 路徑對照表
+  - 如果保持 `public/uploads` 不變的處理方式
+  - 驗證方法
+
+**重點說明：**
+- ✅ 如果保持 `public/uploads` 不變，**不需要更新程式碼**
+- ✅ Flask 路由 `/uploads/<filename>` 已正確映射到 `public/uploads/`
+- ✅ API 返回的路徑格式 `/uploads/...` 已正確
+- ✅ 模板使用方式已正確
+
+**路徑流程：**
+```
+URL: /uploads/shops/xxx.jpg
+  → Flask 路由: /uploads/<filename>
+  → 實際文件: public/uploads/shops/xxx.jpg
+```
+
+---
+
 ## 2025-11-07 01:05 - 修復 Flask 模板路徑計算錯誤
 
 ### 🐛 Bug 修復

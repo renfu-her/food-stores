@@ -9,6 +9,7 @@ from app.models import Shop, ShopImage
 from app.utils.decorators import login_required, role_required
 from app.utils.update_logger import log_update
 from app.utils.image_processor import convert_to_webp, allowed_image_file
+from app.utils.upload_path import get_upload_file_path
 from datetime import datetime
 
 shop_images_api_bp = Blueprint('shop_images_api', __name__)
@@ -119,7 +120,7 @@ def delete_shop_image(image_id):
     
     try:
         # 刪除文件
-        file_path = os.path.join(current_app.root_path, '..', 'public', shop_image.image_path.lstrip('/'))
+        file_path = get_upload_file_path(shop_image.image_path, current_app.root_path)
         if os.path.exists(file_path):
             os.remove(file_path)
         

@@ -9,6 +9,7 @@ from app.models import Shop
 from app.utils.decorators import role_required
 from app.utils.update_logger import log_update
 from app.utils.image_processor import convert_to_webp, allowed_image_file
+from app.utils.upload_path import get_upload_file_path
 from datetime import datetime
 
 shop_banner_api_bp = Blueprint('shop_banner_api', __name__)
@@ -40,7 +41,7 @@ def upload_shop_banner(shop_id):
     try:
         # 刪除舊的 Banner 文件
         if shop.banner_image:
-            old_file_path = os.path.join(current_app.root_path, '..', 'public', shop.banner_image.lstrip('/'))
+            old_file_path = get_upload_file_path(shop.banner_image, current_app.root_path)
             if os.path.exists(old_file_path):
                 os.remove(old_file_path)
         
@@ -103,7 +104,7 @@ def delete_shop_banner(shop_id):
     
     try:
         # 刪除文件
-        file_path = os.path.join(current_app.root_path, '..', 'public', shop.banner_image.lstrip('/'))
+        file_path = get_upload_file_path(shop.banner_image, current_app.root_path)
         if os.path.exists(file_path):
             os.remove(file_path)
         

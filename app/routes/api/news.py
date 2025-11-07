@@ -9,6 +9,7 @@ from app.models import News
 from app.utils.decorators import role_required
 from app.utils.update_logger import log_update
 from app.utils.image_processor import convert_to_webp, allowed_image_file
+from app.utils.upload_path import get_upload_file_path
 from datetime import datetime
 
 news_api_bp = Blueprint('news_api', __name__)
@@ -223,7 +224,7 @@ def update_news_image(news_id):
     try:
         # 刪除舊文件
         if news.image_path:
-            old_file_path = os.path.join(current_app.root_path, '..', 'public', news.image_path.lstrip('/'))
+            old_file_path = get_upload_file_path(news.image_path, current_app.root_path)
             if os.path.exists(old_file_path):
                 os.remove(old_file_path)
         
@@ -306,7 +307,7 @@ def delete_news(news_id):
     try:
         # 刪除文件
         if news.image_path:
-            file_path = os.path.join(current_app.root_path, '..', 'public', news.image_path.lstrip('/'))
+            file_path = get_upload_file_path(news.image_path, current_app.root_path)
             if os.path.exists(file_path):
                 os.remove(file_path)
         
