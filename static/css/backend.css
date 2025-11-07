@@ -1,0 +1,149 @@
+/**
+ * Backend 后台管理系统样式
+ */
+
+/* ================================ */
+/* 布局样式 */
+/* ================================ */
+.wrapper {
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    transition: all 0.3s;
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.sidebar-nav {
+    padding-bottom: 80px;
+}
+
+.sidebar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 1rem 1.5rem;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    display: block;
+    text-decoration: none;
+}
+
+.sidebar-nav .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left-color: #0d6efd;
+}
+
+.sidebar-nav .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-left-color: #0d6efd;
+}
+
+.main-content {
+    margin-left: 250px;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    position: relative;
+    z-index: 1;
+}
+
+/* 确保按钮和下拉菜单可以点击 */
+.main-content button,
+.main-content select,
+.main-content input,
+.main-content .form-control,
+.main-content .form-select {
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+.sidebar-footer {
+    background-color: rgba(0, 0, 0, 0.2);
+    z-index: 101;
+}
+
+/* ================================ */
+/* Bootstrap 5 模态框（使用原生样式） */
+/* ================================ */
+
+/* ================================ */
+/* 响应式设计 */
+/* ================================ */
+@media (max-width: 991px) {
+    .sidebar {
+        transform: translateX(-100%);
+        z-index: 1030;
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+}
+
+/* ================================ */
+/* 统计卡片样式 */
+/* ================================ */
+.stats-card {
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+/* ================================ */
+/* 表格样式 */
+/* ================================ */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* ================================ */
+/* 徽章样式 */
+/* ================================ */
+.badge {
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+/* ================================ */
+/* 按钮组样式 */
+/* ================================ */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* ================================ */
+/* 分页样式 */
+/* ================================ */
+.pagination {
+    margin-bottom: 0;
+}
+
+.pagination .page-item.active .page-link {
+    z-index: 1;
+}
+
+/* ================================ */
+/* 搜索和过滤区域 */
+/* ================================ */
+.filter-section {
+    background-color: white;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
