@@ -22,6 +22,15 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'False').lower() in ('true', '1', 't')
     
+    # 数据库连接池配置（性能优化）
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': int(os.environ.get('DB_POOL_SIZE', '10')),  # 连接池大小
+        'pool_recycle': int(os.environ.get('DB_POOL_RECYCLE', '3600')),  # 连接回收时间（秒）
+        'pool_pre_ping': True,  # 连接前检查连接是否有效
+        'max_overflow': int(os.environ.get('DB_MAX_OVERFLOW', '20')),  # 最大溢出连接数
+        'echo': os.environ.get('SQLALCHEMY_ECHO', 'False').lower() in ('true', '1', 't')
+    }
+    
     # Flask-Migrate配置
     MIGRATIONS_DIR = 'migrations'
     

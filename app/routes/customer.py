@@ -5,6 +5,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from app.models import Shop, Product, Order, Category, About, News, Table, PointTransaction
 from app.utils.decorators import login_required, get_current_user
 from app import db
+from sqlalchemy.orm import joinedload
 
 customer_bp = Blueprint('customer', __name__)
 
@@ -67,8 +68,10 @@ def order_detail(order_id):
 def shop(shop_id):
     """店鋪詳情頁（排除已刪除）"""
     shop = Shop.query.filter_by(id=shop_id).filter(Shop.deleted_at.is_(None)).first_or_404()
-    # 只顯示啟用且未軟刪除的產品
-    products = Product.query.filter_by(shop_id=shop_id, is_active=True).filter(Product.deleted_at.is_(None)).all()
+    # 只顯示啟用且未軟刪除的產品，使用 joinedload 预加载 category 避免 N+1 查询
+    products = Product.query.options(
+        joinedload(Product.category)
+    ).filter_by(shop_id=shop_id, is_active=True).filter(Product.deleted_at.is_(None)).all()
     categories = Category.query.all()
     
     return render_template('store/shop.html', 

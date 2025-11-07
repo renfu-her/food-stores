@@ -36,7 +36,21 @@ def create_app(config_class=Config):
     app.config.from_object(config_class)
     
     # 初始化擴展
+    # Flask-SQLAlchemy 会自动读取 SQLALCHEMY_ENGINE_OPTIONS
     db.init_app(app)
+    
+    # 如果配置了连接池选项，更新 engine
+    if hasattr(config_class, 'SQLALCHEMY_ENGINE_OPTIONS'):
+        engine_options = app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})
+        if engine_options and hasattr(db, 'engine'):
+            # 更新现有 engine 的连接池配置
+            from sqlalchemy import create_engine
+            # 注意：这会在应用启动时重新创建 engine
+            # 在生产环境中，建议通过环境变量配置连接池参数
+            db.engine = create_engine(
+                app.config['SQLALCHEMY_DATABASE_URI'],
+                **engine_options
+            )
     migrate.init_app(app, db)
     socketio.init_app(app, async_mode=app.config['SOCKETIO_ASYNC_MODE'])
     

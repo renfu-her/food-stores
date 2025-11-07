@@ -11,6 +11,7 @@ from app.utils.update_logger import log_update
 from app.utils.order_number import generate_order_number
 from decimal import Decimal
 from sqlalchemy import and_
+from sqlalchemy.orm import joinedload, selectinload
 
 orders_api_bp = Blueprint('orders_api', __name__)
 
@@ -40,22 +41,43 @@ def get_orders():
             # 普通使用者只能查看自己的訂單
             query = query.filter_by(user_id=user.id)
         
-        orders = query.order_by(Order.created_at.desc()).all()
+        # 使用 joinedload 和 selectinload 优化查询，避免 N+1 问题
+        orders = query.options(
+            joinedload(Order.shop),
+            selectinload(Order.items).joinedload(OrderItem.product),
+            selectinload(Order.items).selectinload(OrderItem.toppings)
+        ).order_by(Order.created_at.desc()).all()
+        
+        # 批量获取所有订单项的 topping 价格
+        order_item_ids = []
+        for order in orders:
+            for item in order.items:
+                order_item_ids.append(item.id)
+        
+        # 一次性查询所有订单项的 topping 价格
+        topping_prices_map = {}
+        if order_item_ids:
+            topping_prices_query = db.session.query(
+                order_item_topping.c.order_item_id,
+                order_item_topping.c.topping_id,
+                order_item_topping.c.price
+            ).filter(order_item_topping.c.order_item_id.in_(order_item_ids)).all()
+            
+            for order_item_id, topping_id, price in topping_prices_query:
+                if order_item_id not in topping_prices_map:
+                    topping_prices_map[order_item_id] = {}
+                topping_prices_map[order_item_id][topping_id] = float(price)
         
         orders_data = []
         for order in orders:
             items_data = []
             for item in order.items:
                 toppings_data = []
+                # 从预加载的数据中获取 toppings
+                item_topping_prices = topping_prices_map.get(item.id, {})
                 for topping in item.toppings:
-                    # 獲取訂單項中topping的價格
-                    result = db.session.query(order_item_topping.c.price).filter(
-                        and_(
-                            order_item_topping.c.order_item_id == item.id,
-                            order_item_topping.c.topping_id == topping.id
-                        )
-                    ).scalar()
-                    topping_price = float(result) if result is not None else float(topping.price)
+                    # 优先使用订单项中特定的 topping 价格，否则使用默认价格
+                    topping_price = item_topping_prices.get(topping.id, float(topping.price))
                     
                     toppings_data.append({
                         'id': topping.id,

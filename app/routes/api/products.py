@@ -8,6 +8,7 @@ from app.utils.decorators import login_required, get_current_user, role_required
 from app.utils.validators import validate_decimal, validate_integer
 from app.utils.update_logger import log_update
 from sqlalchemy import and_
+from sqlalchemy.orm import joinedload, selectinload
 
 products_api_bp = Blueprint('products_api', __name__)
 
@@ -34,21 +35,35 @@ def get_products():
         elif is_active.lower() == 'false':
             query = query.filter_by(is_active=False)
         
-        products = query.all()
+        # 使用 selectinload 预加载关联数据，避免 N+1 查询
+        products = query.options(
+            joinedload(Product.category),
+            selectinload(Product.toppings)
+        ).all()
+        
+        # 批量获取所有产品的 topping 价格
+        product_ids = [p.id for p in products]
+        topping_prices_map = {}
+        if product_ids:
+            topping_prices_query = db.session.query(
+                product_topping.c.product_id,
+                product_topping.c.topping_id,
+                product_topping.c.price
+            ).filter(product_topping.c.product_id.in_(product_ids)).all()
+            
+            for product_id, topping_id, price in topping_prices_query:
+                if product_id not in topping_prices_map:
+                    topping_prices_map[product_id] = {}
+                topping_prices_map[product_id][topping_id] = float(price)
         
         products_data = []
         for product in products:
             # 獲取產品的toppings
             toppings_data = []
+            product_topping_prices = topping_prices_map.get(product.id, {})
             for topping in product.toppings:
-                # 獲取產品特定的topping價格
-                result = db.session.query(product_topping.c.price).filter(
-                    and_(
-                        product_topping.c.product_id == product.id,
-                        product_topping.c.topping_id == topping.id
-                    )
-                ).scalar()
-                topping_price = float(result) if result is not None else float(topping.price)
+                # 优先使用产品特定的 topping 价格，否则使用默认价格
+                topping_price = product_topping_prices.get(topping.id, float(topping.price))
                 
                 toppings_data.append({
                     'id': topping.id,
@@ -92,18 +107,28 @@ def get_products():
 def get_product(product_id):
     """獲取產品詳情（公開）"""
     try:
-        product = Product.query.get_or_404(product_id)
+        # 使用 joinedload 预加载关联数据
+        product = Product.query.options(
+            joinedload(Product.category),
+            selectinload(Product.toppings),
+            selectinload(Product.images)
+        ).get_or_404(product_id)
+        
+        # 批量获取产品的 topping 价格
+        topping_prices_map = {}
+        topping_prices_query = db.session.query(
+            product_topping.c.product_id,
+            product_topping.c.topping_id,
+            product_topping.c.price
+        ).filter(product_topping.c.product_id == product.id).all()
+        
+        for _, topping_id, price in topping_prices_query:
+            topping_prices_map[topping_id] = float(price)
         
         # 獲取產品的toppings
         toppings_data = []
         for topping in product.toppings:
-            result = db.session.query(product_topping.c.price).filter(
-                and_(
-                    product_topping.c.product_id == product.id,
-                    product_topping.c.topping_id == topping.id
-                )
-            ).scalar()
-            topping_price = float(result) if result is not None else float(topping.price)
+            topping_price = topping_prices_map.get(topping.id, float(topping.price))
             
             toppings_data.append({
                 'id': topping.id,
