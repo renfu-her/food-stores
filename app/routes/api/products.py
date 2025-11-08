@@ -14,11 +14,17 @@ products_api_bp = Blueprint('products_api', __name__)
 
 @products_api_bp.route('/', methods=['GET'])
 def get_products():
-    """獲取產品列表（公開，可篩選，預設只顯示is_active=true且未刪除的產品）"""
+    """獲取產品列表（公開，可篩選，預設只顯示is_active=true且未刪除的產品，支持分頁）"""
     try:
         shop_id = request.args.get('shop_id', type=int)
         category_id = request.args.get('category_id', type=int)
         is_active = request.args.get('is_active', type=str)
+        
+        # 分頁參數
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        # 限制每頁最大數量，防止過大請求
+        per_page = min(per_page, 100)
         
         # 排除已軟刪除的產品
         query = Product.query.filter(Product.deleted_at.is_(None))
@@ -35,14 +41,21 @@ def get_products():
         elif is_active.lower() == 'false':
             query = query.filter_by(is_active=False)
         
-        # 使用 selectinload 预加载关联数据，避免 N+1 查询
+        # 獲取總數（在分頁前）
+        total = query.count()
+        
+        # 使用 selectinload 预加载关联数据，避免 N+1 查询，並添加分頁
         products = query.options(
             joinedload(Product.category),
             selectinload(Product.toppings)
-        ).all()
+        ).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
         
         # 批量获取所有产品的 topping 价格
-        product_ids = [p.id for p in products]
+        product_ids = [p.id for p in products.items]
         topping_prices_map = {}
         if product_ids:
             topping_prices_query = db.session.query(
@@ -57,7 +70,7 @@ def get_products():
                 topping_prices_map[product_id][topping_id] = float(price)
         
         products_data = []
-        for product in products:
+        for product in products.items:
             # 獲取產品的toppings
             toppings_data = []
             product_topping_prices = topping_prices_map.get(product.id, {})
@@ -94,7 +107,12 @@ def get_products():
         
         return jsonify({
             'products': products_data,
-            'total': len(products_data)
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'pages': products.pages,
+            'has_next': products.has_next,
+            'has_prev': products.has_prev
         }), 200
     except Exception as e:
         return jsonify({

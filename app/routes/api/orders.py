@@ -18,10 +18,17 @@ orders_api_bp = Blueprint('orders_api', __name__)
 @orders_api_bp.route('/', methods=['GET'])
 @login_required
 def get_orders():
-    """獲取訂單列表（使用者自己的訂單，或店鋪擁有者的訂單，或管理員查看所有）"""
+    """獲取訂單列表（使用者自己的訂單，或店鋪擁有者的訂單，或管理員查看所有，支持分頁）"""
     try:
         user = get_current_user()
         shop_id = request.args.get('shop_id', type=int)
+        status = request.args.get('status', type=str)
+        
+        # 分頁參數
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        # 限制每頁最大數量，防止過大請求
+        per_page = min(per_page, 100)
         
         query = Order.query
         
@@ -41,16 +48,27 @@ def get_orders():
             # 普通使用者只能查看自己的訂單
             query = query.filter_by(user_id=user.id)
         
-        # 使用 joinedload 和 selectinload 优化查询，避免 N+1 问题
+        # 狀態篩選
+        if status:
+            query = query.filter_by(status=status)
+        
+        # 獲取總數（在分頁前）
+        total = query.count()
+        
+        # 使用 joinedload 和 selectinload 优化查询，避免 N+1 问题，並添加分頁
         orders = query.options(
             joinedload(Order.shop),
             selectinload(Order.items).joinedload(OrderItem.product),
             selectinload(Order.items).selectinload(OrderItem.toppings)
-        ).order_by(Order.created_at.desc()).all()
+        ).order_by(Order.created_at.desc()).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
         
         # 批量获取所有订单项的 topping 价格
         order_item_ids = []
-        for order in orders:
+        for order in orders.items:
             for item in order.items:
                 order_item_ids.append(item.id)
         
@@ -69,7 +87,7 @@ def get_orders():
                 topping_prices_map[order_item_id][topping_id] = float(price)
         
         orders_data = []
-        for order in orders:
+        for order in orders.items:
             items_data = []
             for item in order.items:
                 toppings_data = []
@@ -109,7 +127,12 @@ def get_orders():
         
         return jsonify({
             'orders': orders_data,
-            'total': len(orders_data)
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'pages': orders.pages,
+            'has_next': orders.has_next,
+            'has_prev': orders.has_prev
         }), 200
     except Exception as e:
         return jsonify({

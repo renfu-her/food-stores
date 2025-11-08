@@ -97,6 +97,52 @@
         </div>
         {% endfor %}
     </div>
+    
+    {# 分頁控件 #}
+    {% if pagination and pagination.pages > 1 %}
+    <nav aria-label="訂單分頁" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {# 上一頁 #}
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{% if pagination.has_prev %}?page={{ pagination.prev_num }}{% else %}#{% endif %}" aria-label="上一頁">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            
+            {# 頁碼 #}
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">…</span>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {# 下一頁 #}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{% if pagination.has_next %}?page={{ pagination.next_num }}{% else %}#{% endif %}" aria-label="下一頁">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+        
+        {# 分頁信息 #}
+        <div class="text-center mt-3 text-muted">
+            <small>顯示第 {{ (pagination.page - 1) * pagination.per_page + 1 }} - {{ pagination.page * pagination.per_page if pagination.page * pagination.per_page < pagination.total else pagination.total }} 條，共 {{ pagination.total }} 條</small>
+        </div>
+    </nav>
+    {% endif %}
+    
     {% else %}
     <div class="empty-state">
         <div class="empty-icon">📦</div>

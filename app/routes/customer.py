@@ -25,9 +25,21 @@ def about():
 
 @customer_bp.route('/news')
 def news():
-    """最新消息列表頁面"""
-    news_list = News.query.filter_by(is_active=True).order_by(News.publish_date.desc()).all()
-    return render_template('store/news.html', news_list=news_list)
+    """最新消息列表頁面（支持分頁）"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # 每頁顯示10條
+    
+    news_pagination = News.query.filter_by(is_active=True)\
+                                .order_by(News.publish_date.desc())\
+                                .paginate(
+                                    page=page,
+                                    per_page=per_page,
+                                    error_out=False
+                                )
+    
+    return render_template('store/news.html', 
+                         news_list=news_pagination.items,
+                         pagination=news_pagination)
 
 @customer_bp.route('/news/<int:news_id>')
 def news_detail(news_id):
@@ -110,10 +122,22 @@ def checkout():
 @customer_bp.route('/orders')
 @login_required
 def orders():
-    """我的訂單頁面"""
+    """我的訂單頁面（支持分頁）"""
     user = get_current_user()
-    orders_list = Order.query.filter_by(user_id=user.id).order_by(Order.created_at.desc()).all()
-    return render_template('store/orders.html', orders=orders_list)
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # 每頁顯示10條
+    
+    orders_pagination = Order.query.filter_by(user_id=user.id)\
+                                  .order_by(Order.created_at.desc())\
+                                  .paginate(
+                                      page=page,
+                                      per_page=per_page,
+                                      error_out=False
+                                  )
+    
+    return render_template('store/orders.html', 
+                         orders=orders_pagination.items,
+                         pagination=orders_pagination)
 
 @customer_bp.route('/profile')
 @login_required
