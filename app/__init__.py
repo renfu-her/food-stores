@@ -116,5 +116,11 @@ def create_app(config_class=Config):
     from app.utils.error_handlers import register_error_handlers
     register_error_handlers(app)
     
+    # 添加模板上下文：提供靜態文件版本號
+    @app.context_processor
+    def inject_static_version():
+        import time
+        return dict(static_version=int(time.time()))
+    
     return app
 

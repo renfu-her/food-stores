@@ -49,7 +49,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}?v={{ static_version }}">
 {% endblock %}
 
 {% block extra_js %}

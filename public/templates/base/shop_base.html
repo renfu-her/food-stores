@@ -107,7 +107,7 @@
 {% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/shop_admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop_admin.css') }}?v={{ static_version }}">
 <style>
 /* 新訂單橫幅樣式 */
 #newOrderBanner {
