@@ -25,6 +25,7 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
+    margin-bottom: 0;
 }
 
 nav {
@@ -84,7 +85,8 @@ nav .container {
 /* Main */
 main {
     min-height: calc(100vh - 200px);
-    padding: 2rem 0;
+    padding: 0 0 2rem 0;
+    margin-top: 0;
 }
 
 /* Footer */

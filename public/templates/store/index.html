@@ -3,7 +3,7 @@
 {% block content %}
 <!-- 首頁 Banner 輪播 -->
 {% if banners and banners|length > 0 %}
-<div id="homeBannerCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+<div id="homeBannerCarousel" class="carousel slide" data-bs-ride="carousel">
     <div class="carousel-indicators">
         {% for banner in banners %}
         <button type="button" data-bs-target="#homeBannerCarousel" data-bs-slide-to="{{ loop.index0 }}" {% if loop.first %}class="active"{% endif %}></button>
@@ -45,7 +45,7 @@
     {% endif %}
 </div>
 {% else %}
-<div class="container my-5">
+<div class="container" style="margin-top: 0; margin-bottom: 2rem;">
     <div class="jumbotron bg-gradient text-white text-center p-5 rounded-3 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
         <h1 class="display-4 mb-3">歡迎來到 快點訂</h1>
         <p class="lead">探索各種美味的食品店鋪</p>
