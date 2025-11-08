@@ -10,7 +10,7 @@ import os
 def test_app():
     """測試應用初始化"""
     print("\n" + "="*60)
-    print("Quick Foods 應用測試")
+    print("快點訂 應用測試")
     print("="*60 + "\n")
     
     try:

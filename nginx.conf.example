@@ -1,4 +1,4 @@
-# Nginx 配置範例 - Quick Foods
+# Nginx 配置範例 - 快點訂
 # 保存為 /etc/nginx/sites-available/quick-foods
 # 或 /etc/nginx/conf.d/quick-foods.conf
 

@@ -129,7 +129,7 @@ def init_default_settings():
         },
         {
             'key': 'mail_from_name',
-            'value': 'Quick Foods',
+            'value': '快點訂',
             'type': 'text',
             'description': '發件人名稱',
             'category': 'email'

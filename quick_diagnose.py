@@ -10,7 +10,7 @@ import sys
 def quick_diagnose():
     """快速診斷常見問題"""
     print("\n" + "="*60)
-    print("Quick Foods 快速診斷工具")
+    print("快點訂 快速診斷工具")
     print("="*60 + "\n")
     
     issues_found = []

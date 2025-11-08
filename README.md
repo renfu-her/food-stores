@@ -1,4 +1,4 @@
-# 🍔 Quick Foods - 多店鋪食品訂購平台
+# 🍔 快點訂 - 多店鋪食品訂購平台
 
 一個功能完整的多店鋪食品訂購管理系統，基於 Flask 開發，支援商品管理、訂單處理、即時通知、配料系統和飲品選項。
 
@@ -256,7 +256,7 @@ uwsgi --ini uwsgi.ini
 
 #### 快速診斷工具
 
-Quick Foods 提供多種診斷工具來幫助您快速定位問題：
+快點訂 提供多種診斷工具來幫助您快速定位問題：
 
 ```bash
 # 快速診斷（推薦）
@@ -329,7 +329,7 @@ gunicorn -w 4 -k eventlet -b 127.0.0.1:8000 wsgi:application
 
 ```ini
 [Unit]
-Description=Quick Foods Web Application
+Description=快點訂 Web Application
 After=network.target
 
 [Service]
@@ -1424,5 +1424,5 @@ flask db upgrade
 
 <div align="center">
   <p>用 ❤️ 打造</p>
-  <p>© 2025 Quick Foods. All Rights Reserved.</p>
+  <p>© 2025 快點訂. All Rights Reserved.</p>
 </div>

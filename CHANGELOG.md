@@ -4,6 +4,85 @@
 
 ---
 
+## 2025-01-27 08:40:22 UTC+8 - 新增 QRCode 操作指南（使用者管理層面）
+
+### 📚 文檔新增
+
+**新增內容：**
+
+1. **新增 QRCode 使用者管理文檔**
+   - ✅ `docs/QRCODE_USER_MANAGEMENT.md` - QRCode 操作指南（使用者管理層面）
+   - 從不同使用者角色的角度說明 QRCode 的操作方法
+   - 詳細說明各角色的權限範圍和操作步驟
+   - 包含權限檢查機制和常見操作場景
+
+**文檔內容：**
+- 使用者角色權限總覽：Admin、Store Admin、Customer、Guest 的權限矩陣
+- Admin（超級管理員）操作指南：管理所有店鋪的 QRCode
+- Store Admin（店主）操作指南：管理自己店鋪的 QRCode
+- Customer（顧客）使用說明：無法管理 QRCode，但可作為訪客使用
+- Guest（訪客）使用說明：掃描 QRCode 點餐的完整流程
+- 權限檢查機制：路由層級和 API 層級的權限控制
+- 常見操作場景：5 個實際操作場景的詳細說明
+
+**重點說明：**
+- ✅ **Admin**：可以管理所有店鋪的 QRCode，不受 `owner_id` 限制
+- ✅ **Store Admin**：只能管理自己擁有店鋪的 QRCode（`shop.owner_id == user.id`）
+- ✅ **Customer**：無法管理 QRCode，但可以作為訪客掃描 QRCode 點餐
+- ✅ **Guest**：無需登入即可掃描 QRCode 點餐
+
+**權限矩陣：**
+| 功能 | Admin | Store Admin | Customer | Guest |
+|------|-------|-------------|----------|-------|
+| 啟用/停用 QRCode | ✅ 所有店鋪 | ✅ 自己的店鋪 | ❌ | ❌ |
+| 創建/編輯/刪除桌號 | ✅ 所有店鋪 | ✅ 自己的店鋪 | ❌ | ❌ |
+| 查看/打印 QRCode | ✅ 所有店鋪 | ✅ 自己的店鋪 | ❌ | ❌ |
+| 掃描 QRCode 點餐 | ❌ | ❌ | ❌ | ✅ |
+
+**使用場景：**
+- 店主首次設置 QRCode 功能
+- Admin 協助店主設置 QRCode
+- 顧客掃描 QRCode 點餐
+- 店主更新桌號編號
+- 店主刪除不需要的桌號
+
+---
+
+## 2025-01-27 08:32:45 UTC+8 - 新增 QRCode 掃碼點餐使用說明文檔
+
+### 📚 文檔新增
+
+**新增內容：**
+
+1. **新增 QRCode 使用說明文檔**
+   - ✅ `docs/QRCODE_USAGE_GUIDE.md` - QRCode 掃碼點餐完整使用說明
+   - 詳細說明 QRCode 功能的使用方法和技術實現
+   - 包含訪客無需登入點餐的完整流程
+   - 提供 API 接口說明和常見問題解答
+
+**文檔內容：**
+- 功能概述：QRCode 掃碼點餐的主要特點和使用場景
+- 啟用 QRCode 功能：如何在店鋪設置中啟用
+- 生成和管理 QRCode：單個創建、批量創建、查看、打印、更新、刪除
+- 訪客使用流程：掃描 QRCode → 點餐 → 購物車 → 結帳 → 訂單成功
+- 技術實現細節：QRCode 生成函數、數據模型、路由結構
+- API 接口說明：桌號管理 API 和訪客訂單 API
+- 常見問題：12 個常見問題的解答
+- 使用範例：完整的操作流程範例
+
+**重點說明：**
+- ✅ **無需登入**：訪客掃描 QRCode 即可點餐，無需註冊或登入
+- ✅ **自動生成**：創建桌號時自動生成對應的 QRCode
+- ✅ **狀態追蹤**：掃描 QRCode 後自動更新桌號狀態
+- ✅ **完整流程**：包含點餐、購物車、結帳等完整功能
+
+**使用場景：**
+- 餐廳內用點餐
+- 快速點餐（無需下載 APP）
+- 桌號管理和追蹤
+
+---
+
 ## 2025-01-27 14:15:36 UTC+8 - 修復應用上下文錯誤：RuntimeError: Working outside of application context
 
 ### 🐛 Bug 修復
@@ -129,7 +208,7 @@
 ### 📝 文件新增
 
 **新增文件：**
-- **`docs/OPENING_ANNOUNCEMENT.md`** - Quick Foods 平台開幕公告
+- **`docs/OPENING_ANNOUNCEMENT.md`** - 快點訂 平台開幕公告
   - 包含平台介紹與特色功能說明
   - 開幕慶祝活動詳情
   - 使用指南與聯絡資訊
@@ -620,11 +699,11 @@ gunicorn -c gunicorn_config.py wsgi:application
 
 ---
 
-## 2025-11-07 00:35 - 品牌名稱更新為 Quick Foods
+## 2025-11-07 00:35 - 品牌名稱更新為 快點訂
 
 ### 🔄 系統更新
 
-**將系統名稱從 "Food Stores" 更改為 "Quick Foods"：**
+**將系統名稱從 "Food Stores" 更改為 "快點訂"：**
 
 **修改範圍：**
 
@@ -648,11 +727,11 @@ gunicorn -c gunicorn_config.py wsgi:application
 - `docs/PAYMENT_METHODS_SETUP.md` - 支付方式設定文檔
 
 **修改內容：**
-- 頁面標題：`Food Stores` → `Quick Foods`
-- 導航欄品牌：`Food Stores` → `Quick Foods`
-- 頁面內容：「歡迎來到 Food Stores」 → 「歡迎來到 Quick Foods」
-- 系統設定預設值：`Food Stores` → `Quick Foods`
-- 文檔維護者：`Food Stores 開發團隊` → `Quick Foods 開發團隊`
+- 頁面標題：`Food Stores` → `快點訂`
+- 導航欄品牌：`Food Stores` → `快點訂`
+- 頁面內容：「歡迎來到 Food Stores」 → 「歡迎來到 快點訂」
+- 系統設定預設值：`Food Stores` → `快點訂`
+- 文檔維護者：`Food Stores 開發團隊` → `快點訂 開發團隊`
 
 **影響位置：**
 - ✅ 所有頁面的瀏覽器標題

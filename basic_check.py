@@ -191,7 +191,7 @@ def check_installed_packages():
 def main():
     """主函數"""
     print("\n" + "="*60)
-    print("Quick Foods 基礎環境檢查")
+    print("快點訂 基礎環境檢查")
     print("="*60)
     print("此工具不需要任何外部依賴，可立即運行")
     print("="*60)

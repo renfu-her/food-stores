@@ -1,4 +1,4 @@
-# Quick Foods 部署指南
+# 快點訂 部署指南
 
 ## 🚀 正式環境部署步驟
 
@@ -137,7 +137,7 @@ server {
 
 ```ini
 [Unit]
-Description=Quick Foods Web Application
+Description=快點訂 Web Application
 After=network.target
 
 [Service]
@@ -350,5 +350,5 @@ sudo systemctl reload nginx
 ---
 
 **最後更新：** 2025-11-07
-**維護者：** Quick Foods 開發團隊
+**維護者：** 快點訂 開發團隊
 

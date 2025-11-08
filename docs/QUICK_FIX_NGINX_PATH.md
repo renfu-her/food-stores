@@ -287,5 +287,5 @@ sudo ln -s /home/ai-tracks-quick-foods/htdocs/quick-foods.ai-tracks.com/public/s
 ---
 
 **最後更新：** 2025-11-07  
-**維護者：** Quick Foods 開發團隊
+**維護者：** 快點訂 開發團隊
 

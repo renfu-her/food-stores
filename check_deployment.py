@@ -212,7 +212,7 @@ def check_app_initialization():
 
 def main():
     print("\n" + "="*50)
-    print("Quick Foods 部署檢查工具")
+    print("快點訂 部署檢查工具")
     print("="*50)
     
     results = []

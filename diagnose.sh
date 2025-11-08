@@ -1,8 +1,8 @@
 #!/bin/bash
-# Quick Foods 一鍵診斷腳本
+# 快點訂 一鍵診斷腳本
 
 echo "=========================================="
-echo "Quick Foods 500 錯誤快速診斷"
+echo "快點訂 500 錯誤快速診斷"
 echo "=========================================="
 echo ""
 
@@ -82,9 +82,9 @@ if command -v systemctl &> /dev/null; then
     # 檢查應用服務
     if systemctl list-units --type=service | grep -q "quick-foods"; then
         if systemctl is-active --quiet quick-foods; then
-            echo -e "${GREEN}✓${NC} Quick Foods 服務正在運行"
+            echo -e "${GREEN}✓${NC} 快點訂 服務正在運行"
         else
-            echo -e "${RED}✗${NC} Quick Foods 服務未運行"
+            echo -e "${RED}✗${NC} 快點訂 服務未運行"
         fi
     fi
 else

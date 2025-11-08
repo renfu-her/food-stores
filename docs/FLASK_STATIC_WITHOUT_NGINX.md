@@ -265,5 +265,5 @@ python test_flask_static.py
 ---
 
 **最後更新：** 2025-11-07  
-**維護者：** Quick Foods 開發團隊
+**維護者：** 快點訂 開發團隊
 
