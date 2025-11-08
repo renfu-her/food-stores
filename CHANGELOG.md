@@ -4,6 +4,63 @@
 
 ---
 
+## 2025-01-27 20:15:00 UTC+8 - 新增 uWSGI 分别 Reload 指南
+
+### 📚 文檔新增
+
+**新增內容：**
+
+1. **新增 uWSGI 分别 Reload 指南**
+   - ✅ `docs/UWSGI_RELOAD_GUIDE.md` - uWSGI 分别 Reload 操作指南
+   - 提供多种方法分别 reload 不同的 uWSGI 应用
+   - 适用于多应用环境（如 blog、chat-message、quick-foods、weather-forecast）
+
+**文檔內容：**
+
+**方法 1: 使用 touch-reload 文件（推荐）**
+- 在配置文件中添加 `touch-reload` 选项
+- 通过 `touch` 文件触发 reload
+- 简单可靠，推荐使用
+
+**方法 2: 使用 uWSGI Master FIFO**
+- 使用命名管道（FIFO）发送 reload 命令
+- 通过 `echo r > master-fifo` 触发 reload
+
+**方法 3: 使用 systemd 服务**
+- 为每个应用创建独立的 systemd 服务
+- 使用 `systemctl reload` 命令
+
+**方法 4: 使用 uWSGI Emperor 模式（推荐用于多应用）**
+- 统一管理多个应用
+- 支持 touch-reload 和 PID 文件方式
+
+**方法 5: 直接使用 PID 文件 Reload**
+- 使用 `uwsgi --reload` 命令
+- 需要 PID 文件路径
+
+**方法 6: 使用信号 Reload**
+- 发送 HUP 信号给 Master 进程
+- 使用 `kill -HUP` 命令
+
+**便捷脚本：**
+- 提供统一的 reload 脚本
+- 自动检测可用的 reload 方法
+- 简化操作流程
+
+**使用示例：**
+```bash
+# 使用 touch-reload（推荐）
+sudo touch /run/uwsgi/app/quick-foods.uwsgi/touch-reload
+
+# 使用便捷脚本
+sudo uwsgi-reload.sh quick-foods
+
+# 使用 systemd
+sudo systemctl reload quick-foods
+```
+
+---
+
 ## 2025-01-27 20:00:00 UTC+8 - 性能優化：添加分頁功能
 
 ### ⚡ 性能優化
