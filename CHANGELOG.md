@@ -4,6 +4,133 @@
 
 ---
 
+## 2025-11-10 17:04:12 UTC+8 - 新增 SEO 搜索引擎优化功能
+
+### 🔍 SEO 功能新增
+
+**新增内容：**
+
+#### 1. **SEO 工具模块** ✅
+
+**文件：** `app/utils/seo.py`
+
+**功能：**
+- ✅ 生成 SEO meta 标签（title, description, keywords）
+- ✅ 生成 Open Graph 标签（Facebook 分享）
+- ✅ 生成 Twitter Card 标签
+- ✅ 生成结构化数据（Schema.org JSON-LD）
+  - Organization（组织）
+  - WebSite（网站）
+  - Product（产品）
+  - Restaurant（餐厅/店铺）
+  - NewsArticle（新闻文章）
+  - BreadcrumbList（面包屑导航）
+
+#### 2. **基础模板 SEO 支持** ✅
+
+**文件：** `public/templates/base/app.html`
+
+**新增内容：**
+- ✅ Meta 标签块（title, description, keywords, canonical）
+- ✅ Open Graph 标签块（og:type, og:url, og:title, og:description, og:image）
+- ✅ Twitter Card 标签块
+- ✅ Robots meta 标签
+- ✅ 结构化数据（JSON-LD）块
+
+#### 3. **Sitemap.xml 和 Robots.txt** ✅
+
+**文件：** `app/routes/seo.py`
+
+**功能：**
+- ✅ `/sitemap.xml` - 自动生成网站地图
+  - 包含所有静态页面
+  - 包含所有店铺页面
+  - 包含所有产品页面
+  - 包含所有新闻页面
+  - 自动设置优先级和更新频率
+  
+- ✅ `/robots.txt` - 搜索引擎爬虫规则
+  - 允许爬取公开页面
+  - 禁止爬取 API、后台、管理页面
+  - 指向 sitemap.xml
+
+#### 4. **页面 SEO 优化** ✅
+
+**优化的页面：**
+
+**首页（`store/index.html`）：**
+- ✅ 自定义 title、description、keywords
+- ✅ WebSite 结构化数据
+- ✅ ItemList 结构化数据（店铺列表）
+
+**店铺页面（`store/shop.html`）：**
+- ✅ 动态 title（店铺名称）
+- ✅ 动态 description（店铺描述）
+- ✅ Restaurant 结构化数据
+- ✅ Open Graph 图片（店铺 banner）
+
+**产品页面（`store/product.html`）：**
+- ✅ 动态 title（产品名称 + 店铺名称）
+- ✅ 动态 description（产品描述）
+- ✅ Product 结构化数据（价格、库存、图片）
+- ✅ BreadcrumbList 结构化数据（面包屑导航）
+- ✅ Open Graph 图片（产品图片）
+
+#### 5. **配置更新** ✅
+
+**文件：** `app/config.py`
+
+**新增配置：**
+```python
+BASE_URL = os.environ.get('BASE_URL') or 'https://yourdomain.com'
+SITE_NAME = os.environ.get('SITE_NAME') or '快點訂'
+SITE_DESCRIPTION = os.environ.get('SITE_DESCRIPTION') or '快點訂 - 在线订餐平台'
+```
+
+**环境变量：**
+- `BASE_URL` - 网站基础 URL（用于 SEO）
+- `SITE_NAME` - 网站名称
+- `SITE_DESCRIPTION` - 网站描述
+
+#### 6. **路由更新** ✅
+
+**文件：** `app/__init__.py`
+
+**新增：**
+- ✅ 注册 SEO blueprint（`seo_bp`）
+
+**文件：** `app/routes/customer.py`
+
+**更新：**
+- ✅ `shop()` 函数：生成店铺结构化数据
+- ✅ `product()` 函数：生成产品和面包屑结构化数据
+
+**SEO 功能总结：**
+
+**支持的 SEO 功能：**
+1. ✅ Meta 标签（title, description, keywords, canonical）
+2. ✅ Open Graph 标签（Facebook、LinkedIn 分享）
+3. ✅ Twitter Card 标签
+4. ✅ 结构化数据（Schema.org JSON-LD）
+5. ✅ Sitemap.xml（自动生成）
+6. ✅ Robots.txt（搜索引擎爬虫规则）
+7. ✅ 面包屑导航结构化数据
+8. ✅ 动态 SEO 信息（根据页面内容生成）
+
+**SEO 优化效果：**
+- ✅ 提升搜索引擎排名
+- ✅ 改善社交媒体分享效果
+- ✅ 提供丰富的搜索结果展示（结构化数据）
+- ✅ 帮助搜索引擎更好地索引网站内容
+
+**使用说明：**
+1. 在 `.env` 文件中设置 `BASE_URL`（生产环境必须设置）
+2. 访问 `/sitemap.xml` 查看网站地图
+3. 访问 `/robots.txt` 查看爬虫规则
+4. 各页面自动包含 SEO meta 标签和结构化数据
+
+---
+
 ## 2025-11-10 16:43:30 UTC+8 - 性能优化：批量数据库查询和批量更新
 
 ### ⚡ 性能优化

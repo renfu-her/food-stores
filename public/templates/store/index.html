@@ -1,5 +1,50 @@
 {% extends "base/store_base.html" %}
 
+{% block title %}快點訂 - 在线订餐平台{% endblock %}
+{% block meta_description %}快點訂 - 探索各种美味的食品店铺，在线订餐，便捷外卖服务{% endblock %}
+{% block meta_keywords %}快點訂,订餐,外卖,在线订餐,美食,餐厅,外卖平台{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "快點訂",
+  "url": "{{ request.url_root.rstrip('/') }}",
+  "description": "快點訂 - 在线订餐平台，提供便捷的外卖订餐服务",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "{{ request.url_root.rstrip('/') }}/?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+{% if shops %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": [
+    {% for shop in shops[:10] %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "item": {
+        "@type": "Restaurant",
+        "name": "{{ shop.name }}",
+        "url": "{{ request.url_root.rstrip('/') }}{{ url_for('customer.shop', shop_id=shop.id) }}"
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <!-- 首頁 Banner 輪播 -->
 {% if banners and banners|length > 0 %}

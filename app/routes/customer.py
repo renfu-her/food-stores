@@ -79,6 +79,7 @@ def order_detail(order_id):
 @customer_bp.route('/shop/<int:shop_id>')
 def shop(shop_id):
     """店鋪詳情頁（排除已刪除）"""
+    from app.utils.seo import generate_structured_data_shop
     shop = Shop.query.filter_by(id=shop_id).filter(Shop.deleted_at.is_(None)).first_or_404()
     # 只顯示啟用且未軟刪除的產品，使用 joinedload 预加载 category 避免 N+1 查询
     products = Product.query.options(
@@ -86,14 +87,19 @@ def shop(shop_id):
     ).filter_by(shop_id=shop_id, is_active=True).filter(Product.deleted_at.is_(None)).all()
     categories = Category.query.all()
     
+    # 生成 SEO 结构化数据
+    shop_schema = generate_structured_data_shop(shop)
+    
     return render_template('store/shop.html', 
                          shop=shop, 
                          products=products,
-                         categories=categories)
+                         categories=categories,
+                         shop_schema=shop_schema)
 
 @customer_bp.route('/product/<int:product_id>')
 def product(product_id):
     """產品詳情頁"""
+    from app.utils.seo import generate_structured_data_product, generate_breadcrumb_list
     product = Product.query.get_or_404(product_id)
     if not product.is_active:
         return redirect(url_for('customer.index'))
@@ -101,9 +107,22 @@ def product(product_id):
     # 獲取店鋪的toppings
     toppings = [t for t in product.shop.toppings if t.is_active]
     
+    # 生成 SEO 结构化数据
+    product_schema = generate_structured_data_product(product)
+    
+    # 生成面包屑导航结构化数据
+    breadcrumb_items = [
+        {'name': '首页', 'url': url_for('customer.index')},
+        {'name': product.shop.name, 'url': url_for('customer.shop', shop_id=product.shop_id)},
+        {'name': product.name, 'url': url_for('customer.product', product_id=product.id)}
+    ]
+    breadcrumb_schema = generate_breadcrumb_list(breadcrumb_items)
+    
     return render_template('store/product.html', 
                          product=product,
-                         toppings=toppings)
+                         toppings=toppings,
+                         product_schema=product_schema,
+                         breadcrumb_schema=breadcrumb_schema)
 
 @customer_bp.route('/cart')
 @login_required

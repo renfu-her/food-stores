@@ -67,12 +67,14 @@ def create_app(config_class=Config):
         from app.routes.api.tables import tables_api_bp
         from app.routes.api.payment_methods import payment_methods_api_bp
         from app.routes.websocket import websocket_bp
+        from app.routes.seo import seo_bp
         
         app.register_blueprint(auth_bp)
         app.register_blueprint(backend_bp, url_prefix='/backend')
         app.register_blueprint(store_admin_bp, url_prefix='/store_admin')
         app.register_blueprint(customer_bp)  # 首頁路由，不需要前綴
         app.register_blueprint(guest_bp, url_prefix='/guest')  # 訪客點餐路由
+        app.register_blueprint(seo_bp)  # SEO 路由（sitemap.xml, robots.txt）
         app.register_blueprint(shops_api_bp, url_prefix='/api/shops')
         app.register_blueprint(products_api_bp, url_prefix='/api/products')
         app.register_blueprint(orders_api_bp, url_prefix='/api/orders')

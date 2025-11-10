@@ -43,6 +43,11 @@ class Config:
     SOCKETIO_ASYNC_MODE = os.environ.get('SOCKETIO_ASYNC_MODE', 'threading')
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.environ.get('SOCKETIO_CORS_ALLOWED_ORIGINS', '*')
     
+    # SEO 配置
+    BASE_URL = os.environ.get('BASE_URL') or 'https://yourdomain.com'  # 网站基础 URL，用于 SEO
+    SITE_NAME = os.environ.get('SITE_NAME') or '快點訂'
+    SITE_DESCRIPTION = os.environ.get('SITE_DESCRIPTION') or '快點訂 - 在线订餐平台，提供便捷的外卖订餐服务'
+    
     # 文件上傳配置
     # 優先使用根目錄的 uploads，否則使用 public/uploads（向後兼容）
     BASE_DIR = os.path.dirname(os.path.dirname(__file__))
