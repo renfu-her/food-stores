@@ -45,6 +45,50 @@ def runtime_error(error):
 
 ---
 
+## 2025-11-10 20:49:05 UTC+8 - 修复店铺页面 AttributeError 错误
+
+### 🐛 Bug 修復
+
+**問題：**
+- 訪問 `/shop/2` 時出現 `AttributeError: 'Shop' object has no attribute 'image_path'` 錯誤
+- `generate_structured_data_shop()` 函數嘗試訪問不存在的 `image_path` 屬性
+- 模板中使用了不存在的 `shop.image_path` 屬性
+
+**原因：**
+- Shop 模型沒有 `image_path` 屬性
+- Shop 模型只有 `banner_image` 屬性（Banner 橫幅圖片）
+- Shop 圖片通過 `images` 關係（ShopImage）獲取，使用 `shop.images[0].image_path`
+- Shop 模型沒有 `district` 和 `county` 屬性（這些屬性在 User 模型中）
+
+**修復內容：**
+- ✅ 修改 `app/utils/seo.py` - `generate_structured_data_shop()` 函數：
+  - 移除對 `shop.image_path` 的訪問
+  - 優先使用 `shop.banner_image`，否則使用 `shop.images[0].image_path`
+  - 移除對 `shop.district` 和 `shop.county` 的訪問（Shop 模型沒有這些屬性）
+  
+- ✅ 修改 `public/templates/store/shop.html`：
+  - 移除對 `shop.image_path` 的引用
+  - 使用 `shop.banner_image` 或 `shop.images[0].image_path`
+
+**修改內容：**
+```python
+# 获取店铺图片（优先使用 banner_image，否则使用第一张 images）
+shop_image = None
+if hasattr(shop, 'banner_image') and shop.banner_image:
+    shop_image = shop.banner_image if shop.banner_image.startswith('http') else base_url + shop.banner_image
+elif hasattr(shop, 'images') and shop.images:
+    first_image = shop.images[0].image_path if shop.images else None
+    if first_image:
+        shop_image = first_image if first_image.startswith('http') else base_url + first_image
+```
+
+**影響範圍：**
+- 店鋪詳情頁面（`/shop/<shop_id>`）
+- SEO 結構化數據生成
+- Open Graph 圖片顯示
+
+---
+
 ## 2025-11-10 20:31:43 UTC+8 - 修复 Socket.IO WebSocket 升级失败错误
 
 ### 🐛 Bug 修復

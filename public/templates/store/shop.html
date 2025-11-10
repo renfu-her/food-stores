@@ -6,7 +6,7 @@
 {% block og_type %}restaurant{% endblock %}
 {% block og_title %}{{ shop.name }} - 快點訂{% endblock %}
 {% block twitter_title %}{{ shop.name }} - 快點訂{% endblock %}
-{% block og_image %}{{ shop.banner_image or shop.image_path or url_for('static', filename='images/logo.png', _external=True) }}{% endblock %}
+{% block og_image %}{% if shop.banner_image %}{{ shop.banner_image }}{% elif shop.images and shop.images|length > 0 %}{{ shop.images[0].image_path }}{% else %}{{ url_for('static', filename='images/logo.png', _external=True) }}{% endif %}{% endblock %}
 
 {% block structured_data %}
 {% if shop_schema %}

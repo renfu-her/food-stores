@@ -163,18 +163,28 @@ def generate_structured_data_shop(shop):
         # 如果无法使用 url_for，则手动构建
         shop_url = f"{base_url}/shop/{shop.id}"
     
+    # 获取店铺图片（优先使用 banner_image，否则使用第一张 images）
+    shop_image = None
+    if hasattr(shop, 'banner_image') and shop.banner_image:
+        shop_image = shop.banner_image if shop.banner_image.startswith('http') else base_url + shop.banner_image
+    elif hasattr(shop, 'images') and shop.images:
+        # 使用第一张图片
+        first_image = shop.images[0].image_path if shop.images else None
+        if first_image:
+            shop_image = first_image if first_image.startswith('http') else base_url + first_image
+    
     data = {
         "@context": "https://schema.org",
         "@type": "Restaurant",
         "name": shop.name,
         "description": shop.description or shop.name,
         "url": shop_url,
-        "image": base_url + shop.image_path if shop.image_path and not shop.image_path.startswith('http') else (shop.image_path or None),
+        "image": shop_image,
         "address": {
             "@type": "PostalAddress",
             "addressCountry": "TW",
-            "addressLocality": shop.district or "",
-            "addressRegion": shop.county or ""
+            "addressLocality": getattr(shop, 'district', None) or "",
+            "addressRegion": getattr(shop, 'county', None) or ""
         }
     }
     
