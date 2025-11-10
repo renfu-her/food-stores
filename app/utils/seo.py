@@ -10,9 +10,19 @@ import json
 def get_base_url():
     """获取网站基础 URL"""
     # 从配置中获取，如果没有则从请求中获取
-    from app import app
-    base_url = app.config.get('BASE_URL') or request.url_root.rstrip('/')
-    return base_url
+    try:
+        from flask import current_app
+        base_url = current_app.config.get('BASE_URL')
+        if base_url and base_url != 'https://yourdomain.com':
+            return base_url.rstrip('/')
+    except:
+        pass
+    
+    # 如果配置中没有或无效，从请求中获取
+    try:
+        return request.url_root.rstrip('/')
+    except:
+        return ''
 
 
 def generate_meta_tags(title, description=None, keywords=None, image=None, url=None, type='website', site_name='快點訂'):
@@ -96,16 +106,25 @@ def generate_structured_data_product(product):
     # 构建图片列表
     images = []
     if product.image_path:
-        images.append(base_url + product.image_path)
+        img_url = product.image_path if product.image_path.startswith('http') else base_url + product.image_path
+        images.append(img_url)
     
     # 获取产品图片
     if hasattr(product, 'images') and product.images:
         for img in product.images[:5]:  # 最多5张图片
             if img.image_path:
-                images.append(base_url + img.image_path)
+                img_url = img.image_path if img.image_path.startswith('http') else base_url + img.image_path
+                images.append(img_url)
     
     # 价格信息
     price = float(product.discounted_price if product.discounted_price else product.unit_price)
+    
+    # 使用 url_for 生成正确的 URL
+    try:
+        from flask import url_for
+        product_url = url_for('customer.product', product_id=product.id, _external=True)
+    except:
+        product_url = f"{base_url}/product/{product.id}"
     
     data = {
         "@context": "https://schema.org",
@@ -118,7 +137,7 @@ def generate_structured_data_product(product):
             "price": str(price),
             "priceCurrency": "TWD",
             "availability": "https://schema.org/InStock" if product.stock_quantity > 0 else "https://schema.org/OutOfStock",
-            "url": f"{base_url}/store/shop/{product.shop_id}/product/{product.id}"
+            "url": product_url
         }
     }
     
@@ -136,13 +155,21 @@ def generate_structured_data_shop(shop):
     """生成商店（Store）结构化数据"""
     base_url = get_base_url()
     
+    # 使用 url_for 生成正确的 URL（需要在应用上下文中）
+    try:
+        from flask import url_for
+        shop_url = url_for('customer.shop', shop_id=shop.id, _external=True)
+    except:
+        # 如果无法使用 url_for，则手动构建
+        shop_url = f"{base_url}/shop/{shop.id}"
+    
     data = {
         "@context": "https://schema.org",
         "@type": "Restaurant",
         "name": shop.name,
         "description": shop.description or shop.name,
-        "url": f"{base_url}/store/shop/{shop.id}",
-        "image": base_url + shop.image_path if shop.image_path else None,
+        "url": shop_url,
+        "image": base_url + shop.image_path if shop.image_path and not shop.image_path.startswith('http') else (shop.image_path or None),
         "address": {
             "@type": "PostalAddress",
             "addressCountry": "TW",
