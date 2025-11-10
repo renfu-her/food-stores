@@ -5,17 +5,30 @@
     const MAX_RECONNECT_ATTEMPTS = 5;
     
     function initSocket() {
-        // 初始化Socket.IO连接，添加重连配置
+        // 初始化Socket.IO连接，添加重连配置和超时处理
+        // 注意：在 uWSGI/Gunicorn WSGI 环境中，只使用 polling 传输，避免 WebSocket 升级失败
         socket = io({
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-            timeout: 20000,
-            transports: ['polling', 'websocket']
+            timeout: 10000,  // 减少超时时间到10秒
+            transports: ['polling'],  // 只使用 polling，避免 WebSocket 升级失败
+            upgrade: false,  // 禁用升级到 WebSocket
+            autoConnect: true,  // 自动连接
+            forceNew: false  // 复用连接
         });
         
+        // 设置连接超时
+        const connectTimeout = setTimeout(function() {
+            if (!socket.connected) {
+                console.warn('Socket.IO connection timeout, continuing without socket');
+                socket.disconnect();
+            }
+        }, 10000);  // 10秒超时
+        
         socket.on('connect', function() {
+            clearTimeout(connectTimeout);
             console.log('Socket.IO connected');
             reconnectAttempts = 0;
         });

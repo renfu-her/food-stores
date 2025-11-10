@@ -6,13 +6,15 @@
     
     function initSocket() {
         // 初始化Socket.IO连接，添加重连配置和超时处理
+        // 注意：在 uWSGI/Gunicorn WSGI 环境中，只使用 polling 传输，避免 WebSocket 升级失败
         socket = io({
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
             timeout: 10000,  // 减少超时时间到10秒
-            transports: ['polling', 'websocket'],
+            transports: ['polling'],  // 只使用 polling，避免 WebSocket 升级失败
+            upgrade: false,  // 禁用升级到 WebSocket
             autoConnect: true,  // 自动连接
             forceNew: false  // 复用连接
         });
