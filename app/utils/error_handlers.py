@@ -73,6 +73,15 @@ def register_error_handlers(app):
         # 忽略 Socket.IO 的會話斷開錯誤
         if 'Session is disconnected' in str(error):
             return '', 200
+        # 處理 WebSocket 升級失敗錯誤（在 WSGI 環境中）
+        if 'Cannot obtain socket from WSGI environment' in str(error) or 'RuntimeError' in str(type(error).__name__):
+            if request.path.startswith('/socket.io/'):
+                # WebSocket 升級失敗，返回 400 Bad Request，告訴客戶端只使用 polling
+                return jsonify({
+                    'error': 'websocket_not_supported',
+                    'message': 'WebSocket is not supported in this environment. Please use polling transport.',
+                    'details': {}
+                }), 400
         if request.path.startswith('/api/') or request.path.startswith('/socket.io/'):
             return jsonify({
                 'error': 'internal_error',
@@ -80,6 +89,21 @@ def register_error_handlers(app):
                 'details': {}
             }), 500
         return render_template('errors/500.html'), 500
+    
+    @app.errorhandler(RuntimeError)
+    def runtime_error(error):
+        """處理 RuntimeError，特別是 WebSocket 相關錯誤"""
+        # 處理 WebSocket 升級失敗錯誤
+        if 'Cannot obtain socket from WSGI environment' in str(error):
+            if request.path.startswith('/socket.io/'):
+                # 返回 400，告訴客戶端不支持 WebSocket
+                return jsonify({
+                    'error': 'websocket_not_supported',
+                    'message': 'WebSocket is not supported. Please use polling transport.',
+                    'details': {}
+                }), 400
+        # 其他 RuntimeError 當作 500 處理
+        return internal_error(error)
     
     @app.errorhandler(ValueError)
     def value_error(error):

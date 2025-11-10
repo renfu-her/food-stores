@@ -4,6 +4,47 @@
 
 ---
 
+## 2025-11-10 20:42:59 UTC+8 - 完善 Socket.IO WebSocket 错误处理
+
+### 🐛 Bug 修復
+
+**問題：**
+- 即使客戶端設置了 `transports: ['polling']` 和 `upgrade: false`，服務器端仍然收到 WebSocket 升級請求
+- WebSocket 升級失敗導致 500 錯誤，影響頁面正常加載
+
+**修復內容：**
+- ✅ 添加 `RuntimeError` 錯誤處理器，捕獲 WebSocket 升級失敗錯誤
+- ✅ 修改 500 錯誤處理器，對 WebSocket 升級失敗返回 400 而不是 500
+- ✅ 返回明確的錯誤消息，告訴客戶端不支持 WebSocket
+- ✅ 移除可能無效的 Socket.IO 配置參數
+
+**修改文件：**
+- `app/utils/error_handlers.py` - 添加 WebSocket 錯誤處理
+- `app/__init__.py` - 清理 Socket.IO 配置
+
+**錯誤處理邏輯：**
+```python
+@app.errorhandler(RuntimeError)
+def runtime_error(error):
+    if 'Cannot obtain socket from WSGI environment' in str(error):
+        if request.path.startswith('/socket.io/'):
+            return jsonify({
+                'error': 'websocket_not_supported',
+                'message': 'WebSocket is not supported. Please use polling transport.'
+            }), 400
+```
+
+**影響範圍：**
+- Socket.IO WebSocket 升級失敗不再導致 500 錯誤
+- 頁面可以正常加載，即使 WebSocket 升級失敗
+- 客戶端會收到明確的錯誤消息
+
+**注意事項：**
+- 如果瀏覽器緩存了舊的 JavaScript 文件，可能需要清除緩存或強制刷新（Ctrl+F5）
+- 確保客戶端使用最新的 `socketio_client.js`，其中包含 `transports: ['polling']` 和 `upgrade: false` 配置
+
+---
+
 ## 2025-11-10 20:31:43 UTC+8 - 修复 Socket.IO WebSocket 升级失败错误
 
 ### 🐛 Bug 修復

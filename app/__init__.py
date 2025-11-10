@@ -7,6 +7,8 @@ from app.config import Config
 # 初始化擴展
 db = SQLAlchemy()
 migrate = Migrate()
+# Socket.IO 配置：在 WSGI 环境中使用 threading 模式
+# 注意：Flask-SocketIO 在 WSGI 环境中不支持 WebSocket，只使用 polling
 socketio = SocketIO(
     cors_allowed_origins="*",
     logger=False,
