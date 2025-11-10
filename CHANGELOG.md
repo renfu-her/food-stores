@@ -4,6 +4,46 @@
 
 ---
 
+## 2025-11-10 20:31:43 UTC+8 - 修复 Socket.IO WebSocket 升级失败错误
+
+### 🐛 Bug 修復
+
+**問題：**
+- 訪問頁面時出現 `RuntimeError: Cannot obtain socket from WSGI environment` 錯誤
+- Socket.IO 嘗試升級到 WebSocket 時失敗
+- 錯誤發生在 uWSGI/Gunicorn WSGI 環境中
+
+**原因：**
+- 標準 WSGI 協議不支持 WebSocket
+- Socket.IO 客戶端默認嘗試從 polling 升級到 WebSocket
+- uWSGI/Gunicorn 等 WSGI 服務器需要特殊配置才能支持 WebSocket
+
+**修復內容：**
+- ✅ 修改 `static/js/socketio_client.js`：只使用 polling 傳輸，禁用 WebSocket 升級
+- ✅ 修改 `public/static/js/socketio_client.js`：同步更新
+- ✅ 添加 `upgrade: false` 選項，明確禁用 WebSocket 升級
+- ✅ 添加連接超時處理，避免長時間等待
+
+**修改內容：**
+```javascript
+socket = io({
+    transports: ['polling'],  // 只使用 polling，避免 WebSocket 升级失败
+    upgrade: false,  // 禁用升级到 WebSocket
+    // ... 其他配置
+});
+```
+
+**影響範圍：**
+- Socket.IO 客戶端連接
+- 實時通知功能（訂單更新、產品更新等）
+- 頁面加載性能（避免 WebSocket 升級失敗導致的延遲）
+
+**注意事項：**
+- Polling 傳輸方式可以正常工作，但性能略低於 WebSocket
+- 如果需要 WebSocket 支持，需要配置 uWSGI 的 WebSocket 插件或使用其他支持 WebSocket 的服務器
+
+---
+
 ## 2025-11-10 17:04:12 UTC+8 - 新增 SEO 搜索引擎优化功能
 
 ### 🔍 SEO 功能新增
