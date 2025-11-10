@@ -4,6 +4,8 @@
 {% block meta_description %}{{ shop.description or shop.name }} - 快點訂在线订餐平台{% endblock %}
 {% block meta_keywords %}{{ shop.name }},订餐,外卖,{{ shop.county or '' }}{% endblock %}
 {% block og_type %}restaurant{% endblock %}
+{% block og_title %}{{ shop.name }} - 快點訂{% endblock %}
+{% block twitter_title %}{{ shop.name }} - 快點訂{% endblock %}
 {% block og_image %}{{ shop.banner_image or shop.image_path or url_for('static', filename='images/logo.png', _external=True) }}{% endblock %}
 
 {% block structured_data %}

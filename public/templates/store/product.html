@@ -4,6 +4,8 @@
 {% block meta_description %}{{ product.description or product.name }} - {{ product.shop.name }} - 快點訂在线订餐平台{% endblock %}
 {% block meta_keywords %}{{ product.name }},{{ product.shop.name }},订餐,外卖,美食{% endblock %}
 {% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }} - {{ product.shop.name }} - 快點訂{% endblock %}
+{% block twitter_title %}{{ product.name }} - {{ product.shop.name }} - 快點訂{% endblock %}
 {% block og_image %}{% if product.images and product.images|length > 0 %}{{ product.images[0].image_path }}{% else %}{{ url_for('static', filename='images/logo.png', _external=True) }}{% endif %}{% endblock %}
 
 {% block structured_data %}
