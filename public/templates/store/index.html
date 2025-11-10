@@ -34,7 +34,7 @@
       "position": {{ loop.index }},
       "item": {
         "@type": "Restaurant",
-        "name": "{{ shop.name }}",
+        "name": {{ shop.name|tojson|safe }},
         "url": "{{ request.url_root.rstrip('/') }}{{ url_for('customer.shop', shop_id=shop.id) }}"
       }
     }{% if not loop.last %},{% endif %}

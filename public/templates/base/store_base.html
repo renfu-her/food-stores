@@ -54,11 +54,18 @@
 
 {% block extra_js %}
 <script>
-// 更新購物車數量
+// 更新購物車數量（僅在用戶登入時執行）
 function updateCartCount() {
+    // 檢查用戶是否登入（通過檢查 session.user_id 是否存在）
+    {% if not session.user_id %}
+    // 未登入用戶不需要更新購物車數量
+    return;
+    {% else %}
+    // 已登入用戶才執行 AJAX 請求
     $.ajax({
         url: '/api/cart',
         method: 'GET',
+        timeout: 5000,  // 5秒超時
         success: function(response) {
             const count = response.total_items || 0;
             const cartCountEl = $('#cartCount');
@@ -67,11 +74,15 @@ function updateCartCount() {
                 cartCountEl.toggle(count > 0);
             }
         },
-        error: function() {
-            // 錯誤時隱藏徽章
+        error: function(xhr, status, error) {
+            // 錯誤時隱藏徽章，不影響頁面載入
             $('#cartCount').hide();
+            if (status !== 'timeout') {
+                console.warn('購物車數量更新失敗:', error);
+            }
         }
     });
+    {% endif %}
 }
 
 // 頁面載入時更新購物車數量
@@ -85,11 +96,12 @@ $(document).ready(function() {
         $.ajax({
             url: '/api/auth/logout',
             method: 'POST',
+            timeout: 5000,
             success: function() {
                 window.location.href = "{{ url_for('customer.index') }}";
             },
-            error: function(xhr) {
-                console.error('登出失敗:', xhr);
+            error: function(xhr, status, error) {
+                console.error('登出失敗:', error);
                 alert('登出失敗，請重試');
             }
         });
