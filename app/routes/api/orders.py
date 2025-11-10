@@ -312,6 +312,12 @@ def create_order():
         total_price = Decimal('0')
         order_items = []
         
+        # 優化：批量收集所有 topping_id 和 product_id，用於批量查詢
+        all_topping_ids = []
+        product_topping_pairs = []  # [(product_id, topping_id), ...]
+        items_with_metadata = []  # 保存每個 item 的元數據，用於後續處理
+        
+        # 第一遍循環：收集所有需要查詢的 ID 並驗證產品
         for item_data in items:
             product_id = item_data.get('product_id')
             quantity = item_data.get('quantity', 1)
@@ -372,29 +378,79 @@ def create_order():
                     'details': {}
                 }), 400
             
+            # 收集 topping_id 和 product-topping 配對
+            for topping_id in toppings:
+                if topping_id not in all_topping_ids:
+                    all_topping_ids.append(topping_id)
+                product_topping_pairs.append((product_id, topping_id))
+            
+            # 保存 item 元數據
+            items_with_metadata.append({
+                'item_data': item_data,
+                'product': product,
+                'qty_value': qty_value,
+                'toppings': toppings
+            })
+        
+        # 優化：批量查詢所有 Topping（一次性查詢，避免 N+1 問題）
+        topping_dict = {}
+        if all_topping_ids:
+            toppings_list = Topping.query.filter(
+                Topping.id.in_(all_topping_ids),
+                Topping.shop_id == shop_id,
+                Topping.is_active == True
+            ).all()
+            topping_dict = {t.id: t for t in toppings_list}
+        
+        # 優化：批量查詢所有 product_topping 價格（一次性查詢）
+        product_topping_price_dict = {}
+        if product_topping_pairs:
+            from app.models import product_topping
+            product_ids_list = list(set([pair[0] for pair in product_topping_pairs]))
+            topping_ids_list = list(set([pair[1] for pair in product_topping_pairs]))
+            
+            # 批量查詢 product_topping 關聯表
+            product_topping_results = db.session.query(
+                product_topping.c.product_id,
+                product_topping.c.topping_id,
+                product_topping.c.price
+            ).filter(
+                and_(
+                    product_topping.c.product_id.in_(product_ids_list),
+                    product_topping.c.topping_id.in_(topping_ids_list)
+                )
+            ).all()
+            
+            # 構建字典：{(product_id, topping_id): price}
+            for result in product_topping_results:
+                product_topping_price_dict[(result.product_id, result.topping_id)] = result.price
+        
+        # 第二遍循環：計算價格（使用批量查詢的結果）
+        for item_meta in items_with_metadata:
+            item_data = item_meta['item_data']
+            product = item_meta['product']
+            qty_value = item_meta['qty_value']
+            toppings = item_meta['toppings']
+            product_id = product.id
+            
             # 計算產品價格（使用折扣價如果有）
             unit_price = product.discounted_price if product.discounted_price else product.unit_price
             item_total = unit_price * qty_value
             
-            # 添加topping價格
+            # 添加topping價格（使用批量查詢的結果）
             for topping_id in toppings:
-                topping = Topping.query.get(topping_id)
-                if not topping or topping.shop_id != shop_id or not topping.is_active:
+                # 從批量查詢的字典中獲取 topping
+                topping = topping_dict.get(topping_id)
+                if not topping:
                     return jsonify({
                         'error': 'validation_error',
                         'message': f'Topping ID {topping_id} 无效',
                         'details': {}
                     }), 400
                 
-                # 獲取產品特定的topping價格
-                from app.models import product_topping
-                result = db.session.query(product_topping.c.price).filter(
-                    and_(
-                        product_topping.c.product_id == product_id,
-                        product_topping.c.topping_id == topping_id
-                    )
-                ).scalar()
-                topping_price = Decimal(str(result)) if result is not None else topping.price
+                # 從批量查詢的字典中獲取產品特定的topping價格
+                specific_price = product_topping_price_dict.get((product_id, topping_id))
+                topping_price = Decimal(str(specific_price)) if specific_price is not None else topping.price
                 item_total += topping_price
             
             total_price += item_total
@@ -595,6 +651,11 @@ def _create_single_order(user, data):
     total_price = Decimal('0')
     order_items_data = []
     
+    # 優化：批量收集所有 topping_id，用於批量查詢
+    all_topping_ids = []
+    items_with_metadata = []
+    
+    # 第一遍循環：收集所有需要查詢的 ID 並驗證產品
     for item_data in items:
         product_id = item_data.get('product_id')
         quantity = item_data.get('quantity', 1)
@@ -626,17 +687,52 @@ def _create_single_order(user, data):
         if not is_valid:
             raise ValueError(error_msg)
         
+        # 收集 topping_id
+        for topping_data in toppings:
+            topping_id = topping_data.get('topping_id') or topping_data.get('id')
+            if topping_id and topping_id not in all_topping_ids:
+                all_topping_ids.append(topping_id)
+        
+        # 保存 item 元數據
+        items_with_metadata.append({
+            'item_data': item_data,
+            'product': product,
+            'qty_value': qty_value,
+            'toppings': toppings,
+            'drink_type': drink_type,
+            'drink_price': drink_price
+        })
+    
+    # 優化：批量查詢所有 Topping（一次性查詢，避免 N+1 問題）
+    topping_dict = {}
+    if all_topping_ids:
+        toppings_list = Topping.query.filter(
+            Topping.id.in_(all_topping_ids),
+            Topping.shop_id == shop_id,
+            Topping.is_active == True
+        ).all()
+        topping_dict = {t.id: t for t in toppings_list}
+    
+    # 第二遍循環：計算價格（使用批量查詢的結果）
+    for item_meta in items_with_metadata:
+        item_data = item_meta['item_data']
+        product = item_meta['product']
+        qty_value = item_meta['qty_value']
+        toppings = item_meta['toppings']
+        drink_type = item_meta['drink_type']
+        drink_price = item_meta['drink_price']
+        
         # 計算單價
         unit_price = product.discounted_price if product.discounted_price else product.unit_price
         
-        # 計算配料價格
+        # 計算配料價格（使用批量查詢的結果）
         topping_price = Decimal('0')
         topping_instances = []
         for topping_data in toppings:
             topping_id = topping_data.get('topping_id') or topping_data.get('id')
             if topping_id:
-                topping = Topping.query.get(topping_id)
-                if topping and topping.shop_id == shop_id and topping.is_active:
+                topping = topping_dict.get(topping_id)
+                if topping:
                     topping_price += topping.price
                     topping_instances.append((topping, topping.price))
         
@@ -657,9 +753,27 @@ def _create_single_order(user, data):
             'drink_type': drink_type,
             'drink_price': drink_total_price
         })
-        
-        # 減少庫存
-        product.stock_quantity -= qty_value
+    
+    # 優化：批量更新庫存（使用 SQLAlchemy 批量更新，避免逐個更新）
+    from sqlalchemy import update
+    product_stock_updates = {}  # {product_id: total_quantity_to_reduce}
+    for item_meta in items_with_metadata:
+        product = item_meta['product']
+        qty_value = item_meta['qty_value']
+        product_id = product.id
+        if product_id not in product_stock_updates:
+            product_stock_updates[product_id] = 0
+        product_stock_updates[product_id] += qty_value
+    
+    # 批量更新庫存
+    if product_stock_updates:
+        for product_id, total_qty in product_stock_updates.items():
+            update_stmt = update(Product).where(
+                Product.id == product_id
+            ).values(
+                stock_quantity=Product.stock_quantity - total_qty
+            )
+            db.session.execute(update_stmt)
     
     # 組合完整地址
     county = data.get('county', '')
@@ -975,6 +1089,11 @@ def checkout_with_points_and_payment():
         total_price = Decimal('0.00')
         order_items_data = []
         
+        # 優化：批量收集所有 topping_id，用於批量查詢
+        all_topping_ids = []
+        items_with_metadata = []
+        
+        # 第一遍循環：收集所有需要查詢的 ID 並驗證產品
         for item in items:
             product_id = item.get('product_id')
             quantity = item.get('quantity', 1)
@@ -984,6 +1103,37 @@ def checkout_with_points_and_payment():
             product = Product.query.get(product_id)
             if not product or product.shop_id != shop_id:
                 continue
+            
+            # 收集 topping_id
+            for topping_id in toppings_ids:
+                if topping_id not in all_topping_ids:
+                    all_topping_ids.append(topping_id)
+            
+            # 保存 item 元數據
+            items_with_metadata.append({
+                'item': item,
+                'product': product,
+                'quantity': quantity,
+                'toppings_ids': toppings_ids,
+                'drink_type': drink_type
+            })
+        
+        # 優化：批量查詢所有 Topping（一次性查詢，避免 N+1 問題）
+        topping_dict = {}
+        if all_topping_ids:
+            toppings_list = Topping.query.filter(
+                Topping.id.in_(all_topping_ids),
+                Topping.shop_id == shop_id
+            ).all()
+            topping_dict = {t.id: t for t in toppings_list}
+        
+        # 第二遍循環：計算價格（使用批量查詢的結果）
+        for item_meta in items_with_metadata:
+            item = item_meta['item']
+            product = item_meta['product']
+            quantity = item_meta['quantity']
+            toppings_ids = item_meta['toppings_ids']
+            drink_type = item_meta['drink_type']
             
             # 计算单价
             if product.discounted_price and product.discounted_price > 0:
@@ -1002,11 +1152,11 @@ def checkout_with_points_and_payment():
             
             item_total += drink_price * quantity
             
-            # 处理配料
+            # 处理配料（使用批量查詢的結果）
             toppings_list = []
             for topping_id in toppings_ids:
-                topping = Topping.query.get(topping_id)
-                if topping and topping.shop_id == shop_id:
+                topping = topping_dict.get(topping_id)
+                if topping:
                     topping_price = topping.price or Decimal('0.00')
                     toppings_list.append((topping, topping_price))
                     item_total += topping_price * quantity
