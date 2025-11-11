@@ -13,6 +13,7 @@
 - ✅ 创建测试指南文档 `docs/CONCURRENT_TESTING_GUIDE.md`
 - ✅ 创建生产环境测试文档 `docs/PRODUCTION_TESTING.md`
 - ✅ 将所有测试文件整理到 `test/` 目录
+- ✅ 创建博客文章 `docs/blog.md`（面向管理者和使用者）
 
 **功能说明：**
 - 支持混合负载测试（产品查询、用户登录、购物车操作等）
@@ -20,6 +21,7 @@
 - 自动统计成功率、响应时间、QPS等指标
 - 生成详细的测试结果报告（JSON格式）
 - 支持HTTPS生产环境测试
+- 支持创建和删除测试用户
 
 **测试场景：**
 1. **订单创建测试**: 检测库存竞争条件、超卖问题、数据库死锁
@@ -38,6 +40,12 @@ python test/test_concurrent_load.py --stock-test --shop-id 1 --product-id 1 --in
 
 # 生产环境测试
 python test/test_concurrent_load.py --base-url https://quick-foods.ai-tracks.com --concurrent 50 --requests 500
+
+# 创建50个测试用户
+python test/test_concurrent_load.py --base-url https://quick-foods.ai-tracks.com --create-users 50
+
+# 删除测试用户
+python test/test_concurrent_load.py --base-url https://quick-foods.ai-tracks.com --delete-users --admin-email admin@admin.com --admin-password admin123
 ```
 
 **可能发现的问题：**
@@ -53,8 +61,10 @@ python test/test_concurrent_load.py --base-url https://quick-foods.ai-tracks.com
 - `test/run_test_example.py` - 交互式测试示例
 - `test/test_production.sh` - 生产环境测试脚本
 - `test/README.md` - 测试目录说明
+- `test/USER_GUIDE.md` - 测试用户管理指南
 - `docs/CONCURRENT_TESTING_GUIDE.md` - 测试使用指南
 - `docs/PRODUCTION_TESTING.md` - 生产环境测试指南
+- `docs/blog.md` - 面向管理者和使用者的博客文章
 
 **注意事项：**
 - 建议在测试环境运行，避免影响生产数据
@@ -62,6 +72,7 @@ python test/test_concurrent_load.py --base-url https://quick-foods.ai-tracks.com
 - 从低并发开始，逐步增加并发数
 - 监控服务器资源使用情况
 - 所有测试文件已整理到 `test/` 目录
+- 测试结果JSON文件自动保存到 `test/` 目录
 
 ---
 
