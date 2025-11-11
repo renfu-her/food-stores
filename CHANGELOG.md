@@ -4,6 +4,67 @@
 
 ---
 
+## 2025-01-15 10:00:00 UTC+8 - 新增高并发测试脚本
+
+### ✨ 新功能
+
+**新增内容：**
+- ✅ 创建高并发测试脚本 `test/test_concurrent_load.py`
+- ✅ 创建测试指南文档 `docs/CONCURRENT_TESTING_GUIDE.md`
+- ✅ 创建生产环境测试文档 `docs/PRODUCTION_TESTING.md`
+- ✅ 将所有测试文件整理到 `test/` 目录
+
+**功能说明：**
+- 支持混合负载测试（产品查询、用户登录、购物车操作等）
+- 支持库存竞争条件专项测试
+- 自动统计成功率、响应时间、QPS等指标
+- 生成详细的测试结果报告（JSON格式）
+- 支持HTTPS生产环境测试
+
+**测试场景：**
+1. **订单创建测试**: 检测库存竞争条件、超卖问题、数据库死锁
+2. **产品查询测试**: 检测读取性能、连接池耗尽、N+1查询问题
+3. **用户登录测试**: 检测认证性能、Session管理问题
+4. **购物车操作测试**: 检测数据竞争、Session冲突
+5. **积分交易测试**: 检测数据一致性、事务问题
+
+**使用方法：**
+```bash
+# 混合负载测试
+python test/test_concurrent_load.py --base-url http://localhost:5000 --concurrent 50 --requests 1000
+
+# 库存竞争条件测试
+python test/test_concurrent_load.py --stock-test --shop-id 1 --product-id 1 --initial-stock 10 --concurrent-orders 20
+
+# 生产环境测试
+python test/test_concurrent_load.py --base-url https://quick-foods.ai-tracks.com --concurrent 50 --requests 500
+```
+
+**可能发现的问题：**
+- 库存超卖（成功订单数超过实际库存）
+- 数据库连接池耗尽
+- 响应时间过长
+- Session存储压力过大
+- 数据一致性问题
+- 数据库死锁
+
+**修改文件：**
+- `test/test_concurrent_load.py` - 高并发测试脚本
+- `test/run_test_example.py` - 交互式测试示例
+- `test/test_production.sh` - 生产环境测试脚本
+- `test/README.md` - 测试目录说明
+- `docs/CONCURRENT_TESTING_GUIDE.md` - 测试使用指南
+- `docs/PRODUCTION_TESTING.md` - 生产环境测试指南
+
+**注意事项：**
+- 建议在测试环境运行，避免影响生产数据
+- 测试前备份数据库
+- 从低并发开始，逐步增加并发数
+- 监控服务器资源使用情况
+- 所有测试文件已整理到 `test/` 目录
+
+---
+
 ## 2025-11-10 20:42:59 UTC+8 - 完善 Socket.IO WebSocket 错误处理
 
 ### 🐛 Bug 修復
