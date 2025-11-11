@@ -33,4 +33,4 @@ migrations/versions/*.pyc
 .env
 .vscode/
 .idea/
-
+test/
