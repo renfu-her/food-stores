@@ -4,6 +4,37 @@
 
 ---
 
+## 2025-11-12 23:04:15 UTC+8 - 修復錯誤處理程序攔截 Socket.IO 請求問題
+
+### 🐛 Bug 修復
+
+**問題描述：**
+- Socket.IO polling 請求返回 400 Bad Request 錯誤
+- Flask 錯誤處理程序攔截了 Socket.IO 請求，導致連接失敗
+- `RuntimeError`、`400` 和 `500` 錯誤處理程序都會攔截 Socket.IO 請求
+
+**修復內容：**
+- ✅ 修改 `app/utils/error_handlers.py` 中的錯誤處理程序
+- ✅ 添加 Socket.IO 請求檢查，避免攔截 Socket.IO 請求
+- ✅ 讓 Flask-SocketIO 自己處理 Socket.IO 相關的錯誤
+- ✅ 僅對非 Socket.IO 請求應用錯誤處理邏輯
+
+**改進細節：**
+1. **400 錯誤處理程序**：檢查請求路徑，如果是 Socket.IO 請求，重新拋出錯誤讓 Flask-SocketIO 處理
+2. **500 錯誤處理程序**：檢查請求路徑，如果是 Socket.IO 請求，重新拋出錯誤讓 Flask-SocketIO 處理
+3. **RuntimeError 處理程序**：檢查請求路徑，如果是 Socket.IO 請求，重新拋出錯誤讓 Flask-SocketIO 處理
+4. **會話斷開錯誤**：保留對 Socket.IO 會話斷開錯誤的特殊處理
+
+**影響範圍：**
+- `app/utils/error_handlers.py` - 錯誤處理邏輯
+
+**注意事項：**
+- Flask-SocketIO 應該自己處理 Socket.IO 請求的錯誤
+- 錯誤處理程序不應該攔截 Socket.IO 請求
+- 如果問題仍然存在，可能需要檢查 Socket.IO 的 async_mode 配置是否與 Gunicorn worker 類型匹配
+
+---
+
 ## 2025-11-12 22:57:07 UTC+8 - 修復 Socket.IO 客戶端錯誤處理問題
 
 ### 🐛 Bug 修復

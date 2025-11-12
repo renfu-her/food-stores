@@ -25,6 +25,12 @@ def register_error_handlers(app):
     @app.errorhandler(400)
     def bad_request(error):
         """400 Bad Request"""
+        # Socket.IO 請求不應該被這個錯誤處理程序攔截
+        # Flask-SocketIO 會自己處理 Socket.IO 相關的錯誤
+        if request.path.startswith('/socket.io/'):
+            # 讓 Socket.IO 自己處理錯誤，不攔截
+            raise error
+        
         if request.path.startswith('/api/'):
             return jsonify({
                 'error': 'bad_request',
@@ -70,19 +76,29 @@ def register_error_handlers(app):
     def internal_error(error):
         """500 Internal Server Error"""
         db.session.rollback()
-        # 忽略 Socket.IO 的會話斷開錯誤
+        
+        # Socket.IO 請求不應該被這個錯誤處理程序攔截
+        # Flask-SocketIO 會自己處理 Socket.IO 相關的錯誤
+        if request.path.startswith('/socket.io/'):
+            # 忽略 Socket.IO 的會話斷開錯誤
+            if 'Session is disconnected' in str(error):
+                return '', 200
+            # 讓 Socket.IO 自己處理其他錯誤，不攔截
+            raise error
+        
+        # 忽略 Socket.IO 的會話斷開錯誤（非 Socket.IO 請求）
         if 'Session is disconnected' in str(error):
             return '', 200
-        # 處理 WebSocket 升級失敗錯誤（在 WSGI 環境中）
+        
+        # 處理 WebSocket 升級失敗錯誤（在 WSGI 環境中，僅對非 Socket.IO 請求）
         if 'Cannot obtain socket from WSGI environment' in str(error) or 'RuntimeError' in str(type(error).__name__):
-            if request.path.startswith('/socket.io/'):
-                # WebSocket 升級失敗，返回 400 Bad Request，告訴客戶端只使用 polling
-                return jsonify({
-                    'error': 'websocket_not_supported',
-                    'message': 'WebSocket is not supported in this environment. Please use polling transport.',
-                    'details': {}
-                }), 400
-        if request.path.startswith('/api/') or request.path.startswith('/socket.io/'):
+            return jsonify({
+                'error': 'websocket_not_supported',
+                'message': 'WebSocket is not supported in this environment. Please use polling transport.',
+                'details': {}
+            }), 400
+        
+        if request.path.startswith('/api/'):
             return jsonify({
                 'error': 'internal_error',
                 'message': '伺服器內部錯誤',
@@ -93,15 +109,19 @@ def register_error_handlers(app):
     @app.errorhandler(RuntimeError)
     def runtime_error(error):
         """處理 RuntimeError，特別是 WebSocket 相關錯誤"""
-        # 處理 WebSocket 升級失敗錯誤
+        # Socket.IO 請求不應該被這個錯誤處理程序攔截
+        # Flask-SocketIO 會自己處理 Socket.IO 相關的錯誤
+        if request.path.startswith('/socket.io/'):
+            # 讓 Socket.IO 自己處理錯誤，不攔截
+            raise error
+        
+        # 處理 WebSocket 升級失敗錯誤（僅對非 Socket.IO 請求）
         if 'Cannot obtain socket from WSGI environment' in str(error):
-            if request.path.startswith('/socket.io/'):
-                # 返回 400，告訴客戶端不支持 WebSocket
-                return jsonify({
-                    'error': 'websocket_not_supported',
-                    'message': 'WebSocket is not supported. Please use polling transport.',
-                    'details': {}
-                }), 400
+            return jsonify({
+                'error': 'websocket_not_supported',
+                'message': 'WebSocket is not supported. Please use polling transport.',
+                'details': {}
+            }), 400
         # 其他 RuntimeError 當作 500 處理
         return internal_error(error)
     
