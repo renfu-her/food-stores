@@ -72,4 +72,6 @@ class Config:
     COMPRESS_MIMETYPES = ['text/html', 'text/css', 'text/xml', 'application/json', 'application/javascript', 'text/javascript']
     COMPRESS_LEVEL = int(os.environ.get('COMPRESS_LEVEL', '6'))  # 壓縮級別 1-9，6 是平衡點
     COMPRESS_MIN_SIZE = int(os.environ.get('COMPRESS_MIN_SIZE', '500'))  # 最小壓縮大小（字節）
+    # 排除 Socket.IO 路徑不被壓縮（Socket.IO polling 請求不應被壓縮）
+    COMPRESS_EXCLUDE = ['socket.io']  # 排除包含 socket.io 的路徑
 

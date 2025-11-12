@@ -52,6 +52,17 @@ def create_app(config_class=Config):
     cache.init_app(app)
     compress.init_app(app)
     
+    # 排除 Socket.IO 路徑不被壓縮（避免 Socket.IO polling 請求被壓縮導致錯誤）
+    # 使用 after_request 鉤子確保 Socket.IO 響應不被壓縮
+    @app.after_request
+    def skip_compression_for_socketio(response):
+        from flask import request
+        if request.path.startswith('/socket.io'):
+            # 移除壓縮相關的響應頭，確保 Socket.IO 請求不被壓縮
+            response.headers.pop('Content-Encoding', None)
+            # 不刪除 Content-Length，因為 Socket.IO 可能需要它
+        return response
+    
     # 註冊藍圖（延遲導入避免循環依賴）
     with app.app_context():
         from app.routes.auth import auth_bp
