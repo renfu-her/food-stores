@@ -43,7 +43,11 @@
         
         socket.on('connect_error', function(error) {
             reconnectAttempts++;
-            console.warn('Socket.IO connection error:', error.message);
+            // 安全地获取错误信息：error 可能是 Error 对象、字符串或其他类型
+            const errorMessage = error && typeof error === 'object' && error.message 
+                ? error.message 
+                : (error ? String(error) : 'Unknown error');
+            console.warn('Socket.IO connection error:', errorMessage);
             if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
                 console.error('Socket.IO max reconnection attempts reached');
             }
@@ -59,7 +63,11 @@
         });
         
         socket.on('reconnect_error', function(error) {
-            console.warn('Socket.IO reconnection error:', error.message);
+            // 安全地获取错误信息：error 可能是 Error 对象、字符串或其他类型
+            const errorMessage = error && typeof error === 'object' && error.message 
+                ? error.message 
+                : (error ? String(error) : 'Unknown error');
+            console.warn('Socket.IO reconnection error:', errorMessage);
         });
         
         socket.on('reconnect_failed', function() {
