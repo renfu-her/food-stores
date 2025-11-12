@@ -11,12 +11,13 @@ db = SQLAlchemy()
 migrate = Migrate()
 cache = Cache()
 compress = Compress()
-# Socket.IO 配置：在 WSGI 环境中使用 threading 模式
+# Socket.IO 配置
 # 注意：Flask-SocketIO 在 WSGI 环境中不支持 WebSocket，只使用 polling
+# async_mode 会在 init_app 时根据配置设置
 socketio = SocketIO(
     cors_allowed_origins="*",
-    logger=False,
-    engineio_logger=False,
+    logger=True,  # 临时启用日志以便调试
+    engineio_logger=True,  # 临时启用引擎日志以便调试
     ping_timeout=60,
     ping_interval=25
 )

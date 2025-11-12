@@ -40,7 +40,19 @@ class Config:
     SESSION_COOKIE_SAMESITE = 'Lax'
     
     # SocketIO配置
-    SOCKETIO_ASYNC_MODE = os.environ.get('SOCKETIO_ASYNC_MODE', 'threading')
+    # 注意：如果使用 eventlet worker，应该使用 'eventlet' 模式
+    # 如果使用 threading worker，应该使用 'threading' 模式
+    # 默认根据环境变量设置，如果没有设置则自动检测
+    socketio_async_mode_env = os.environ.get('SOCKETIO_ASYNC_MODE')
+    if socketio_async_mode_env:
+        SOCKETIO_ASYNC_MODE = socketio_async_mode_env
+    else:
+        # 尝试检测是否安装了 eventlet
+        try:
+            import eventlet
+            SOCKETIO_ASYNC_MODE = 'eventlet'
+        except ImportError:
+            SOCKETIO_ASYNC_MODE = 'threading'
     SOCKETIO_CORS_ALLOWED_ORIGINS = os.environ.get('SOCKETIO_CORS_ALLOWED_ORIGINS', '*')
     
     # SEO 配置
