@@ -2,11 +2,15 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
+from flask_caching import Cache
+from flask_compress import Compress
 from app.config import Config
 
 # 初始化擴展
 db = SQLAlchemy()
 migrate = Migrate()
+cache = Cache()
+compress = Compress()
 # Socket.IO 配置：在 WSGI 环境中使用 threading 模式
 # 注意：Flask-SocketIO 在 WSGI 环境中不支持 WebSocket，只使用 polling
 socketio = SocketIO(
@@ -43,6 +47,10 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app, async_mode=app.config['SOCKETIO_ASYNC_MODE'])
+    
+    # 初始化快取和壓縮
+    cache.init_app(app)
+    compress.init_app(app)
     
     # 註冊藍圖（延遲導入避免循環依賴）
     with app.app_context():
@@ -109,6 +117,7 @@ def create_app(config_class=Config):
         
         # 根路径指向前台首页
         @app.route('/')
+        @cache.cached(timeout=300)  # 快取5分鐘
         def index():
             from flask import render_template
             from app.models import Shop, HomeBanner

@@ -2,7 +2,7 @@
 產品API路由
 """
 from flask import Blueprint, request, jsonify
-from app import db
+from app import db, cache
 from app.models import Product, Shop, Category, Topping, product_topping
 from app.utils.decorators import login_required, get_current_user, role_required
 from app.utils.validators import validate_decimal, validate_integer
@@ -13,6 +13,7 @@ from sqlalchemy.orm import joinedload, selectinload
 products_api_bp = Blueprint('products_api', __name__)
 
 @products_api_bp.route('/', methods=['GET'])
+@cache.cached(timeout=300, query_string=True)  # 快取5分鐘，根據查詢參數區分
 def get_products():
     """獲取產品列表（公開，可篩選，預設只顯示is_active=true且未刪除的產品，支持分頁）"""
     try:
@@ -122,6 +123,7 @@ def get_products():
         }), 500
 
 @products_api_bp.route('/<int:product_id>', methods=['GET'])
+@cache.cached(timeout=300)  # 快取5分鐘，自動包含product_id參數
 def get_product(product_id):
     """獲取產品詳情（公開）"""
     try:
@@ -287,6 +289,10 @@ def create_product():
         
         db.session.commit()
         
+        # 清除相關快取
+        cache.delete_memoized(get_products)
+        cache.delete_memoized(get_product, product.id)
+        
         return jsonify({
             'id': product.id,
             'name': product.name,
@@ -413,6 +419,10 @@ def update_product(product_id):
         
         db.session.commit()
         
+        # 清除相關快取
+        cache.delete_memoized(get_products)
+        cache.delete_memoized(get_product, product_id)
+        
         # 觸發SocketIO事件 - 产品更新
         from app import socketio
         socketio.emit('product_updated', {
@@ -485,6 +495,10 @@ def delete_product(product_id):
         )
         
         db.session.commit()
+        
+        # 清除相關快取
+        cache.delete_memoized(get_products)
+        cache.delete_memoized(get_product, product_id)
         
         return jsonify({
             'message': '產品刪除成功（可在後台恢復）'

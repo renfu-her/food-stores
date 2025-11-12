@@ -2,7 +2,7 @@
 店鋪API路由
 """
 from flask import Blueprint, request, jsonify
-from app import db
+from app import db, cache
 from app.models import Shop, User, Topping
 from app.utils.decorators import login_required, role_required, shop_access_required, get_current_user
 from app.utils.validators import validate_integer, validate_decimal
@@ -53,6 +53,7 @@ def get_my_shops():
         }), 500
 
 @shops_api_bp.route('/', methods=['GET'])
+@cache.cached(timeout=300, key_prefix='shops_list')  # 快取5分鐘
 def get_shops():
     """獲取店鋪列表（公開，排除已刪除）"""
     try:
@@ -82,6 +83,7 @@ def get_shops():
         }), 500
 
 @shops_api_bp.route('/<int:shop_id>', methods=['GET'])
+@cache.cached(timeout=300)  # 快取5分鐘，自動包含shop_id參數
 def get_shop(shop_id):
     """獲取店鋪詳情（公開）"""
     try:
@@ -212,6 +214,9 @@ def create_shop():
         )
         
         db.session.commit()
+        
+        # 清除相關快取
+        cache.delete('shops_list')
         
         return jsonify({
             'message': '店鋪建立成功',
@@ -378,6 +383,11 @@ def update_shop(shop_id):
         
         db.session.commit()
         
+        # 清除相關快取
+        cache.delete('shops_list')
+        cache.delete_memoized(get_shop, shop_id)
+        cache.delete_memoized(get_shop_toppings, shop_id)
+        
         return jsonify({
             'message': '店鋪更新成功',
             'shop': {
@@ -447,6 +457,11 @@ def delete_shop(shop_id):
         
         db.session.commit()
         
+        # 清除相關快取
+        cache.delete('shops_list')
+        cache.delete_memoized(get_shop, shop_id)
+        cache.delete_memoized(get_shop_toppings, shop_id)
+        
         return jsonify({
             'message': '店鋪刪除成功（可在後台恢復）'
         }), 200
@@ -460,6 +475,7 @@ def delete_shop(shop_id):
         }), 500
 
 @shops_api_bp.route('/<int:shop_id>/toppings', methods=['GET'])
+@cache.cached(timeout=300)  # 快取5分鐘，自動包含shop_id參數
 def get_shop_toppings(shop_id):
     """獲取店鋪toppings列表（僅顯示is_active=true的）"""
     try:
@@ -543,6 +559,9 @@ def create_topping(shop_id):
         
         db.session.add(new_topping)
         db.session.commit()
+        
+        # 清除相關快取
+        cache.delete_memoized(get_shop_toppings, shop_id)
         
         return jsonify({
             'message': '配料建立成功',

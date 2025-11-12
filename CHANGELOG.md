@@ -4,6 +4,83 @@
 
 ---
 
+## 2025-11-12 22:13:35 UTC+8 - 新增 Flask-Caching 和 Flask-Compress 性能優化
+
+### ⚡ 性能優化
+
+**新增內容：**
+- ✅ 整合 Flask-Caching 用於 API 響應快取
+- ✅ 整合 Flask-Compress 用於響應壓縮
+- ✅ 為主要 API 端點添加快取裝飾器
+- ✅ 實現智能快取失效機制
+
+**功能說明：**
+
+**Flask-Caching 配置：**
+- 預設使用 `simple` 快取類型（記憶體快取）
+- 支援 Redis 快取（可選，通過環境變數配置）
+- 預設快取時間：5分鐘（API端點）、10分鐘（分類端點）
+- 自動快取失效：當資料更新時自動清除相關快取
+
+**Flask-Compress 配置：**
+- 自動壓縮 HTML、CSS、JavaScript、JSON 響應
+- 壓縮級別：6（平衡壓縮率和性能）
+- 最小壓縮大小：500 字節
+
+**已添加快取的 API 端點：**
+- `GET /api/shops/` - 店鋪列表（5分鐘快取）
+- `GET /api/shops/<id>` - 店鋪詳情（5分鐘快取）
+- `GET /api/shops/<id>/toppings` - 店鋪配料列表（5分鐘快取）
+- `GET /api/products/` - 產品列表（5分鐘快取，支援查詢參數）
+- `GET /api/products/<id>` - 產品詳情（5分鐘快取）
+- `GET /api/categories/` - 分類列表（10分鐘快取）
+- `GET /api/categories/<id>` - 分類詳情（10分鐘快取）
+- `GET /` - 首頁（5分鐘快取）
+
+**快取失效機制：**
+- 當建立/更新/刪除店鋪時，自動清除店鋪相關快取
+- 當建立/更新/刪除產品時，自動清除產品相關快取
+- 當建立/更新/刪除分類時，自動清除分類相關快取
+- 當建立/更新配料時，自動清除相關店鋪配料快取
+
+**配置選項（env.example）：**
+```env
+# Flask-Caching 配置
+CACHE_TYPE=simple
+CACHE_DEFAULT_TIMEOUT=300
+# Redis 快取配置（可選）
+# CACHE_REDIS_HOST=localhost
+# CACHE_REDIS_PORT=6379
+# CACHE_REDIS_DB=0
+# CACHE_REDIS_PASSWORD=
+
+# Flask-Compress 配置
+COMPRESS_LEVEL=6
+COMPRESS_MIN_SIZE=500
+```
+
+**修改文件：**
+- `requirements.txt` - 新增 Flask-Caching==2.1.0 和 Flask-Compress==1.14
+- `app/config.py` - 新增快取和壓縮配置選項
+- `app/__init__.py` - 初始化快取和壓縮擴展，為首頁添加快取
+- `app/routes/api/shops.py` - 添加快取裝飾器和失效邏輯
+- `app/routes/api/products.py` - 添加快取裝飾器和失效邏輯
+- `app/routes/api/categories.py` - 添加快取裝飾器和失效邏輯
+- `env.example` - 新增快取和壓縮配置範例
+
+**性能提升：**
+- API 響應時間減少（快取命中時）
+- 網路傳輸量減少（響應壓縮）
+- 資料庫查詢負載降低（快取減少重複查詢）
+- 提升高併發場景下的系統穩定性
+
+**使用建議：**
+- 開發環境：使用 `simple` 快取類型（預設）
+- 生產環境：建議使用 Redis 快取（設置 `CACHE_TYPE=redis`）
+- 可根據實際需求調整快取時間（`CACHE_DEFAULT_TIMEOUT`）
+
+---
+
 ## 2025-01-15 10:00:00 UTC+8 - 新增高并发测试脚本
 
 ### ✨ 新功能

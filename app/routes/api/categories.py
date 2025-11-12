@@ -2,7 +2,7 @@
 分類 API 路由
 """
 from flask import Blueprint, request, jsonify
-from app import db
+from app import db, cache
 from app.models import Category, Product
 from app.utils.decorators import login_required, role_required
 from app.utils.update_logger import log_update
@@ -10,6 +10,7 @@ from app.utils.update_logger import log_update
 categories_api_bp = Blueprint('categories_api', __name__)
 
 @categories_api_bp.route('', methods=['GET'])
+@cache.cached(timeout=600, key_prefix='categories_list')  # 快取10分鐘
 def get_categories():
     """獲取所有分類"""
     categories = Category.query.order_by(Category.name).all()
@@ -29,6 +30,7 @@ def get_categories():
     return jsonify(result)
 
 @categories_api_bp.route('/<int:category_id>', methods=['GET'])
+@cache.cached(timeout=600)  # 快取10分鐘，自動包含category_id參數
 def get_category(category_id):
     """獲取單個分類"""
     category = Category.query.get_or_404(category_id)
@@ -76,6 +78,9 @@ def create_category():
         )
         
         db.session.commit()
+        
+        # 清除相關快取
+        cache.delete('categories_list')
         
         return jsonify({
             'id': category.id,
@@ -131,6 +136,10 @@ def update_category(category_id):
         
         db.session.commit()
         
+        # 清除相關快取
+        cache.delete('categories_list')
+        cache.delete_memoized(get_category, category_id)
+        
         return jsonify({
             'id': category.id,
             'name': category.name,
@@ -167,6 +176,10 @@ def delete_category(category_id):
         
         db.session.delete(category)
         db.session.commit()
+        
+        # 清除相關快取
+        cache.delete('categories_list')
+        cache.delete_memoized(get_category, category_id)
         
         return jsonify({'message': '刪除成功'}), 200
         

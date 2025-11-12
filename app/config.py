@@ -56,4 +56,20 @@ class Config:
     UPLOAD_FOLDER = uploads_dir if os.path.exists(uploads_dir) else uploads_dir_public
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_UPLOAD_SIZE_MB', '16')) * 1024 * 1024  # 默認16MB
     ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    
+    # Flask-Caching 配置
+    CACHE_TYPE = os.environ.get('CACHE_TYPE', 'simple')  # simple, redis, memcached, filesystem
+    CACHE_DEFAULT_TIMEOUT = int(os.environ.get('CACHE_DEFAULT_TIMEOUT', '300'))  # 默認5分鐘
+    CACHE_KEY_PREFIX = 'quick_foods_'
+    
+    # Redis 快取配置（如果使用 Redis）
+    CACHE_REDIS_HOST = os.environ.get('CACHE_REDIS_HOST', 'localhost')
+    CACHE_REDIS_PORT = int(os.environ.get('CACHE_REDIS_PORT', '6379'))
+    CACHE_REDIS_DB = int(os.environ.get('CACHE_REDIS_DB', '0'))
+    CACHE_REDIS_PASSWORD = os.environ.get('CACHE_REDIS_PASSWORD', None)
+    
+    # Flask-Compress 配置
+    COMPRESS_MIMETYPES = ['text/html', 'text/css', 'text/xml', 'application/json', 'application/javascript', 'text/javascript']
+    COMPRESS_LEVEL = int(os.environ.get('COMPRESS_LEVEL', '6'))  # 壓縮級別 1-9，6 是平衡點
+    COMPRESS_MIN_SIZE = int(os.environ.get('COMPRESS_MIN_SIZE', '500'))  # 最小壓縮大小（字節）
 
