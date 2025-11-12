@@ -51,17 +51,31 @@ def create_app(config_class=Config):
     
     # 初始化快取和壓縮
     cache.init_app(app)
+    
+    # 在初始化 Flask-Compress 之前，添加 before_request 鉤子排除 Socket.IO 路徑
+    @app.before_request
+    def skip_compression_for_socketio_before():
+        """在請求處理前排除 Socket.IO 路徑，防止 Flask-Compress 壓縮"""
+        from flask import request
+        if request.path.startswith('/socket.io'):
+            # 設置標記，告訴 Flask-Compress 不要壓縮這個請求
+            request.environ['flask_compress.skip'] = True
+    
     compress.init_app(app)
     
-    # 排除 Socket.IO 路徑不被壓縮（避免 Socket.IO polling 請求被壓縮導致錯誤）
-    # 使用 after_request 鉤子確保 Socket.IO 響應不被壓縮
+    # 使用 after_request 鉤子作為雙重保險，確保 Socket.IO 響應不被壓縮
     @app.after_request
-    def skip_compression_for_socketio(response):
+    def skip_compression_for_socketio_after(response):
+        """在響應處理後移除壓縮相關的響應頭（雙重保險）"""
         from flask import request
         if request.path.startswith('/socket.io'):
             # 移除壓縮相關的響應頭，確保 Socket.IO 請求不被壓縮
             response.headers.pop('Content-Encoding', None)
             # 不刪除 Content-Length，因為 Socket.IO 可能需要它
+            # 確保響應不被緩存
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
         return response
     
     # 註冊藍圖（延遲導入避免循環依賴）
