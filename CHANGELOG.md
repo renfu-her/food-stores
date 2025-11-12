@@ -4,6 +4,45 @@
 
 ---
 
+## 2025-11-12 23:09:07 UTC+8 - 修復 Socket.IO async_mode 與 Gunicorn worker 不匹配問題
+
+### 🐛 Bug 修復
+
+**問題描述：**
+- Socket.IO 連接仍然返回 400 Bad Request 錯誤
+- Gunicorn 使用 `eventlet` worker，但 Socket.IO 配置為 `threading` 模式
+- 配置不匹配導致 Socket.IO 無法正常工作
+
+**根本原因：**
+- Flask-SocketIO 要求 `async_mode` 必須與 Gunicorn worker 類型匹配
+- 使用 `eventlet` worker 時，Socket.IO 必須使用 `eventlet` 模式
+- 使用 `threading` worker 時，Socket.IO 必須使用 `threading` 模式
+
+**修復內容：**
+- ✅ 修改 `app/config.py`：添加自動檢測邏輯，優先使用 `eventlet` 模式
+- ✅ 修改 `env.example`：將默認值改為 `eventlet`
+- ✅ 修改 `app/__init__.py`：臨時啟用 Socket.IO 日誌以便調試
+- ✅ 添加智能檢測：如果環境變數未設置，自動檢測是否安裝了 eventlet
+
+**改進細節：**
+1. **自動檢測機制**：如果 `SOCKETIO_ASYNC_MODE` 環境變數未設置，系統會自動檢測是否安裝了 `eventlet`
+2. **優先使用 eventlet**：如果檢測到 eventlet 已安裝，自動使用 `eventlet` 模式
+3. **向後兼容**：如果環境變數已設置，使用環境變數的值
+4. **調試支持**：臨時啟用 Socket.IO 日誌，方便排查問題
+
+**影響範圍：**
+- `app/config.py` - Socket.IO 配置邏輯
+- `app/__init__.py` - Socket.IO 初始化（啟用日誌）
+- `env.example` - 環境變數示例文件
+
+**重要提示：**
+- 如果使用 `eventlet` worker，必須設置 `SOCKETIO_ASYNC_MODE=eventlet`
+- 如果使用 `threading` worker，必須設置 `SOCKETIO_ASYNC_MODE=threading`
+- 如果不設置環境變數，系統會自動檢測並使用合適的模式
+- 修復後需要重啟 Gunicorn 服務器才能生效
+
+---
+
 ## 2025-11-12 23:04:15 UTC+8 - 修復錯誤處理程序攔截 Socket.IO 請求問題
 
 ### 🐛 Bug 修復
